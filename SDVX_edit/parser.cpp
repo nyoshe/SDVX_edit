@@ -83,8 +83,12 @@ Chart parser::loadFile(std::string fileName)
 			}
 		}
 
-		std::vector<ChartLine> lineBuffer;
+		std::vector<ChartLine*> lineBuffer;
 		std::vector<bool> laserWide = { false, false };
+
+		std::vector <ChartLine*> lastLaser = { nullptr, nullptr };
+		ChartLine* prev = nullptr;
+		unsigned int pos = 0;
 
 		//read chart body
 		while (getline(mapFile, s)) {
@@ -97,29 +101,33 @@ Chart parser::loadFile(std::string fileName)
 				m.lines = lineBuffer;
 				m.division = lineBuffer.size();
 				chart.measures.push_back(m);
+				for (auto line : chart.measures.back().lines) {
+					line->pos = pos;
+					pos += 192 / m.division;
+				}
 				lineBuffer.clear();
 				continue;
 			}
 			//check for commands, these always have equal signs
 			std::vector<Command> commands;
-			ChartLine line;
+			ChartLine* line = new ChartLine;
 
 			while (s.find('=') != std::string::npos) {
 				commands.push_back(parseCommand(s));
 				getline(mapFile, s);
 			}
 
-			line.cmds = commands;
+			line->cmds = commands;
 
 			//now do buttons
-			line.btVal[0] = s[0] - '0';
-			line.btVal[1] = s[1] - '0';
-			line.btVal[2] = s[2] - '0';
-			line.btVal[3] = s[3] - '0';
+			line->btVal[0] = s[0] - '0';
+			line->btVal[1] = s[1] - '0';
+			line->btVal[2] = s[2] - '0';
+			line->btVal[3] = s[3] - '0';
 
 			//fx 
-			line.fxVal[0] = s[5] - '0';
-			line.fxVal[1] = s[6] - '0';
+			line->fxVal[0] = s[5] - '0';
+			line->fxVal[1] = s[6] - '0';
 
 			
 			//lasers
@@ -127,36 +135,43 @@ Chart parser::loadFile(std::string fileName)
 			for (int i = 0; i < 2; i++) {
 				switch (s[8 + i]) {
 				case '-':
-					line.laserPos[i] = -1;
+					line->laserPos[i] = -1;
+					lastLaser[i] = nullptr;
 					break;
 				case ':':
-					line.laserPos[i] = -2;
+					line->laserPos[i] = -2;
 					break;
 				default:
-					line.laserPos[i] = laserVals.find(s[8 + i]);
+					line->laserPos[i] = laserVals.find(s[8 + i]);
+					line->laserConnectionPos[i] = laserVals.find(s[8 + i]);
+					if (lastLaser[i] != nullptr) {
+						line->prevLaser[i] = lastLaser[i];
+						lastLaser[i]->nextLaser[i] = line;
+					}
+					lastLaser[i] = line;
 					break;
 				}
 
 				
 			}
 
-			for (auto it : line.cmds) {
-				if (it.type == CommandType::WIDE_LASER_L && line.laserPos[0] != -1) {
+			for (auto it : line->cmds) {
+				if (it.type == CommandType::WIDE_LASER_L && line->laserPos[0] != -1) {
 					laserWide[0] = true;
 				}
-				else if (line.laserPos[0] == -1) {
+				else if (line->laserPos[0] == -1) {
 					laserWide[0] = false;
 				}
-				if (it.type == CommandType::WIDE_LASER_R && line.laserPos[1] != -1) {
+				if (it.type == CommandType::WIDE_LASER_R && line->laserPos[1] != -1) {
 					laserWide[1] = true;
 				}
-				else if (line.laserPos[1] == -1) {
+				else if (line->laserPos[1] == -1) {
 					laserWide[1] = false;
 				}
 				
 			}
-			line.isWide[0] = laserWide[0];
-			line.isWide[1] = laserWide[1];
+			line->isWide[0] = laserWide[0];
+			line->isWide[1] = laserWide[1];
 
 			//now check for spin commands cause they're special snowflakes
 			if (s.size() > 10) {
@@ -166,9 +181,16 @@ Chart parser::loadFile(std::string fileName)
 				
 				spinCommand.val = s.substr(12);
 
-				line.cmds.push_back(spinCommand);
+				line->cmds.push_back(spinCommand);
 			}
 
+			//doubly linked list stuff
+			line->prev = prev;
+			if (prev != nullptr) {
+				prev->next = line;
+			}
+			
+			prev = line;
 			lineBuffer.push_back(line);
 		}
 	}
@@ -229,7 +251,7 @@ void parser::saveFile(Chart chart, std::string fileName)
 			bool hasSpin = false;
 			std::string spinVal = "";
 			//first output commands
-			for (auto command : line.cmds) {
+			for (auto command : line->cmds) {
 				auto it = swappedCmdTable.find(command.type);
 				switch (it->first) {
 				case CommandType::SPIN_R:
@@ -248,21 +270,21 @@ void parser::saveFile(Chart chart, std::string fileName)
 			}
 
 			//output the actual line
-			mapFile << char(line.btVal[0] + '0') << char(line.btVal[1] + '0') << char(line.btVal[2] + '0') << char(line.btVal[3] + '0') << "|";
-			mapFile << char(line.fxVal[0] + '0') << char(line.fxVal[1] + '0') << "|";
+			mapFile << char(line->btVal[0] + '0') << char(line->btVal[1] + '0') << char(line->btVal[2] + '0') << char(line->btVal[3] + '0') << "|";
+			mapFile << char(line->fxVal[0] + '0') << char(line->fxVal[1] + '0') << "|";
 			for (int i = 0; i < 2; i++) {
-				switch (line.laserPos[i]) {
+				switch (line->laserPos[i]) {
 				case -1: mapFile << "-"; break;
 				case -2: mapFile << ":"; break;
 				default:
-					mapFile << laserVals[line.laserPos[i]];
+					mapFile << laserVals[line->laserPos[i]];
 					break;
 				}
 			}
 
 			//now do spins
 			if (hasSpin){
-				mapFile << swappedCmdTable.find(line.cmds.back().type)->second << line.cmds.back().val;
+				mapFile << swappedCmdTable.find(line->cmds.back().type)->second << line->cmds.back().val;
 			}
 
 			mapFile << std::endl;

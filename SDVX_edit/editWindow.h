@@ -11,7 +11,7 @@
 #include "imgui-SFML.h"
 #include "structs.h"
 #include <cmath>
-
+#include <algorithm>
 
 
 
@@ -65,7 +65,7 @@ public:
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
-    float getLaserX(float pos, bool wide);
+    std::vector <float> getLaserX(ChartLine* line);
     sf::Vector2f getMeasureStart(int measure);
     sf::Vector2f getSnappedPos(NoteType type);
     //get the note location from measure, lane, and line position given a snapping size

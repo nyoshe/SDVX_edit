@@ -8,26 +8,33 @@ struct Command {
     std::string val = "";
 };
 
-typedef struct ChartLine {
+ struct ChartLine {
     //2 for long note, 1 for chip
-    uint8_t btVal[4] = { 0, 0, 0, 0 };
+    std::vector <uint8_t> btVal = { 0, 0, 0, 0 };
     //1 for long note, 2 for chip (legacy reasons tl. stupid devs)
-    uint8_t fxVal[2] = { 0, 0 };
-    int8_t laserPos[2] = { -1, -1 };
-    bool isWide[2] = { false, false };
+    std::vector <uint8_t> fxVal = { 0, 0 };
+    std::vector <int8_t> laserPos = { -1, -1 };
+    std::vector <bool>  isWide = { false, false };
+    std::vector <ChartLine*> nextLaser = { nullptr, nullptr };
+    std::vector <ChartLine*> prevLaser = { nullptr, nullptr };
+    ChartLine* next = nullptr;
+    ChartLine* prev = nullptr;
+    //defines our position relative to 1/192 snapping
+    unsigned int pos = 0;
     //this is used for drawing, and represents and active laser position at that point
-    float laserConnectionPos[2] = { 0.0, 0.0 };
-    std::vector<Command> cmds;
+    std::vector <float> laserConnectionPos = { 0.0, 0.0 };
+    std::vector <Command> cmds;
 };
 
-typedef struct Measure {
+ struct Measure {
     //division of the measure (eg. 32, 16, 12, etc)
     //the standard measure division is 192
-    int division;
-    std::vector<ChartLine> lines;
+    int division = 32;
+    //miiiiiiight have a memory leak, not sure if the pointers delete themselves
+    std::vector<ChartLine*> lines;
 };
 
-typedef struct Chart {
+ struct Chart {
     //metadata
     std::string title = "";
     std::string titleImg = "";

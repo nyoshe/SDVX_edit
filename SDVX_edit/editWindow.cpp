@@ -3,63 +3,22 @@ void editWindow::loadFile(std::string fileName) {
 	parser p;
 	chart = p.loadFile(fileName);
 
-	//set up intermediate laser positions
-	std::vector<float> connectionStartX = { 0, 0 };
-	std::vector<int> connectionLength = { 0, 0 };
-	std::vector<bool> laserActive = { false, false };
-	std::vector<int> startMeasure = { 0, 0 };
-	std::vector<int> startLine = { 0, 0 };
-
-	for (int m = 0; m < chart.measures.size(); m++) {
-		for (int l = 0; l < chart.measures[m].lines.size(); l++) {
-			for (int i = 0; i < 2; i++) {
-				switch (chart.measures[m].lines[l].laserPos[i]) {
-				case -1:
-					connectionLength[i] = 0;
-					laserActive[i] = false;
-					break;
-				case -2:
-					connectionLength[i] += 192 / chart.measures[m].division;
-					break;
-				default:
-					if (laserActive[i]) {
-						//make connection points
-						int n = 0;
-
-						for (int m2 = startMeasure[i]; m2 < m; m2++) {
-							int l2 = 0;
-							if (m2 == startMeasure[i]) l2 = startLine[i];
-
-							for (; l2 < chart.measures[m2].division; l2++) {
-								chart.measures[m2].lines[l2].laserConnectionPos[i] = connectionStartX[i] - (connectionStartX[i] - chart.measures[m].lines[l].laserPos[i]) * float(float(n) / float(connectionLength[i]));
-								n += 192 / chart.measures[m2].division;
-							}
-						}
-
-						int l2 = 0;
-						if (m == startMeasure[i]) l2 = startLine[i];
-						for (; l2 < l; l2++) {
-							chart.measures[m].lines[l2].laserConnectionPos[i] = connectionStartX[i] - (connectionStartX[i] - chart.measures[m].lines[l].laserPos[i]) * float(float(n) / float(connectionLength[i]));
-							n += 192 / chart.measures[m].division;
-						}
-						chart.measures[m].lines[l].laserConnectionPos[i] = chart.measures[m].lines[l].laserPos[i];
-						connectionLength[i] = 0;
-					}
-					else {
-						chart.measures[m].lines[l].laserConnectionPos[i] = chart.measures[m].lines[l].laserPos[i];
-						laserActive[i] = true;
-					}
-					
-					startMeasure[i] = m;
-					startLine[i] = l;
-					connectionStartX[i] = chart.measures[m].lines[l].laserPos[i];
-					connectionLength[i] += 192 / chart.measures[m].division;
-					break;
+	ChartLine* start = chart.measures[0].lines[0];
+	while (start->next != nullptr) {
+		for (int i = 0; i < 2; i++) {
+			if (start->laserPos[i] >= 0 && start->nextLaser[i] != nullptr) {
+				ChartLine* line = start->next;
+				float startPos = start->laserConnectionPos[i];
+				float endPos = start->nextLaser[i]->laserConnectionPos[i];
+				float diff = start->nextLaser[i]->pos - start->pos;
+				while (line != start->nextLaser[i]) {
+					line->laserConnectionPos[i] = startPos - (startPos - endPos) * (float(line->pos - start->pos) / diff);
+					line = line->next;
 				}
 			}
 		}
+		start = start->next;
 	}
-
 	p.saveFile(chart, "test.ksh");
 }
 
@@ -165,18 +124,22 @@ int editWindow::getMouseLine() {
 }
 
 //gets left x position of leaser start
-float editWindow::getLaserX(float pos, bool wide) {
-	if (wide) {
-		return pos * (9 * laneWidth) / 50.0 - 3 * laneWidth;
+std::vector <float> editWindow::getLaserX(ChartLine* line) {
+	std::vector <float> xVec = { 0, 0 };
+	for (int i = 0; i < 2; i++) {
+		if (line->isWide[i]) {
+			xVec[i] = line->laserConnectionPos[i] * (9 * laneWidth) / 50.0 - 3 * laneWidth;
+		}
+		else {
+			xVec[i] = line->laserConnectionPos[i] * (5 * laneWidth) / 50.0 - laneWidth;
+		}
 	}
-	else {
-		return pos * (5 * laneWidth) / 50.0 - laneWidth;
-	}
+	return xVec;
 	
 }
 
 void editWindow::drawMap() {
-	//draw the columns
+
 	//draw measure lines
 	for (int i = 0; i < columns; i++) {
 		for (int j = 0; j < (measuresPerColumn + 1); j++) {
@@ -187,6 +150,7 @@ void editWindow::drawMap() {
 			window->draw(line, 2, sf::Lines);
 		}
 	}
+	
 	//draw horizontal lines
 	for (int i = 0; i < columns; i++) {
 		for (int j = 0; j < measuresPerColumn; j++) {
@@ -222,15 +186,15 @@ void editWindow::drawChart() {
 	for (int i = 0; i < (measuresPerColumn * columns); i++) {
 		Measure cMeasure = chart.measures[i + editorMeasure];
 		for (int line = 0; line < chart.measures[i + editorMeasure].lines.size(); line++) {
-			ChartLine cLine = cMeasure.lines[line];
+			ChartLine* cLine = cMeasure.lines[line];
 			for (int lane = 0; lane < 2; lane += 1) {
 				//fx chips
-				if (cLine.fxVal[lane] == 2) {
+				if (cLine->fxVal[lane] == 2) {
 					fxSprite.setPosition(getNoteLocation(i, lane * 2, line, cMeasure.division));
 					window->draw(fxSprite);
 				}
 				//fx hold
-				else if (cLine.fxVal[lane] == 1) {
+				else if (cLine->fxVal[lane] == 1) {
 					fxHoldSprite.setPosition(getNoteLocation(i, lane * 2, line, cMeasure.division));
 					fxHoldSprite.setScale(fxHoldSprite.getScale().x, measureHeight / cMeasure.division);
 					window->draw(fxHoldSprite);
@@ -240,13 +204,13 @@ void editWindow::drawChart() {
 			
 			for (int lane = 0; lane < 4; lane++) {
 				//bt chips
-				if (cLine.btVal[lane] == 1) {
+				if (cLine->btVal[lane] == 1) {
 					auto test = getNoteLocation(i, lane, line, cMeasure.division);
 					btSprite.setPosition(getNoteLocation(i, lane, line, cMeasure.division));
 					window->draw(btSprite);
 				}
 				//bt hold
-				else if (cLine.btVal[lane] == 2) {
+				else if (cLine->btVal[lane] == 2) {
 					btHoldSprite.setPosition(getNoteLocation(i, lane, line, cMeasure.division));
 					btHoldSprite.setScale(btHoldSprite.getScale().x, measureHeight / cMeasure.division);
 					window->draw(btHoldSprite);
@@ -254,47 +218,58 @@ void editWindow::drawChart() {
 			}
 
 			
-			for (int l = 0; l < 2; l++) {
-				
-
-				sf::Color c;
-				if (l == 1) {
-					c = sf::Color(255, 0, 200, 150);
-				}
-				else {
-					c = sf::Color(0, 160, 255, 150);
-				}
-				
-				
-				if (cLine.laserPos[l] != -1) {
-					sf::VertexArray quad(sf::Quads, 4);
-					//sf::Vertex quad[2];
-					
-					// build laser quad
-					quad[0] = sf::Vertex(sf::Vector2f(getLaserX(cLine.laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x, getNoteLocation(i, 0, line, cMeasure.division).y), c);
-					quad[1] = sf::Vertex(sf::Vector2f(getLaserX(cLine.laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x + laneWidth, getNoteLocation(i, 0, line, cMeasure.division).y), c);
-					
-					if (line == chart.measures[i + editorMeasure].lines.size() - 1) {
-						quad[3] = sf::Vertex(sf::Vector2f(getLaserX(chart.measures[i + editorMeasure + 1].lines[0].laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x, getNoteLocation(i, 0, line + 1, cMeasure.division).y), c);
-						quad[2] = sf::Vertex(sf::Vector2f(getLaserX(chart.measures[i + editorMeasure + 1].lines[0].laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x + laneWidth, getNoteLocation(i, 0, line + 1, cMeasure.division).y), c);
-						if (chart.measures[i + editorMeasure + 1].lines[0].laserPos[l] != -1) {
-							window->draw(quad);
-						}
-					}
-					else {
-						quad[3] = sf::Vertex(sf::Vector2f(getLaserX(cMeasure.lines[line + 1].laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x, getNoteLocation(i, 0, line + 1, cMeasure.division).y), c);
-						quad[2] = sf::Vertex(sf::Vector2f(getLaserX(cMeasure.lines[line + 1].laserConnectionPos[l], cLine.isWide[l]) + getMeasureStart(i).x + laneWidth, getNoteLocation(i, 0, line + 1, cMeasure.division).y), c);
-						if (chart.measures[i + editorMeasure].lines[line + 1].laserPos[l] != -1) {
-							window->draw(quad);
-						}
-					}
-					
-					
-				}
-			}
+			
 		}
 	}
+
+	for (int l = 0; l < 2; l++) {
+		ChartLine* line = chart.measures[editorMeasure].lines[0];
+		ChartLine* start = line;
+		while (line->pos <= 192 * (editorMeasure + columns * measuresPerColumn)) {
+		
+			int measureNum = line->pos / 192;
+			Measure cMeasure = chart.measures[measureNum];
+			int lineNum = (line->pos - cMeasure.lines[0]->pos) / (192 / cMeasure.division);
+			sf::Color c;
+			if (l == 1) {
+				c = sf::Color(255, 0, 200, 150);
+			}
+			else {
+				c = sf::Color(0, 160, 255, 150);
+			}
+
+
+			if (line->laserPos[l] != -1 && line->next != nullptr && line->next->laserPos[l] != -1) {
+				//check for slams, this is not kson compliant and checks based on timing
+				if (line->nextLaser[l] != nullptr && (line->nextLaser[l]->pos - line->pos) <= (192 / 32) && line->laserPos[l] != -2) {
+					sf::VertexArray quad(sf::Quads, 4);
+
+					// build laser quad
+					quad[0] = sf::Vertex(sf::Vector2f(std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
+					quad[1] = sf::Vertex(sf::Vector2f(std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y - laneWidth / 2.0), c);
+					quad[2] = sf::Vertex(sf::Vector2f(std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y - laneWidth / 2.0), c);
+					quad[3] = sf::Vertex(sf::Vector2f(std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
+
+					window->draw(quad);
+					line = line->nextLaser[l];
+				}
+				else {
+					sf::VertexArray quad(sf::Quads, 4);
+
+					// build laser quad
+					quad[0] = sf::Vertex(sf::Vector2f(getLaserX(line)[l] + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
+					quad[1] = sf::Vertex(sf::Vector2f(getLaserX(line)[l] + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
+					quad[3] = sf::Vertex(sf::Vector2f(getLaserX(line->next)[l] + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum + 1, cMeasure.division).y), c);
+					quad[2] = sf::Vertex(sf::Vector2f(getLaserX(line->next)[l] + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum + 1, cMeasure.division).y), c);
+					window->draw(quad);
+				}
+			}
+			line = line->next;
+		}
+	}
+	
 }
+
 
 sf::Vector2f editWindow::getMeasureStart(int measure) {
 	int columnNum = measure / measuresPerColumn;
