@@ -21,6 +21,7 @@ struct Command {
     ChartLine* prev = nullptr;
     //defines our position relative to 1/192 snapping
     unsigned int pos = 0;
+    unsigned int measurePos = 0;
     //this is used for drawing, and represents and active laser position at that point
     std::vector <float> laserConnectionPos = { 0.0, 0.0 };
     std::vector <Command> cmds;
@@ -28,10 +29,48 @@ struct Command {
 
  struct Measure {
     //division of the measure (eg. 32, 16, 12, etc)
-    //the standard measure division is 192
+    //the standard measure division is 192, it can go higher if the time signature is different
     int division = 32;
+
+    //this defines the top part of the time signature
+    int topSig = 4;
     //miiiiiiight have a memory leak, not sure if the pointers delete themselves
     std::vector<ChartLine*> lines;
+    void updateDivision(int div) {
+        for (int i = 0; i < division; i += div / division) {
+            std::vector<ChartLine*>::iterator it = lines.begin() + i;
+            ChartLine* newLine = new ChartLine;
+            for (int j = 0; j < 2; j++) {
+                if (lines[i]->laserPos[j] >= 0 && lines[i]->nextLaser[j] != nullptr) {
+                    newLine->laserPos[j] = -2;
+                    newLine->isWide[j] = lines[i]->isWide[j];
+                }
+                else if (lines[i]->laserPos[j] == -2){
+                    newLine->laserPos[j] = -2;
+                    newLine->laserConnectionPos[j] = (lines[i]->next->laserConnectionPos[j] + lines[i]->laserConnectionPos[j]) / 2;
+                }
+
+                //fx buttons update
+                if (lines[i]->fxVal[j] == 1) {
+                    newLine->fxVal[j] = 1;
+                }
+            }
+
+            for (int j = 0; j < 4; j++) {
+                if (lines[i]->btVal[j] == 2) {
+                    newLine->btVal[j] = 2;
+                }
+            }
+            newLine->pos = (lines[i]->next->pos + lines[i]->pos) / 2;
+            newLine->measurePos = (lines[i]->next->measurePos + lines[i]->measurePos) / 2;
+            lines[i]->next = newLine;
+            newLine->prev = lines[i];
+            lines.insert(it, div/division - 1, newLine);
+        }
+    }
+    void minimizeDivision() {
+        //TODO
+    }
 };
 
  struct Chart {

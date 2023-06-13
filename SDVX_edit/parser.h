@@ -34,7 +34,7 @@ static std::unordered_map<std::string, CommandType> const cmdTable = {
 			{"@<", CommandType::HALF_SPIN_L},
 			{"@>", CommandType::HALF_SPIN_R},
 			{"S<", CommandType::SWING_L},
-			{"S>", CommandType::SWING_R},
+			{"S>", CommandType::SWING_R}
 };
 
 class parser

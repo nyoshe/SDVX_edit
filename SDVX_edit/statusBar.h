@@ -1,7 +1,9 @@
 #pragma once
-#include "imgui.h"
-#include "imgui-SFML.h"
-
+#include "imgui/imgui.h"
+#include "imgui/imgui-SFML.h"
+#include "editWindow.h"
+#include "fileDialog/ImGuiFileDialog.h"
+#include <string>
 class statusBar
 {
 private:

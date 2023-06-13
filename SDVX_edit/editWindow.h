@@ -7,11 +7,25 @@
 #include <vector>
 #include <iostream>
 #include "parser.h"
-#include "imgui.h"
-#include "imgui-SFML.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui-SFML.h"
 #include "structs.h"
 #include <cmath>
 #include <algorithm>
+#include <iostream>
+
+
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <cstdlib> //std::system
+#include <sstream>
+
+struct gameControl
+{
+    bool paused = true;
+    bool seek = false;
+    uint32_t seekPos = 0;
+    float speed = 1.0;
+};
 
 
 
@@ -44,6 +58,9 @@ private:
     sf::Texture fxHoldTex;
     sf::Sprite fxHoldSprite;
 
+    sf::Texture entryTex;
+    sf::Sprite entrySprite;
+
     Chart chart;
 public:
 
@@ -60,11 +77,13 @@ public:
     }
     void setWindow(sf::RenderWindow* _window);
     void update();
+    void updateVars();
     void drawMap();
     void drawChart();
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
+    void handleEvent(sf::Event event);
     std::vector <float> getLaserX(ChartLine* line);
     sf::Vector2f getMeasureStart(int measure);
     sf::Vector2f getSnappedPos(NoteType type);
@@ -73,9 +92,11 @@ public:
     void loadFile(std::string fileName);
 
     //vars
-
+    boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;
     int columns = 6;
     int measuresPerColumn = 4;
     int snapGridSize = 16;
+
+    gameControl* controlPtr;
 };

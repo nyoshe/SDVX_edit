@@ -27,7 +27,6 @@ Chart parser::loadFile(std::string fileName)
 	//ignore first 3 bytes
 	mapFile.seekg(3);
 	Chart chart;
-	
 
 	if (mapFile.is_open()) {
 		std::string s;
@@ -90,6 +89,10 @@ Chart parser::loadFile(std::string fileName)
 		ChartLine* prev = nullptr;
 		unsigned int pos = 0;
 
+		int timeSigTop = std::stoi(chart.beat.substr(0, chart.beat.find('/')));
+		int timeSigBottom = std::stoi(chart.beat.substr(chart.beat.find('/') + 1));
+
+		unsigned int measurePos = 0;
 		//read chart body
 		while (getline(mapFile, s)) {
 			std::vector<std::vector<ChartLine *>> laserLines[2];
@@ -99,21 +102,33 @@ Chart parser::loadFile(std::string fileName)
 			if (s == "--") {
 				Measure m;
 				m.lines = lineBuffer;
-				m.division = lineBuffer.size();
+				m.division = (lineBuffer.size() * timeSigTop) / timeSigBottom;
+				m.topSig = timeSigTop;
 				chart.measures.push_back(m);
 				for (auto line : chart.measures.back().lines) {
 					line->pos = pos;
-					pos += 192 / m.division;
+					line->measurePos = measurePos;
+					pos += ((192 * timeSigTop) / timeSigBottom) / m.division;
 				}
 				lineBuffer.clear();
+				measurePos++;
 				continue;
 			}
+
+
 			//check for commands, these always have equal signs
 			std::vector<Command> commands;
 			ChartLine* line = new ChartLine;
 
 			while (s.find('=') != std::string::npos) {
-				commands.push_back(parseCommand(s));
+				Command cmd = parseCommand(s);
+				if (cmd.type == CommandType::BEAT_CHANGE) {
+					timeSigTop = std::stoi(cmd.val.substr(0, cmd.val.find('/')));
+
+					//unnused
+					timeSigBottom = std::stoi(cmd.val.substr(cmd.val.find('/') + 1));
+				}
+				commands.push_back(cmd);
 				getline(mapFile, s);
 			}
 

@@ -19,7 +19,37 @@ void editWindow::loadFile(std::string fileName) {
 		}
 		start = start->next;
 	}
+
+	struct shm_remove
+	{
+		shm_remove() { boost::interprocess::shared_memory_object::remove("MySharedMemory"); }
+		~shm_remove() { boost::interprocess::shared_memory_object::remove("MySharedMemory"); }
+	} remover;
+	//Create a managed shared memory segment
+	memSegment = boost::interprocess::managed_shared_memory(boost::interprocess::create_only, "MySharedMemory", 1000);
+
+	controlPtr = static_cast<gameControl*>(memSegment.allocate(sizeof(gameControl)));
+	controlPtr->speed = 20.0;
+	controlPtr->seekPos = 50;
+
+
+	//An handle from the base address can identify any byte of the shared
+	//memory segment even if it is mapped in different base addresses
+	boost::interprocess::managed_shared_memory::handle_t handle = memSegment.get_handle_from_address(controlPtr);
+
+	std::stringstream s;
+	s << "start C:/Users/niayo/source/repos/unnamed-sdvx-clone/bin/usc-game_Debug.exe" << " " << handle << " C:/Users/niayo/source/repos/SDVX_edit/SDVX_edit/exh.ksh" << " -autoplay";
+	//Launch child process
+	//std::system(s.str().c_str());
+
 	p.saveFile(chart, "test.ksh");
+}
+
+void editWindow::updateVars() {
+	//calculate lane Width, there is 11 lanes allocate per column
+	laneWidth = width / (11 * columns);
+	columnWidth = width / columns;
+	measureHeight = float(height) / measuresPerColumn;
 }
 
 void editWindow::setWindow(sf::RenderWindow* _window) {
@@ -27,11 +57,15 @@ void editWindow::setWindow(sf::RenderWindow* _window) {
 	width = window->getSize().x;
 	height = window->getSize().y - topPadding - bottomPadding;
 
-	//calculate lane Width, there is 11 lanes allocate per column
-	laneWidth = width / (11 * columns);
-	columnWidth = width / columns;
-	measureHeight = float(height) / measuresPerColumn;
+	updateVars();
 	
+	//bt button
+	if (!entryTex.loadFromFile("textures/entryTex.png"))
+		std::cout << "failed to load entry sprite!";
+	entrySprite.setTexture(entryTex);
+
+	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
+	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
 
 	//bt button
 	if (!btTex.loadFromFile("textures/button.png"))
@@ -138,6 +172,7 @@ std::vector <float> editWindow::getLaserX(ChartLine* line) {
 	
 }
 
+//TODO: add proper support for nunstandard time signatures eg. 20/4
 void editWindow::drawMap() {
 
 	//draw measure lines
@@ -222,12 +257,13 @@ void editWindow::drawChart() {
 		}
 	}
 
+	// NOT FOR FUTURE SELF THESE ISSUES ARE CAUSED BY BEAT CHANGE
 	for (int l = 0; l < 2; l++) {
 		ChartLine* line = chart.measures[editorMeasure].lines[0];
 		ChartLine* start = line;
-		while (line->pos <= 192 * (editorMeasure + columns * measuresPerColumn)) {
+		while (line->measurePos <= (editorMeasure + columns * measuresPerColumn)) {
 		
-			int measureNum = line->pos / 192;
+			int measureNum = line->measurePos;
 			Measure cMeasure = chart.measures[measureNum];
 			int lineNum = (line->pos - cMeasure.lines[0]->pos) / (192 / cMeasure.division);
 			sf::Color c;
@@ -240,21 +276,68 @@ void editWindow::drawChart() {
 
 
 			if (line->laserPos[l] != -1 && line->next != nullptr && line->next->laserPos[l] != -1) {
-				//check for slams, this is not kson compliant and checks based on timing
-				if (line->nextLaser[l] != nullptr && (line->nextLaser[l]->pos - line->pos) <= (192 / 32) && line->laserPos[l] != -2) {
-					sf::VertexArray quad(sf::Quads, 4);
+				sf::VertexArray quad(sf::Quads, 4);
+				float x = 0;
+				float y = 0;
+				//draw entry point
+				if (line->prevLaser[l] == nullptr && line->laserPos[l] >= 0) {
+					
 
+					//check wrapping
+					if (line == cMeasure.lines.front()) {
+						x = getMeasureStart(measureNum - editorMeasure - 1).x + getLaserX(line)[l];
+						y = getNoteLocation(measureNum - editorMeasure - 1, 0, chart.measures[measureNum - 1].division, chart.measures[measureNum - 1].division).y;
+					}
+					else {
+						x = getMeasureStart(measureNum - editorMeasure).x + getLaserX(line)[l];
+						y = getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y;
+					}
+
+					quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
+					quad[1] = sf::Vertex(sf::Vector2f(x, y), c);
+					quad[3] = sf::Vertex(sf::Vector2f(x + laneWidth, y + laneWidth), c);
+					quad[2] = sf::Vertex(sf::Vector2f(x, y + laneWidth), c);
+					window->draw(quad);
+
+					quad[0].color = sf::Color(255, 255, 255);
+					quad[1].color = sf::Color(255, 255, 255);
+					quad[2].color = sf::Color(255, 255, 255);
+					quad[3].color = sf::Color(255, 255, 255);
+					quad[0].texCoords = sf::Vector2f(0.f, 0.f);
+					quad[1].texCoords = sf::Vector2f(128.f, 0.f);
+					quad[2].texCoords = sf::Vector2f(128.f, 128.f);
+					quad[3].texCoords = sf::Vector2f(0.f, 128.f);
+					window->draw(quad, &entryTex);
+				}
+
+				//check for slams, this is not kson compliant and checks based on timing
+				if (line->nextLaser[l] != nullptr && (line->nextLaser[l]->pos - line->pos) <= (192 / 32) && line->laserPos[l] != -2 && line->laserPos[l] != line->nextLaser[l]->laserPos[l]) {
+					x = std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x;
+					y = getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y;
 					// build laser quad
-					quad[0] = sf::Vertex(sf::Vector2f(std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
-					quad[1] = sf::Vertex(sf::Vector2f(std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x + laneWidth, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y - laneWidth / 2.0), c);
-					quad[2] = sf::Vertex(sf::Vector2f(std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y - laneWidth / 2.0), c);
-					quad[3] = sf::Vertex(sf::Vector2f(std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
+					quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
+					quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth / 2.0), c);
+					
+					x = std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum - editorMeasure).x;
+					quad[2] = sf::Vertex(sf::Vector2f(x, y - laneWidth / 2.0), c);
+					quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
 
 					window->draw(quad);
+					
 					line = line->nextLaser[l];
+
+					//draw tail if we need it
+					if (line->nextLaser[l] == nullptr) {
+						x = getLaserX(line)[l] + getMeasureStart(measureNum - editorMeasure).x;
+						quad[0] = sf::Vertex(sf::Vector2f(x, y - laneWidth / 2.0), c);
+						quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth / 2.0), c);
+						quad[3] = sf::Vertex(sf::Vector2f(x, y - laneWidth * 1.5), c);
+						quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth * 1.5), c);
+						window->draw(quad);
+					}
 				}
+				
 				else {
-					sf::VertexArray quad(sf::Quads, 4);
 
 					// build laser quad
 					quad[0] = sf::Vertex(sf::Vector2f(getLaserX(line)[l] + getMeasureStart(measureNum - editorMeasure).x, getNoteLocation(measureNum - editorMeasure, 0, lineNum, cMeasure.division).y), c);
@@ -264,6 +347,9 @@ void editWindow::drawChart() {
 					window->draw(quad);
 				}
 			}
+			//also draw laser entrance
+
+
 			line = line->next;
 		}
 	}
@@ -278,7 +364,7 @@ sf::Vector2f editWindow::getMeasureStart(int measure) {
 
 sf::Vector2f editWindow::getSnappedPos(NoteType type) {
 	//first check if we have a valid position
-	int measure = getMouseMeasure();
+	int measure = getMouseMeasure() - editorMeasure;
 	sf::Vector2f start = getMeasureStart(measure);
 	float snapSize = measureHeight / snapGridSize;
 	if (measure != -1) {
@@ -296,6 +382,24 @@ sf::Vector2f editWindow::getSnappedPos(NoteType type) {
 	return sf::Vector2f(-1, -1);
 }
 
+void editWindow::handleEvent(sf::Event event) {
+	if (event.type == sf::Event::MouseButtonPressed)
+	{
+		if (event.mouseButton.button == sf::Mouse::Left)
+		{
+			
+		}
+	}
+	if (event.type == sf::Event::KeyPressed)
+	{
+		if (event.key.code == sf::Keyboard::Space)
+		{
+			std::cout << "paused!" << std::endl;
+			controlPtr->paused = true;
+		}
+	}
+}
+
 sf::Vector2f editWindow::getNoteLocation(int measure, int lane, int line, int snapSize) {
 	sf::Vector2f startPos = getMeasureStart(measure);
 	float snapHieght = measureHeight / snapSize;
@@ -304,16 +408,15 @@ sf::Vector2f editWindow::getNoteLocation(int measure, int lane, int line, int sn
 
 void editWindow::update() {
 
-
+	controlPtr->seekPos = 50;
 	sf::Vector2i position = sf::Mouse::getPosition(*window);
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
 
 	btSprite.setPosition(getSnappedPos(NoteType::BT));
 
-	window->draw(fxSprite);
+	window->draw(btSprite);
 
-	
 
 	ImGui::Begin("laneWidth");
 	

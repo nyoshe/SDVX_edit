@@ -1,9 +1,11 @@
 #pragma once
-#include "imgui.h"
-#include "imgui-SFML.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui-SFML.h"
 #include "statusBar.h"
 #include "editWindow.h"
 #include "parser.h"
+#include "toolWindow.h"
+
 
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -34,7 +36,7 @@ int main() {
                 }
             }
 
-
+            editWindow::getInstance().handleEvent(event);
             ImGui::SFML::ProcessEvent(window, event);
 
             if (event.type == sf::Event::Closed) {
@@ -43,17 +45,17 @@ int main() {
 
         }
 
+        
         ImGui::SFML::Update(window, deltaClock.restart());
 
         //ImGui::ShowDemoWindow();
 
-
-        
-        
+       
 
         window.clear();
         statusBar::getInstance().update();
         editWindow::getInstance().update();
+        toolWindow::getInstance().update();
         ImGui::SFML::Render(window);
         window.display();
     }

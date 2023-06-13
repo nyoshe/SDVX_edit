@@ -16,6 +16,9 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{e1c7faa6-db69-41a8-8f00-c0f59cb5c114}</UniqueIdentifier>
     </Filter>
+    <Filter Include="fileDialog">
+      <UniqueIdentifier>{709cb210-b9f6-455c-b32f-37ec6ee957dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -25,6 +28,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="editWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="statusBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="menuItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="toolWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui\imgui.cpp">
@@ -42,14 +54,11 @@
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui-SFML.cpp">
+    <ClCompile Include="fileDialog\ImGuiFileDialog.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="statusBar.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="menuItem.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="imgui\imgui-SFML.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -58,6 +67,33 @@
     </ClInclude>
     <ClInclude Include="editWindow.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="statusBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="menuItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="enums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fileDialog\ImGuiFileDialog.h">
+      <Filter>fileDialog</Filter>
+    </ClInclude>
+    <ClInclude Include="fileDialog\ImGuiFileDialogConfig.h">
+      <Filter>fileDialog</Filter>
+    </ClInclude>
+    <ClInclude Include="fileDialog\dirent\dirent.h">
+      <Filter>fileDialog</Filter>
+    </ClInclude>
+    <ClInclude Include="toolWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="imgui\imconfig.h">
       <Filter>imgui</Filter>
@@ -82,21 +118,6 @@
     </ClInclude>
     <ClInclude Include="imgui\imstb_textedit.h">
       <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="statusBar.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="menuItem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="enums.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="structs.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
