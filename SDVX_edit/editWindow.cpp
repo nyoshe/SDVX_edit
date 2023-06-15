@@ -565,12 +565,12 @@ sf::Vector2f editWindow::getSnappedPos(ToolType type) {
 }
 
 void editWindow::clearRedoStack() {
-	for (auto it : redoStack) {
-		for (auto it2 : it) {
-			delete it2.second;
+	while (!redoStack.empty()) {
+		for (auto it : redoStack.top()) {
+			delete it.second;
 		}
+		redoStack.pop();
 	}
-	redoStack.clear();
 }
 
 void editWindow::handleEvent(sf::Event event) {
@@ -631,14 +631,14 @@ void editWindow::undo() {
 			delete it.second;
 		}
 	}
-	redoStack.push_back(redoBuffer);
+	redoStack.push(redoBuffer);
 	undoStack.pop();
 }
 
 void editWindow::redo() {
 	if (redoStack.empty()) return;
 	std::vector<std::pair<ChartLine*, ChartLine*>> undoBuffer;
-	for (auto it : redoStack.back()) {
+	for (auto it : redoStack.top()) {
 		if (it.first == nullptr) {
 			undoBuffer.push_back(it);
 			chart.lines[it.second->pos] = it.second;
@@ -651,7 +651,7 @@ void editWindow::redo() {
 		}
 	}
 	undoStack.push(undoBuffer);
-	redoStack.pop_back();
+	redoStack.pop();
 }
 
 sf::Vector2f editWindow::getNoteLocation(int measure, int lane, int line) {

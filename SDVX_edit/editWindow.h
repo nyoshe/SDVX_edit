@@ -115,7 +115,7 @@ public:
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
 
     //the redo stick contains the next value in the second field
-    std::vector<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
+    std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
     gameControl* controlPtr;
     
 };
