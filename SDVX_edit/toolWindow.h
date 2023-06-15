@@ -4,6 +4,8 @@
 #include "fileDialog/ImGuiFileDialog.h"
 #include <string>
 #include <iostream>
+#include "editWindow.h"
+#include "enums.h"
 #include <SFML/Graphics.hpp>
 
 
@@ -11,8 +13,9 @@ class toolWindow
 {
 private:
     static toolWindow* instance;
-    toolWindow() = default;
+    toolWindow();
     ~toolWindow() = default;
+    
     sf::Texture fxIcon;
     sf::Texture btIcon;
     sf::Texture fxHoldIcon;
@@ -28,14 +31,9 @@ public:
     static toolWindow& getInstance()
     {
         static toolWindow instance;
-        instance.fxIcon.loadFromFile("textures/fxIcon.png");
-        instance.btIcon.loadFromFile("textures/btIcon.png");
-        instance.fxHoldIcon.loadFromFile("textures/fxHoldIcon.png");
-        instance.btHoldIcon.loadFromFile("textures/btHoldIcon.png");
-        instance.knobRIcon.loadFromFile("textures/knobLIcon.png");
-        instance.knobLIcon.loadFromFile("textures/knobRIcon.png");
 
         return instance;
     }
+
     void update();
 };

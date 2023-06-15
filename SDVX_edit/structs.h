@@ -2,13 +2,14 @@
 #include "enums.h"
 #include <vector>
 #include <string>
+#include <map>
 
 struct Command {
     CommandType type = CommandType::INVALID;
     std::string val = "";
 };
 
- struct ChartLine {
+struct ChartLine {
     //2 for long note, 1 for chip
     std::vector <uint8_t> btVal = { 0, 0, 0, 0 };
     //1 for long note, 2 for chip (legacy reasons tl. stupid devs)
@@ -22,20 +23,21 @@ struct Command {
     //defines our position relative to 1/192 snapping
     unsigned int pos = 0;
     unsigned int measurePos = 0;
-    //this is used for drawing, and represents and active laser position at that point
-    std::vector <float> laserConnectionPos = { 0.0, 0.0 };
     std::vector <Command> cmds;
 };
 
  struct Measure {
     //division of the measure (eg. 32, 16, 12, etc)
     //the standard measure division is 192, it can go higher if the time signature is different
-    int division = 32;
 
     //this defines the top part of the time signature
     int topSig = 4;
-    //miiiiiiight have a memory leak, not sure if the pointers delete themselves
-    std::vector<ChartLine*> lines;
+
+    std::map<int, ChartLine*> lines;
+
+    //position of measure start in 192 snapping
+    unsigned int pos = 0;
+    /*
     void updateDivision(int div) {
         for (int i = 0; i < division; i += div / division) {
             std::vector<ChartLine*>::iterator it = lines.begin() + i;
@@ -71,6 +73,7 @@ struct Command {
     void minimizeDivision() {
         //TODO
     }
+    */
 };
 
  struct Chart {
@@ -110,5 +113,6 @@ struct Command {
     //collection of all measures
 
     std::vector<Measure> measures = {};
+    std::map<int, ChartLine*> lines;
 };
 

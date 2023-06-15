@@ -101,15 +101,19 @@ Chart parser::loadFile(std::string fileName)
 			//check for measure end
 			if (s == "--") {
 				Measure m;
-				m.lines = lineBuffer;
-				m.division = (lineBuffer.size() * timeSigTop) / timeSigBottom;
+				
+				int length = (lineBuffer.size() * timeSigTop) / timeSigBottom;
 				m.topSig = timeSigTop;
-				chart.measures.push_back(m);
-				for (auto line : chart.measures.back().lines) {
-					line->pos = pos;
-					line->measurePos = measurePos;
-					pos += ((192 * timeSigTop) / timeSigBottom) / m.division;
+				m.pos = pos;
+
+				for (int i = 0; i < lineBuffer.size(); i++) {
+					lineBuffer[i]->pos = pos;
+					lineBuffer[i]->measurePos = measurePos;
+					m.lines.insert({ pos - m.pos, lineBuffer[i]});
+					chart.lines[pos] = lineBuffer[i];
+					pos += ((192 * timeSigTop) / timeSigBottom) / length;
 				}
+				chart.measures.push_back(m);
 				lineBuffer.clear();
 				measurePos++;
 				continue;
@@ -158,8 +162,12 @@ Chart parser::loadFile(std::string fileName)
 					break;
 				default:
 					line->laserPos[i] = laserVals.find(s[8 + i]);
-					line->laserConnectionPos[i] = laserVals.find(s[8 + i]);
 					if (lastLaser[i] != nullptr) {
+						
+						for (ChartLine* line2 = lastLaser[i]->next; line2 != nullptr; line2 = line2->next) {
+							line2->nextLaser[i] = line;
+							line2->prevLaser[i] = lastLaser[i];
+						}
 						line->prevLaser[i] = lastLaser[i];
 						lastLaser[i]->nextLaser[i] = line;
 					}
@@ -266,7 +274,7 @@ void parser::saveFile(Chart chart, std::string fileName)
 			bool hasSpin = false;
 			std::string spinVal = "";
 			//first output commands
-			for (auto command : line->cmds) {
+			for (auto command : line.second->cmds) {
 				auto it = swappedCmdTable.find(command.type);
 				switch (it->first) {
 				case CommandType::SPIN_R:
@@ -285,21 +293,21 @@ void parser::saveFile(Chart chart, std::string fileName)
 			}
 
 			//output the actual line
-			mapFile << char(line->btVal[0] + '0') << char(line->btVal[1] + '0') << char(line->btVal[2] + '0') << char(line->btVal[3] + '0') << "|";
-			mapFile << char(line->fxVal[0] + '0') << char(line->fxVal[1] + '0') << "|";
+			mapFile << char(line.second->btVal[0] + '0') << char(line.second->btVal[1] + '0') << char(line.second->btVal[2] + '0') << char(line.second->btVal[3] + '0') << "|";
+			mapFile << char(line.second->fxVal[0] + '0') << char(line.second->fxVal[1] + '0') << "|";
 			for (int i = 0; i < 2; i++) {
-				switch (line->laserPos[i]) {
+				switch (line.second->laserPos[i]) {
 				case -1: mapFile << "-"; break;
 				case -2: mapFile << ":"; break;
 				default:
-					mapFile << laserVals[line->laserPos[i]];
+					mapFile << laserVals[line.second->laserPos[i]];
 					break;
 				}
 			}
 
 			//now do spins
 			if (hasSpin){
-				mapFile << swappedCmdTable.find(line->cmds.back().type)->second << line->cmds.back().val;
+				mapFile << swappedCmdTable.find(line.second->cmds.back().type)->second << line.second->cmds.back().val;
 			}
 
 			mapFile << std::endl;

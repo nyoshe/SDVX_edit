@@ -49,7 +49,6 @@ enum Option {
     INFO
 };
 
-
-enum NoteType {
-    BT, FX, LASER
+enum ToolType {
+    BT, FX, LASER_L, LASER_R
 };

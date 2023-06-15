@@ -11,14 +11,17 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+#include <string>
 
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "voltexEdit");
-    window.setFramerateLimit(60);
     ImGui::SFML::Init(window);
 
     sf::Clock deltaClock;
+    sf::Clock deltaClock2;
+    int counter = 0;
+
     editWindow::getInstance();
     editWindow::getInstance().setWindow(&window);
     editWindow::getInstance().loadFile("exh.ksh");
@@ -42,10 +45,8 @@ int main() {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
-
         }
 
-        
         ImGui::SFML::Update(window, deltaClock.restart());
 
         //ImGui::ShowDemoWindow();
@@ -58,6 +59,16 @@ int main() {
         toolWindow::getInstance().update();
         ImGui::SFML::Render(window);
         window.display();
+        
+        if (counter == 10) {
+            float endTime = deltaClock2.restart().asSeconds();
+            window.setTitle("voltexEdit | FPS: " + std::to_string(10.0 / endTime));
+            counter = 0;
+        }
+        else {
+            counter++;
+        }
+        
     }
 
     ImGui::SFML::Shutdown();

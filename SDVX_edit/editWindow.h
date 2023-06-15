@@ -13,6 +13,7 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <stack>
 
 
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -61,6 +62,8 @@ private:
     sf::Texture entryTex;
     sf::Sprite entrySprite;
 
+    sf::Sprite toolSprite;
+
     Chart chart;
 public:
 
@@ -83,12 +86,19 @@ public:
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
+    int getMouseGlobalLine();
+    void undo();
+    void redo();
+    void clearRedoStack();
+    ChartLine* insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine);
+    ChartLine* removeChartLine(unsigned int measure, unsigned int line, ToolType type);
+
     void handleEvent(sf::Event event);
     std::vector <float> getLaserX(ChartLine* line);
     sf::Vector2f getMeasureStart(int measure);
-    sf::Vector2f getSnappedPos(NoteType type);
+    sf::Vector2f getSnappedPos(ToolType type);
     //get the note location from measure, lane, and line position given a snapping size
-    sf::Vector2f getNoteLocation(int measure, int lane, int line, int snapSize);
+    sf::Vector2f getNoteLocation(int measure, int lane, int line);
     void loadFile(std::string fileName);
 
     //vars
@@ -98,5 +108,14 @@ public:
     int measuresPerColumn = 4;
     int snapGridSize = 16;
 
+    ToolType tool = ToolType::BT;
+
+    //this is our undo stack, the first pair value is the pointer value, and the second is the previous value
+    //the vector is to group multiple movements into one group
+    std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
+
+    //the redo stick contains the next value in the second field
+    std::vector<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
     gameControl* controlPtr;
+    
 };
