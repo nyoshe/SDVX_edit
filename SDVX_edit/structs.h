@@ -24,6 +24,40 @@ struct ChartLine {
     unsigned int pos = 0;
     unsigned int measurePos = 0;
     std::vector <Command> cmds;
+    bool empty() {
+        for (int i = 0; i < 4; i++) {
+            if (btVal[i]) {
+                return false;
+            }
+        }
+        for (int i = 0; i < 2; i++) {
+            if (fxVal[i]) {
+                return false;
+            }
+            if (laserPos[i] != -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+    //merging
+    ChartLine& operator+=(const ChartLine& b) {
+        for (int i = 0; i < 2; i++) {
+            if (b.laserPos[i] != -1) {
+                this->laserPos[i] = b.laserPos[i];
+            }
+            if (b.fxVal[i] != 0) {
+                this->fxVal[i] = b.fxVal[i];
+            }
+        }
+        for (int i = 0; i < 4; i++) {
+            //extend hold notes
+            if (b.btVal[i] != 0) {
+                this->btVal[i] = b.btVal[i];
+            }
+        }
+        return *this;
+    }
 };
 
  struct Measure {
@@ -37,43 +71,6 @@ struct ChartLine {
 
     //position of measure start in 192 snapping
     unsigned int pos = 0;
-    /*
-    void updateDivision(int div) {
-        for (int i = 0; i < division; i += div / division) {
-            std::vector<ChartLine*>::iterator it = lines.begin() + i;
-            ChartLine* newLine = new ChartLine;
-            for (int j = 0; j < 2; j++) {
-                if (lines[i]->laserPos[j] >= 0 && lines[i]->nextLaser[j] != nullptr) {
-                    newLine->laserPos[j] = -2;
-                    newLine->isWide[j] = lines[i]->isWide[j];
-                }
-                else if (lines[i]->laserPos[j] == -2){
-                    newLine->laserPos[j] = -2;
-                    newLine->laserConnectionPos[j] = (lines[i]->next->laserConnectionPos[j] + lines[i]->laserConnectionPos[j]) / 2;
-                }
-
-                //fx buttons update
-                if (lines[i]->fxVal[j] == 1) {
-                    newLine->fxVal[j] = 1;
-                }
-            }
-
-            for (int j = 0; j < 4; j++) {
-                if (lines[i]->btVal[j] == 2) {
-                    newLine->btVal[j] = 2;
-                }
-            }
-            newLine->pos = (lines[i]->next->pos + lines[i]->pos) / 2;
-            newLine->measurePos = (lines[i]->next->measurePos + lines[i]->measurePos) / 2;
-            lines[i]->next = newLine;
-            newLine->prev = lines[i];
-            lines.insert(it, div/division - 1, newLine);
-        }
-    }
-    void minimizeDivision() {
-        //TODO
-    }
-    */
 };
 
  struct Chart {

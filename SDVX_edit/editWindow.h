@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
-#include <iostream>
 #include "parser.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
@@ -44,6 +43,8 @@ private:
     float laneWidth = 0;
     float columnWidth = 0;
     float measureHeight = 0;
+    unsigned int selectStart = 0;
+    unsigned int selectEnd = 0;
     std::vector<Measure> measures;
     float mouseX = 0;
     float mouseY = 0;
@@ -86,7 +87,9 @@ public:
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
+    int getMouseLine(int snapSize);
     int getMouseGlobalLine();
+    unsigned int getMeasureFromGlobal(unsigned int loc);
     void undo();
     void redo();
     void clearRedoStack();

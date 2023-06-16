@@ -30,14 +30,7 @@ int main() {
         sf::Event event;
         while (window.pollEvent(event)) {
             
-            if (event.type == sf::Event::MouseWheelScrolled)
-            {
-                if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
-                    if (editWindow::getInstance().editorMeasure + event.mouseWheelScroll.delta * editWindow::getInstance().measuresPerColumn >= 0) {
-                        editWindow::getInstance().editorMeasure += event.mouseWheelScroll.delta * editWindow::getInstance().measuresPerColumn;
-                    }
-                }
-            }
+            
 
             editWindow::getInstance().handleEvent(event);
             ImGui::SFML::ProcessEvent(window, event);
