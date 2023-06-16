@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <SFML/Graphics.hpp>
 
 struct Command {
     CommandType type = CommandType::INVALID;
@@ -58,6 +59,8 @@ struct ChartLine {
         }
         return *this;
     }
+
+    
 };
 
  struct Measure {
@@ -73,43 +76,4 @@ struct ChartLine {
     unsigned int pos = 0;
 };
 
- struct Chart {
-    //metadata
-    std::string title = "";
-    std::string titleImg = "";
-    std::string artist = "";
-    std::string artistImg = "";
-    std::string effect = "";
-    std::string jacket = "";
-    std::string illustrator = "";
-    std::string difficulty = "";
-    std::string icon = "";
-
-    int level = 1;
-    float bpm = 120;
-    float bpmHi = 0;
-    std::string beat = "4/4";
-    std::string songFile = "";
-    int volume = 100;
-    int offset = 0;
-    std::string bg = "desert";
-    std::string layer = "arrow";
-    int previewOffset = 0;
-    int previewLength = 0;
-    int total = 0;
-    int slamVol = 50;
-    int slamToVol = 1;
-    std::string filterType = "peak";
-    int pFilterGain = 50;
-    int pFilterDelay = 40;
-    std::string videoFile = "";
-    int videoOffset = 0;
-    std::string version = "";
-    std::string info = "";
-
-    //collection of all measures
-
-    std::vector<Measure> measures = {};
-    std::map<int, ChartLine*> lines;
-};
 

@@ -22,7 +22,8 @@ int main() {
     sf::Clock deltaClock2;
     int counter = 0;
 
-    editWindow::getInstance();
+    statusBar status_bar;
+    toolWindow tool_window;
     editWindow::getInstance().setWindow(&window);
     editWindow::getInstance().loadFile("exh.ksh");
 
@@ -47,9 +48,9 @@ int main() {
        
 
         window.clear();
-        statusBar::getInstance().update();
+        status_bar.update();
         editWindow::getInstance().update();
-        toolWindow::getInstance().update();
+        tool_window.update();
         ImGui::SFML::Render(window);
         window.display();
         

@@ -1,5 +1,6 @@
 #pragma once
 #include "structs.h"
+#include "Chart.h"
 
 #include <iostream>
 #include <fstream>

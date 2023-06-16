@@ -143,6 +143,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audioManager.cpp" />
+    <ClCompile Include="Chart.cpp" />
     <ClCompile Include="editWindow.cpp" />
     <ClCompile Include="fileDialog\ImGuiFileDialog.cpp" />
     <ClCompile Include="imgui\imgui-SFML.cpp" />
@@ -158,6 +160,8 @@
     <ClCompile Include="toolWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audioManager.h" />
+    <ClInclude Include="Chart.h" />
     <ClInclude Include="editWindow.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="fileDialog\dirent\dirent.h" />
@@ -172,9 +176,9 @@
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="parser.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="menuItem.h" />
-    <ClInclude Include="parser.h" />
     <ClInclude Include="statusBar.h" />
     <ClInclude Include="toolWindow.h" />
   </ItemGroup>

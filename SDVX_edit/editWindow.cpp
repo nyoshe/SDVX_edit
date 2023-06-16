@@ -25,6 +25,8 @@ void editWindow::loadFile(std::string fileName) {
 	//Launch child process
 	//std::system(s.str().c_str());
 
+	player.loadFile(chart.songFile);
+
 	p.saveFile(chart, "test.ksh");
 }
 
@@ -174,168 +176,8 @@ unsigned int editWindow::getMeasureFromGlobal(unsigned int loc) {
 	return 0;
 }
 
-ChartLine* editWindow::insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine) {
-	line = line * 192 / snapGridSize;
-	unsigned int absPos = chart.measures[measure].pos + line;
-	auto it = chart.lines.find(absPos);
 
-	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
 
-	if (it == chart.lines.end()) {
-		//add to the undo list, the new pointer we created
-		actionList.push_back(std::make_pair(nullptr, cLine));
-
-		chart.measures[measure].lines[line] = cLine;
-		chart.lines[absPos] = cLine;
-
-		cLine->pos = absPos;
-		cLine->measurePos = measure;
-
-		it = chart.lines.find(absPos);
-
-		if (it == chart.lines.begin()) {
-			it++;
-			//check if we are the ONLY object
-			if (it == chart.lines.end()) {
-				//do nothing
-			}
-			//we are first object
-			else {
-				ChartLine* newPtr = new ChartLine(*it->second);
-				actionList.push_back(std::make_pair(it->second, newPtr));
-
-				it->second->prev = cLine;
-				cLine->next = it->second;
-
-			}
-		}
-		else {
-			it++;
-			//we are last object
-			if (it == chart.lines.end()) {
-				it--;
-				it--;
-				ChartLine* newPtr = new ChartLine(*it->second);
-				actionList.push_back(std::make_pair(it->second, newPtr));
-
-				it->second->next = cLine;
-				cLine->prev = it->second;
-
-			}
-			//we are middle object
-			else {
-				ChartLine* newPtr = new ChartLine(*it->second);
-				actionList.push_back(std::make_pair(it->second, newPtr));
-
-				it->second->prev = cLine;
-				cLine->next = it->second;
-				it--;
-				it--;
-
-				ChartLine* newPtr2 = new ChartLine(*it->second);
-				actionList.push_back(std::make_pair(it->second, newPtr2));
-
-				it->second->next = cLine;
-				cLine->prev = it->second;
-
-				for (int i = 0; i < 2; i++) {
-					if (cLine->prev->laserPos[i] == -2 || cLine->next->laserPos[i] == -2) {
-						cLine->laserPos[i] = -2;
-					}
-					//extend hold notes
-					if (cLine->prev->fxVal[i] == 1) {
-						cLine->fxVal[i] = 1;
-					}
-				}
-				for (int i = 0; i < 4; i++) {
-					//extend hold notes
-					if (cLine->prev->btVal[i] == 2) {
-						cLine->btVal[i] = 2;
-					}
-				}
-			}
-		}
-		
-	}
-
-	//if the object already exists, merge them
-	else {
-		ChartLine* existingLine = chart.lines[absPos];
-
-		actionList.push_back(std::make_pair(existingLine, new ChartLine(*chart.lines[absPos])));
-
-		*existingLine += *cLine;
-
-		delete cLine;
-	}
-
-	undoStack.push(actionList);
-
-	return chart.lines[absPos];
-}
-
-ChartLine* editWindow::removeChartLine(unsigned int measure, unsigned int line, ToolType type) {
-	line = line * 192 / snapGridSize;
-	unsigned int absPos = chart.measures[measure].pos + line;
-	auto it = chart.lines.find(absPos);
-
-	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
-
-	if (it != chart.lines.end()) {
-		
-
-		if (type == ToolType::BT) {
-			//traverse list forward and back
-			if (it->second->btVal[getMouseLane() / 2] == 2) {
-				ChartLine* cLine = it->second;
-				while (cLine != nullptr && cLine->btVal[getMouseLane() / 2] == 2) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->btVal[getMouseLane() / 2] = 0;
-					cLine = cLine->prev;
-				}
-				cLine = it->second->next;
-				while (cLine != nullptr && cLine->btVal[getMouseLane() / 2] == 2) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->btVal[getMouseLane() / 2] = 0;
-					cLine = cLine->next;
-				}
-			}
-			//remove chip
-			if (it->second->btVal[getMouseLane()] == 1) {
-				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-				it->second->btVal[getMouseLane()] = 0;
-			}
-		}
-		if (type == ToolType::FX) {
-			//traverse list forward and back
-			if (it->second->fxVal[getMouseLane() / 2] == 1) {
-				ChartLine* cLine = it->second;
-				while (cLine != nullptr && cLine->fxVal[getMouseLane() / 2] == 1) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->fxVal[getMouseLane() / 2] = 0;
-					cLine = cLine->prev;
-				}
-				cLine = it->second->next;
-				while (cLine != nullptr && cLine->fxVal[getMouseLane() / 2] == 1) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->fxVal[getMouseLane() / 2] = 0;
-					cLine = cLine->next;
-				}
-			}
-			//remove chip
-			if (it->second->fxVal[getMouseLane()/2] == 2) {
-				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-				it->second->fxVal[getMouseLane()/2] = 0;
-			}
-		}
-
-		undoStack.push(actionList);
-	}
-	else {
-		return nullptr;
-	}
-	
-}
 //gets left x position of leaser start
 std::vector <float> editWindow::getLaserX(ChartLine* line) {
 	std::vector <float> xVec = { 0, 0 };
@@ -398,7 +240,38 @@ void editWindow::drawMap() {
 	}
 }
 
+void editWindow::drawLineButtons(ChartLine* line) {
+	int pos = line->pos - chart.measures[line->measurePos].pos;
+	int measureNum = line->measurePos - editorMeasure;
+	for (int lane = 0; lane < 2; lane += 1) {
+		//fx chips
+		if (line->fxVal[lane] == 2) {
+			fxSprite.setPosition(getNoteLocation(measureNum, lane * 2, pos));
+			window->draw(fxSprite);
+		}
+		//fx hold
+		else if (line->fxVal[lane] == 1) {
+			fxHoldSprite.setPosition(getNoteLocation(measureNum, lane * 2, pos));
+			fxHoldSprite.setScale(fxHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
+			window->draw(fxHoldSprite);
+		}
+	}
 
+
+	for (int lane = 0; lane < 4; lane++) {
+		//bt chips
+		if (line->btVal[lane] == 1) {
+			btSprite.setPosition(getNoteLocation(measureNum, lane, pos));
+			window->draw(btSprite);
+		}
+		//bt hold
+		else if (line->btVal[lane] == 2) {
+			btHoldSprite.setPosition(getNoteLocation(measureNum, lane, pos));
+			btHoldSprite.setScale(btHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
+			window->draw(btHoldSprite);
+		}
+	}
+}
 
 void editWindow::drawChart() {
 
@@ -406,35 +279,16 @@ void editWindow::drawChart() {
 		if ((i + editorMeasure) >= chart.measures.size())
 			break;
 		for (auto line : chart.measures[i + editorMeasure].lines) {
-			for (int lane = 0; lane < 2; lane += 1) {
-				//fx chips
-				if (line.second->fxVal[lane] == 2) {
-					fxSprite.setPosition(getNoteLocation(i, lane * 2, line.first));
-					window->draw(fxSprite);
-				}
-				//fx hold
-				else if (line.second->fxVal[lane] == 1) {
-					fxHoldSprite.setPosition(getNoteLocation(i, lane * 2, line.first));
-					fxHoldSprite.setScale(fxHoldSprite.getScale().x, (measureHeight / 192) * (line.second->next->pos - line.second->pos));
-					window->draw(fxHoldSprite);
-				}
+			if (line.second->pos >= std::min(selectStart, selectEnd) &&
+				line.second->pos <= std::max(selectStart, selectEnd))
+			{
+				fxSprite.setColor(sf::Color(100, 255, 0));
+				btSprite.setColor(sf::Color(100, 255, 0));
 			}
+			drawLineButtons(line.second);
 
-			
-			for (int lane = 0; lane < 4; lane++) {
-				//bt chips
-				if (line.second->btVal[lane] == 1) {
-					auto test = getNoteLocation(i, lane, line.first);
-					btSprite.setPosition(getNoteLocation(i, lane, line.first));
-					window->draw(btSprite);
-				}
-				//bt hold
-				else if (line.second->btVal[lane] == 2) {
-					btHoldSprite.setPosition(getNoteLocation(i, lane, line.first));
-					btHoldSprite.setScale(btHoldSprite.getScale().x, (measureHeight / 192) * (line.second->next->pos - line.second->pos));
-					window->draw(btHoldSprite);
-				}
-			}
+			fxSprite.setColor(sf::Color(255, 255, 255));
+			btSprite.setColor(sf::Color(255, 255, 255));
 		}
 	}
 
@@ -579,7 +433,6 @@ void editWindow::drawChart() {
 	}
 }
 
-
 sf::Vector2f editWindow::getMeasureStart(int measure) {
 	int columnNum = measure / measuresPerColumn;
 	return sf::Vector2f((4 * laneWidth) + (columnWidth * columnNum), topPadding + measureHeight * (measuresPerColumn - (measure % measuresPerColumn) - 1));
@@ -605,14 +458,6 @@ sf::Vector2f editWindow::getSnappedPos(ToolType type) {
 	return sf::Vector2f(-1, -1);
 }
 
-void editWindow::clearRedoStack() {
-	while (!redoStack.empty()) {
-		for (auto it : redoStack.top()) {
-			delete it.second;
-		}
-		redoStack.pop();
-	}
-}
 
 void editWindow::handleEvent(sf::Event event) {
 	if (event.type == sf::Event::MouseButtonPressed) {
@@ -637,28 +482,33 @@ void editWindow::handleEvent(sf::Event event) {
 					newLine->fxVal[getMouseLane() / 2] = 2;
 					break;
 				};
-				clearRedoStack();
-				insertChartLine(getMouseMeasure(), getMouseLine(), newLine);
+				chart.clearRedoStack();
+				chart.insertChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, newLine);
 			}
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
-			removeChartLine(getMouseMeasure(), getMouseLine(), tool);
-			clearRedoStack();
+			chart.removeChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, getMouseLane(), tool);
+			chart.clearRedoStack();
 			
 		}
 	}
 	if (event.type == sf::Event::KeyPressed) {
 		if (event.key.code == sf::Keyboard::Space) {
-			std::cout << "paused!" << std::endl;
+			if (player.isPlaying()) {
+				player.stop();
+			}
+			else {
+				player.playFrom(chart.getMs(selectStart));
+			}
 			controlPtr->paused = true;
 		}
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)){ 
 			if (event.key.code == sf::Keyboard::Z) {
-				undo();
+				chart.undo();
 			}
 			if (event.key.code == sf::Keyboard::Y) {
-				redo();
+				chart.redo();
 			}
 		}
 	}
@@ -670,59 +520,26 @@ void editWindow::handleEvent(sf::Event event) {
 			}
 		}
 	}
-	if (event.type == sf::Event::MouseMoved) {
-		if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && 
-			sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
-			sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
-			getMouseGlobalLine() != -1){
-				selectEnd = getMouseGlobalLine();
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
+		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
+		getMouseGlobalLine() != -1) {
+		if (event.type == sf::Event::MouseButtonReleased) {
+			selectEnd = getMouseGlobalLine();
 		}
 	}
+	
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && 
+		sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
+		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
+		getMouseGlobalLine() != -1){
 
-	if (event.type == sf::Event::MouseButtonReleased) {
-		if (getMouseGlobalLine() != -1) {
+		if (event.type == sf::Event::MouseMoved) {
 			selectEnd = getMouseGlobalLine();
 		}
 	}
 }
 
-void editWindow::undo() {
-	if (undoStack.empty()) return;
-	std::vector<std::pair<ChartLine*, ChartLine*>> redoBuffer;
-	for (auto it : undoStack.top()){
-		if (it.first == nullptr) {
-			redoBuffer.push_back(it);
-			chart.lines.erase(it.second->pos);
-			chart.measures[it.second->measurePos].lines.erase(it.second->pos - chart.measures[it.second->measurePos].pos);
-		}
-		else {
-			redoBuffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
-			*(it.first) = *(it.second);
-			delete it.second;
-		}
-	}
-	redoStack.push(redoBuffer);
-	undoStack.pop();
-}
-
-void editWindow::redo() {
-	if (redoStack.empty()) return;
-	std::vector<std::pair<ChartLine*, ChartLine*>> undoBuffer;
-	for (auto it : redoStack.top()) {
-		if (it.first == nullptr) {
-			undoBuffer.push_back(it);
-			chart.lines[it.second->pos] = it.second;
-			chart.measures[it.second->measurePos].lines[it.second->pos - chart.measures[it.second->measurePos].pos] = it.second;
-		}
-		else {
-			undoBuffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
-			*(it.first) = *(it.second);
-			delete it.second;
-		}
-	}
-	undoStack.push(undoBuffer);
-	redoStack.pop();
-}
 
 sf::Vector2f editWindow::getNoteLocation(int measure, int lane, int line) {
 	sf::Vector2f startPos = getMeasureStart(measure);

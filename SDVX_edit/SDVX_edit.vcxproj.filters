@@ -60,11 +60,14 @@
     <ClCompile Include="imgui\imgui-SFML.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
+    <ClCompile Include="audioManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Chart.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="editWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -118,6 +121,15 @@
     </ClInclude>
     <ClInclude Include="imgui\imstb_textedit.h">
       <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="audioManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Chart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parser.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 #include "parser.h"
 
+
 Command parser::parseCommand(std::string s) {
 	
 
@@ -111,6 +112,9 @@ Chart parser::loadFile(std::string fileName)
 					lineBuffer[i]->measurePos = measurePos;
 					m.lines.insert({ pos - m.pos, lineBuffer[i]});
 					chart.lines[pos] = lineBuffer[i];
+					if (!lineBuffer[i]->cmds.empty()) {
+						chart.cmds[pos] = lineBuffer[i]->cmds;
+					}
 					pos += ((192 * timeSigTop) / timeSigBottom) / length;
 				}
 				chart.measures.push_back(m);
@@ -132,11 +136,13 @@ Chart parser::loadFile(std::string fileName)
 					//unnused
 					timeSigBottom = std::stoi(cmd.val.substr(cmd.val.find('/') + 1));
 				}
+
 				commands.push_back(cmd);
 				getline(mapFile, s);
 			}
 
 			line->cmds = commands;
+			
 
 			//now do buttons
 			line->btVal[0] = s[0] - '0';

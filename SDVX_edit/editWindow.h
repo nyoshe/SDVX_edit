@@ -9,6 +9,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
 #include "structs.h"
+#include "audioManager.h"
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -35,6 +36,8 @@ private:
     static editWindow* instance;
     editWindow() = default;
     ~editWindow() = default;
+    audioManager player;
+    void drawLineButtons(ChartLine* line);
     sf::RenderWindow* window = nullptr;
     int topPadding = 50;
     int bottomPadding = 50;
@@ -45,6 +48,7 @@ private:
     float measureHeight = 0;
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
+    unsigned int playbackPos = 0;
     std::vector<Measure> measures;
     float mouseX = 0;
     float mouseY = 0;
@@ -90,11 +94,7 @@ public:
     int getMouseLine(int snapSize);
     int getMouseGlobalLine();
     unsigned int getMeasureFromGlobal(unsigned int loc);
-    void undo();
-    void redo();
-    void clearRedoStack();
-    ChartLine* insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine);
-    ChartLine* removeChartLine(unsigned int measure, unsigned int line, ToolType type);
+
 
     void handleEvent(sf::Event event);
     std::vector <float> getLaserX(ChartLine* line);
@@ -113,12 +113,6 @@ public:
 
     ToolType tool = ToolType::BT;
 
-    //this is our undo stack, the first pair value is the pointer value, and the second is the previous value
-    //the vector is to group multiple movements into one group
-    std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
-
-    //the redo stick contains the next value in the second field
-    std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
     gameControl* controlPtr;
     
 };
