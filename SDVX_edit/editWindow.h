@@ -30,13 +30,13 @@ struct gameControl
 
 
 
-class editWindow
+class EditWindow
 {
 private:
-    static editWindow* instance;
-    editWindow() = default;
-    ~editWindow() = default;
-    audioManager player;
+    static EditWindow* instance;
+    EditWindow() = default;
+    ~EditWindow() = default;
+    
     void drawLineButtons(ChartLine* line);
     sf::RenderWindow* window = nullptr;
     int topPadding = 50;
@@ -74,13 +74,13 @@ public:
 
     //functions
 
-    editWindow(const editWindow&) = delete;
-    editWindow(editWindow&&) = delete;
-    editWindow& operator=(const editWindow&) = delete;
-    editWindow& operator=(editWindow&&) = delete;
-    static editWindow& getInstance()
+    EditWindow(const EditWindow&) = delete;
+    EditWindow(EditWindow&&) = delete;
+    EditWindow& operator=(const EditWindow&) = delete;
+    EditWindow& operator=(EditWindow&&) = delete;
+    static EditWindow& getInstance()
     {
-        static editWindow instance;
+        static EditWindow instance;
         return instance;
     }
     void setWindow(sf::RenderWindow* _window);
@@ -93,7 +93,7 @@ public:
     int getMouseLine();
     int getMouseLine(int snapSize);
     int getMouseGlobalLine();
-    unsigned int getMeasureFromGlobal(unsigned int loc);
+    int getMeasureFromGlobal(unsigned int loc);
 
 
     void handleEvent(sf::Event event);
@@ -110,6 +110,9 @@ public:
     int columns = 6;
     int measuresPerColumn = 4;
     int snapGridSize = 16;
+    float playbackSpeed = 1.0;
+    AudioManager player;
+    std::string mapFilePath;
 
     ToolType tool = ToolType::BT;
 

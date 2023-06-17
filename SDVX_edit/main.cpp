@@ -15,6 +15,7 @@
 
 
 int main() {
+
     sf::RenderWindow window(sf::VideoMode(800, 600), "voltexEdit");
     ImGui::SFML::Init(window);
 
@@ -22,10 +23,9 @@ int main() {
     sf::Clock deltaClock2;
     int counter = 0;
 
-    statusBar status_bar;
+    StatusBar status_bar;
     toolWindow tool_window;
-    editWindow::getInstance().setWindow(&window);
-    editWindow::getInstance().loadFile("exh.ksh");
+    EditWindow::getInstance().setWindow(&window);
 
     while (window.isOpen()) {
         sf::Event event;
@@ -33,7 +33,7 @@ int main() {
             
             
 
-            editWindow::getInstance().handleEvent(event);
+            EditWindow::getInstance().handleEvent(event);
             ImGui::SFML::ProcessEvent(window, event);
 
             if (event.type == sf::Event::Closed) {
@@ -49,7 +49,7 @@ int main() {
 
         window.clear();
         status_bar.update();
-        editWindow::getInstance().update();
+        EditWindow::getInstance().update();
         tool_window.update();
         ImGui::SFML::Render(window);
         window.display();

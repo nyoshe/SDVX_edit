@@ -74,6 +74,7 @@ struct ChartLine {
 
     //position of measure start in 192 snapping
     unsigned int pos = 0;
+    float msStart = 0.0;
 };
 
 

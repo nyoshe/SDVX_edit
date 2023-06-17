@@ -1,7 +1,8 @@
 #include "editWindow.h"
-void editWindow::loadFile(std::string fileName) {
-	parser p;
+void EditWindow::loadFile(std::string fileName) {
+	Parser p;
 	chart = p.loadFile(fileName);
+	chart.calcTimings();
 
 	struct shm_remove
 	{
@@ -25,19 +26,19 @@ void editWindow::loadFile(std::string fileName) {
 	//Launch child process
 	//std::system(s.str().c_str());
 
-	player.loadFile(chart.songFile);
+	player.loadFile(mapFilePath + "\\" + chart.songFile);
 
 	p.saveFile(chart, "test.ksh");
 }
 
-void editWindow::updateVars() {
+void EditWindow::updateVars() {
 	//calculate lane Width, there is 11 lanes allocate per column
 	laneWidth = width / (11 * columns);
 	columnWidth = width / columns;
 	measureHeight = float(height) / measuresPerColumn;
 }
 
-void editWindow::setWindow(sf::RenderWindow* _window) {
+void EditWindow::setWindow(sf::RenderWindow* _window) {
 	window = _window;
 	width = window->getSize().x;
 	height = window->getSize().y - topPadding - bottomPadding;
@@ -96,7 +97,7 @@ void editWindow::setWindow(sf::RenderWindow* _window) {
 }
 
 //returns the lane # the mouse is in, -1 if not found
-int editWindow::getMouseLane() {
+int EditWindow::getMouseLane() {
 	for (int i = 0; i < columns; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (
@@ -112,7 +113,7 @@ int editWindow::getMouseLane() {
 }
 
 //returns the measure mouse is in relative to the start of file, -1 if not found
-int editWindow::getMouseMeasure() {
+int EditWindow::getMouseMeasure() {
 	for (int i = 0; i < columns; i++) {
 		for (int j = 0; j < measuresPerColumn; j++) {
 			if (
@@ -129,7 +130,7 @@ int editWindow::getMouseMeasure() {
 }
 
 //returns the line relative to the selected snapping value, -1 if not found
-int editWindow::getMouseLine() {
+int EditWindow::getMouseLine() {
 	for (int j = 0; j < measuresPerColumn; j++) {
 		if (
 			mouseY >= (topPadding + measureHeight * j) &&
@@ -142,7 +143,7 @@ int editWindow::getMouseLine() {
 	return -1;
 }
 
-int editWindow::getMouseLine(int snapSize) {
+int EditWindow::getMouseLine(int snapSize) {
 	for (int j = 0; j < measuresPerColumn; j++) {
 		if (
 			mouseY >= (topPadding + measureHeight * j) &&
@@ -156,7 +157,7 @@ int editWindow::getMouseLine(int snapSize) {
 }
 
 //gives is the global location in 1/192 snapping
-int editWindow::getMouseGlobalLine() {
+int EditWindow::getMouseGlobalLine() {
 	if (getMouseMeasure() != -1) {
 		unsigned int measure = chart.measures[getMouseMeasure()].pos;
 		return getMouseLine(192) + measure;
@@ -165,8 +166,9 @@ int editWindow::getMouseGlobalLine() {
 }
 
 //probably slow as shit but it's fiiiiiine
-unsigned int editWindow::getMeasureFromGlobal(unsigned int loc) {
+int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 	int n = 0;
+	if (chart.measures.empty()) return -1;
 	for (auto m : chart.measures) {
 		if (m.pos > loc) {
 			return n - 1;
@@ -179,7 +181,7 @@ unsigned int editWindow::getMeasureFromGlobal(unsigned int loc) {
 
 
 //gets left x position of leaser start
-std::vector <float> editWindow::getLaserX(ChartLine* line) {
+std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 	std::vector <float> xVec = { 0, 0 };
 
 	
@@ -207,7 +209,7 @@ std::vector <float> editWindow::getLaserX(ChartLine* line) {
 }
 
 //TODO: add proper support for nunstandard time signatures eg. 20/4
-void editWindow::drawMap() {	
+void EditWindow::drawMap() {	
 	for (int i = 0; i < columns; i++) {
 		//draw measure lines
 		for (int j = 0; j < (measuresPerColumn + 1); j++) {
@@ -240,7 +242,7 @@ void editWindow::drawMap() {
 	}
 }
 
-void editWindow::drawLineButtons(ChartLine* line) {
+void EditWindow::drawLineButtons(ChartLine* line) {
 	int pos = line->pos - chart.measures[line->measurePos].pos;
 	int measureNum = line->measurePos - editorMeasure;
 	for (int lane = 0; lane < 2; lane += 1) {
@@ -273,7 +275,7 @@ void editWindow::drawLineButtons(ChartLine* line) {
 	}
 }
 
-void editWindow::drawChart() {
+void EditWindow::drawChart() {
 
 	for (int i = 0; i < (measuresPerColumn * columns); i++) {
 		if ((i + editorMeasure) >= chart.measures.size())
@@ -408,6 +410,7 @@ void editWindow::drawChart() {
 			}
 		}
 	}
+	
 	int m = getMeasureFromGlobal(selectStart) - editorMeasure;
 	if (m >= 0) {
 		sf::Vector2f pos1 = getNoteLocation(m, -1, selectStart - chart.measures[m + editorMeasure].pos);
@@ -431,14 +434,39 @@ void editWindow::drawChart() {
 		};
 		window->draw(line, 2, sf::Lines);
 	}
+	
+	//draw the play bar
+	if (player.isPlaying()) {
+		for (int i = 0; i < editorMeasure + measuresPerColumn * columns; i++) {
+			if (i >= chart.measures.size()) break;
+			if (chart.measures[i].msStart > player.getMs()) {
+
+				float startMs = chart.measures[i - 1].msStart;
+				float endMs = chart.measures[i].msStart;
+
+				sf::Vector2f pos1 = getNoteLocation(i - 1 - editorMeasure, -1, 0);
+				sf::Vector2f pos2 = getNoteLocation(i - 1 - editorMeasure, 5, 0);
+
+				pos1.y -= measureHeight * (player.getMs() - startMs) / (endMs - startMs);
+				pos2.y -= measureHeight * (player.getMs() - startMs) / (endMs - startMs);
+
+				sf::Vertex line[] = {
+					sf::Vertex(pos1, sf::Color(255, 0, 0)),
+					sf::Vertex(pos2, sf::Color(255, 0, 0))
+				};
+				window->draw(line, 2, sf::Lines);
+				break;
+			}
+		}
+	}
 }
 
-sf::Vector2f editWindow::getMeasureStart(int measure) {
+sf::Vector2f EditWindow::getMeasureStart(int measure) {
 	int columnNum = measure / measuresPerColumn;
 	return sf::Vector2f((4 * laneWidth) + (columnWidth * columnNum), topPadding + measureHeight * (measuresPerColumn - (measure % measuresPerColumn) - 1));
 }
 
-sf::Vector2f editWindow::getSnappedPos(ToolType type) {
+sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 	//first check if we have a valid position
 	int measure = getMouseMeasure() - editorMeasure;
 	sf::Vector2f start = getMeasureStart(measure);
@@ -459,7 +487,7 @@ sf::Vector2f editWindow::getSnappedPos(ToolType type) {
 }
 
 
-void editWindow::handleEvent(sf::Event event) {
+void EditWindow::handleEvent(sf::Event event) {
 	if (event.type == sf::Event::MouseButtonPressed) {
 
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) return;
@@ -482,13 +510,18 @@ void editWindow::handleEvent(sf::Event event) {
 					newLine->fxVal[getMouseLane() / 2] = 2;
 					break;
 				};
-				chart.clearRedoStack();
-				chart.insertChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, newLine);
+				
+				if (getMouseMeasure() != -1) {
+					chart.clearRedoStack();
+					chart.insertChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, newLine);
+				}
 			}
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
-			chart.removeChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, getMouseLane(), tool);
-			chart.clearRedoStack();
+			if (getMouseMeasure() != -1) {
+				chart.removeChartLine(getMouseMeasure(), getMouseLine() * 192 / snapGridSize, getMouseLane(), tool);
+				chart.clearRedoStack();
+			}
 			
 		}
 	}
@@ -541,15 +574,15 @@ void editWindow::handleEvent(sf::Event event) {
 }
 
 
-sf::Vector2f editWindow::getNoteLocation(int measure, int lane, int line) {
+sf::Vector2f EditWindow::getNoteLocation(int measure, int lane, int line) {
 	sf::Vector2f startPos = getMeasureStart(measure);
 	float snapHieght = measureHeight / 192;
 	return sf::Vector2f(startPos.x + lane * laneWidth, startPos.y + (192 - line) * snapHieght);
 }
 
-void editWindow::update() {
+void EditWindow::update() {
 	sf::Clock deltaClock;
-	controlPtr->seekPos = 50;
+	//controlPtr->seekPos = 50;
 	sf::Vector2i position = sf::Mouse::getPosition(*window);
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
@@ -591,6 +624,10 @@ void editWindow::update() {
 	ImGui::Text(s9.c_str());
 	std::string s10 = "hoverWindow: " + std::to_string(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow));
 	ImGui::Text(s10.c_str());
+	std::string s11 = "bufferSize: " + std::to_string(player.track.buffSize);
+	ImGui::Text(s11.c_str());
+	std::string s12 = "audioSamples: " + std::to_string(player.track.lastSampleLength);
+	ImGui::Text(s12.c_str());
 	
 	ImGui::End();
 	

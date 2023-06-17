@@ -43,7 +43,6 @@ public:
     //collection of all measures
 
     std::vector<Measure> measures = {};
-    std::map<unsigned int, Measure*> measureMs;
     std::map<int, ChartLine*> lines;
     std::map<int, std::vector<Command>> cmds;
 
@@ -55,6 +54,9 @@ public:
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
 
     float getMs(unsigned int lineNum);
+
+    //this must be done whenever we change the bpm or update the time signature
+    void calcTimings();
     ChartLine* insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine);
     ChartLine* removeChartLine(unsigned int measure, unsigned int line, unsigned int lane, ToolType type);
     void undo();

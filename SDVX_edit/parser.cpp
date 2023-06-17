@@ -1,7 +1,7 @@
 #include "parser.h"
 
 
-Command parser::parseCommand(std::string s) {
+Command Parser::parseCommand(std::string s) {
 	
 
 	Command c;
@@ -21,7 +21,7 @@ Command parser::parseCommand(std::string s) {
 	return c;
 }
 
-Chart parser::loadFile(std::string fileName)
+Chart Parser::loadFile(std::string fileName)
 {
 	std::ifstream mapFile;
 	mapFile.open(fileName);
@@ -96,6 +96,8 @@ Chart parser::loadFile(std::string fileName)
 		unsigned int measurePos = 0;
 		//read chart body
 		while (getline(mapFile, s)) {
+			//check for comments
+			if (s.size() >= 2 && s.substr(0, 2) == "//") continue;
 			std::vector<std::vector<ChartLine *>> laserLines[2];
 
 			if (s == "") continue;
@@ -227,7 +229,7 @@ Chart parser::loadFile(std::string fileName)
 	return chart;
 }
 
-void parser::saveFile(Chart chart, std::string fileName)
+void Parser::saveFile(Chart chart, std::string fileName)
 {
 	//TODO: handle comments
 	std::ofstream mapFile;

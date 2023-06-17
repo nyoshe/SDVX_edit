@@ -1,6 +1,6 @@
 #pragma once
 #include "structs.h"
-#include "Chart.h"
+#include "chart.h"
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +38,7 @@ static std::unordered_map<std::string, CommandType> const cmdTable = {
 			{"S>", CommandType::SWING_R}
 };
 
-class parser
+class Parser
 {
 private:
 	Command parseCommand(std::string s);

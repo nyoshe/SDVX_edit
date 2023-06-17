@@ -1,25 +1,33 @@
 #include "audioManager.h"
 
-void audioManager::loadFile(std::string fileName) {
+void AudioManager::loadFile(std::string fileName) {
+
 	if (!buffer.loadFromFile(fileName)) {
 		std::cout << "couldn't find sound file at: " + fileName;
 	}
-	track.setBuffer(buffer);
+
+	track.load(buffer);
 }
 
-void audioManager::playFrom(int ms) {
+void AudioManager::playFrom(int ms) {
 	track.setPlayingOffset(sf::milliseconds(ms));
 	track.play();
 }
 
-void audioManager::stop() {
-	track.pause();
+void AudioManager::stop() {
+	track.stop();
 }
 
-unsigned int audioManager::getMs() {
+unsigned int AudioManager::getMs() {
 	return track.getPlayingOffset().asMilliseconds();
 }
 
-bool audioManager::isPlaying() {
+bool AudioManager::isPlaying() {
 	return (track.getStatus() == sf::Sound::Playing);
+}
+
+void AudioManager::setSpeed(float speed) {
+	track.setProcessorPitch(1.0 / speed);
+	playbackSpeed = speed;
+	track.setPitch(playbackSpeed);
 }

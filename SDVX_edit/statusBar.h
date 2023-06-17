@@ -4,13 +4,13 @@
 #include "editWindow.h"
 #include "fileDialog/ImGuiFileDialog.h"
 #include <string>
-class statusBar
+class StatusBar
 {
 private:
     
 
 public:
-    statusBar() = default;
-    ~statusBar() = default;
+    StatusBar() = default;
+    ~StatusBar() = default;
     void update();
 };

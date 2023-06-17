@@ -19,14 +19,14 @@ void toolWindow::update() {
 	ImGui::BeginGroup();
 	
 	if (ImGui::ImageButton(fxIcon, ImVec2(100, 100))) {
-		editWindow::getInstance().tool = ToolType::FX;
+		EditWindow::getInstance().tool = ToolType::FX;
 	}
 	if (ImGui::ImageButton(fxHoldIcon, ImVec2(100, 100))) {
 
 	}
 	
 	if (ImGui::ImageButton(btIcon, ImVec2(100, 100))) {
-		editWindow::getInstance().tool = ToolType::BT;
+		EditWindow::getInstance().tool = ToolType::BT;
 	}
 	if (ImGui::ImageButton(btHoldIcon, ImVec2(100, 100))) {
 

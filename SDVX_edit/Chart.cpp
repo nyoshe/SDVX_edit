@@ -30,6 +30,12 @@ float Chart::getMs(unsigned int lineNum) {
     return currentMs;
 }
 
+void Chart::calcTimings() {
+	for (int i = 0; i < measures.size(); i++) {
+		measures[i].msStart = getMs(measures[i].pos);
+	}
+}
+
 ChartLine* Chart::insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine) {
 	unsigned int absPos = measures[measure].pos + line;
 	auto it = lines.find(absPos);

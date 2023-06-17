@@ -1,6 +1,6 @@
 #include "statusBar.h"
 
-void statusBar::update()
+void StatusBar::update()
 {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -23,12 +23,12 @@ void statusBar::update()
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu(("Measures per column: " + std::to_string(editWindow::getInstance().measuresPerColumn)).c_str())) {
+            if (ImGui::BeginMenu(("Measures per column: " + std::to_string(EditWindow::getInstance().measuresPerColumn)).c_str())) {
                 for (int i = 1; i < 10; i++) {
                     if (ImGui::MenuItem(std::to_string(i).c_str())) {
                         //Do something
-                        editWindow::getInstance().measuresPerColumn = i;
-                        editWindow::getInstance().updateVars();
+                        EditWindow::getInstance().measuresPerColumn = i;
+                        EditWindow::getInstance().updateVars();
                     }
                 }
                 ImGui::EndMenu();
@@ -38,42 +38,49 @@ void statusBar::update()
         if (ImGui::BeginMenu("Tool")) {
             if (ImGui::BeginMenu("Lane Snapping")) {
                 if (ImGui::MenuItem("1/4")) { 
-                    editWindow::getInstance().snapGridSize = 4;
+                    EditWindow::getInstance().snapGridSize = 4;
                 }
                 if (ImGui::MenuItem("1/8")) {
-                    editWindow::getInstance().snapGridSize = 8;
+                    EditWindow::getInstance().snapGridSize = 8;
                 }
                 if (ImGui::MenuItem("1/12")) {
-                    editWindow::getInstance().snapGridSize = 12;
+                    EditWindow::getInstance().snapGridSize = 12;
                 }
                 if (ImGui::MenuItem("1/16")) {
-                    editWindow::getInstance().snapGridSize = 16;
+                    EditWindow::getInstance().snapGridSize = 16;
                 }
                 if (ImGui::MenuItem("1/24")) {
-                    editWindow::getInstance().snapGridSize = 24;
+                    EditWindow::getInstance().snapGridSize = 24;
                 }
                 if (ImGui::MenuItem("1/32")) {
-                    editWindow::getInstance().snapGridSize = 32;
+                    EditWindow::getInstance().snapGridSize = 32;
                 }
                 if (ImGui::MenuItem("1/48")) {
-                    editWindow::getInstance().snapGridSize = 48;
+                    EditWindow::getInstance().snapGridSize = 48;
                 }
                 if (ImGui::MenuItem("1/64")) {
-                    editWindow::getInstance().snapGridSize = 64;
+                    EditWindow::getInstance().snapGridSize = 64;
                 }
                 if (ImGui::MenuItem("1/96")) {
-                    editWindow::getInstance().snapGridSize = 96;
+                    EditWindow::getInstance().snapGridSize = 96;
                 }
                 if (ImGui::MenuItem("1/192")) {
-                    editWindow::getInstance().snapGridSize = 192;
+                    EditWindow::getInstance().snapGridSize = 192;
                 }
                 //Do something
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
-        //if (ImGui::BeginMenu("Play")) {
-        //}
+        if (ImGui::BeginMenu("Play")) {
+            if (ImGui::MenuItem("half speed")) {
+                EditWindow::getInstance().player.setSpeed(0.5);
+            }
+            if (ImGui::MenuItem("full speed")) {
+                EditWindow::getInstance().player.setSpeed(1.0);
+            }
+            ImGui::EndMenu();
+        }
         
         ImGui::EndMainMenuBar();
     }
@@ -84,6 +91,8 @@ void statusBar::update()
         {
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+            EditWindow::getInstance().mapFilePath = filePath;
+            EditWindow::getInstance().loadFile(filePathName);
             // action
         }
 
