@@ -36,6 +36,21 @@ void Chart::calcTimings() {
 	}
 }
 
+void Chart::connectLines(ChartLine* l1, ChartLine* l2) {
+	l1->next = l2;
+	l2->prev = l1;
+}
+
+template <typename T> void Chart::connectLines(T l1, T l2)
+{
+	connectLines(l1->second, l2->second);
+}
+
+void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
+	connectLines(l1, l2);
+	connectLines(l2, l3);
+}
+
 ChartLine* Chart::insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine) {
 	unsigned int absPos = measures[measure].pos + line;
 	auto it = lines.find(absPos);
@@ -44,72 +59,52 @@ ChartLine* Chart::insertChartLine(unsigned int measure, unsigned int line, Chart
 
 	//if we don't exist
 	if (it == lines.end()) {
-		//add to the undo list, the new pointer we created
-		actionList.push_back(std::make_pair(nullptr, cLine));
 
 		measures[measure].lines[line] = cLine;
 		lines[absPos] = cLine;
 
 		cLine->pos = absPos;
 		cLine->measurePos = measure;
-
 		it = lines.find(absPos);
 
-		if (it == lines.begin()) {
-			it++;
-			//check if we are not the only object
-			if (it != lines.end()) {
-				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-
-				it->second->prev = cLine;
-				cLine->next = it->second;
-			}
-			undoStack.push(actionList);
-			return lines[absPos];
+		//check if we are not the first object
+		if (it != lines.begin()) {
+			actionList.push_back(std::make_pair(std::prev(it, 1)->second, new ChartLine(*std::prev(it, 1)->second)));
+			connectLines(std::prev(it, 1), it);
+			//we must push the change in the next line
 		}
 
-		it++;
-		//we are last object
-		if (it == lines.end()) {
-			it--;
-			it--;
-			actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-
-			it->second->next = cLine;
-			cLine->prev = it->second;
-
-			undoStack.push(actionList);
-			return lines[absPos];
+		//check if we are not the first object
+		if (std::next(it, 1) != lines.end()) {
+			actionList.push_back(std::make_pair(std::next(it, 1)->second, new ChartLine(*std::next(it, 1)->second)));
+			connectLines(it, std::next(it, 1));
+			//we must push the change in the next line
 		}
 
-		//we are middle object
-		actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-
-		it->second->prev = cLine;
-		cLine->next = it->second;
-		it--;
-		it--;
-
-		actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
-
-		it->second->next = cLine;
-		cLine->prev = it->second;
-
-		for (int i = 0; i < 2; i++) {
-			if (cLine->prev->laserPos[i] == -2 || cLine->next->laserPos[i] == -2) {
-				cLine->laserPos[i] = -2;
+		//here we extend  the buttons and holds if needed
+		if (std::next(it, 1) != lines.end() && it != lines.begin()) {
+			for (int i = 0; i < 2; i++) {
+				if ((cLine->prev->laserPos[i] == -2 || cLine->next->laserPos[i] == -2)) {
+					cLine->laserPos[i] = -2;
+				}
+				//extend hold fx
+				if (cLine->prev->fxVal[i] == 1) {
+					cLine->fxVal[i] = 1;
+				}
 			}
-			//extend hold notes
-			if (cLine->prev->fxVal[i] == 1) {
-				cLine->fxVal[i] = 1;
+			for (int i = 0; i < 4; i++) {
+				//extend hold bt
+				if (cLine->prev->btVal[i] == 2) {
+					cLine->btVal[i] = 2;
+				}
 			}
 		}
-		for (int i = 0; i < 4; i++) {
-			//extend hold notes
-			if (cLine->prev->btVal[i] == 2) {
-				cLine->btVal[i] = 2;
-			}
-		}
+
+
+
+		//add to the undo list, the new pointer we created
+		actionList.push_back(std::make_pair(nullptr, cLine));
+
 	}
 	//if the object already exists, merge them
 	else {
@@ -137,20 +132,9 @@ ChartLine* Chart::removeChartLine(unsigned int measure, unsigned int line, unsig
 
 
 		if (type == ToolType::BT) {
-			//traverse list forward and back
-			if (it->second->btVal[lane / 2] == 2) {
-				ChartLine* cLine = it->second;
-				while (cLine != nullptr && cLine->btVal[lane] == 2) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->btVal[lane] = 0;
-					cLine = cLine->prev;
-				}
-				cLine = it->second->next;
-				while (cLine != nullptr && cLine->btVal[lane] == 2) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->btVal[lane] = 0;
-					cLine = cLine->next;
-				}
+			if (it->second->btVal[lane] == 2) {
+				std::vector<std::pair<ChartLine*, ChartLine*>> newList = it->second->clearBtHold(lane);
+				actionList.insert(actionList.end(), newList.begin(), newList.end());
 			}
 			//remove chip
 			if (it->second->btVal[lane] == 1) {
@@ -159,20 +143,9 @@ ChartLine* Chart::removeChartLine(unsigned int measure, unsigned int line, unsig
 			}
 		}
 		if (type == ToolType::FX) {
-			//traverse list forward and back
 			if (it->second->fxVal[lane / 2] == 1) {
-				ChartLine* cLine = it->second;
-				while (cLine != nullptr && cLine->fxVal[lane / 2] == 1) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->fxVal[lane / 2] = 0;
-					cLine = cLine->prev;
-				}
-				cLine = it->second->next;
-				while (cLine != nullptr && cLine->fxVal[lane / 2] == 1) {
-					actionList.push_back(std::make_pair(cLine, new ChartLine(*cLine)));
-					cLine->fxVal[lane / 2] = 0;
-					cLine = cLine->next;
-				}
+				std::vector<std::pair<ChartLine*, ChartLine*>> newList = it->second->clearFxHold(lane);
+				actionList.insert(actionList.end(), newList.begin(), newList.end());
 			}
 			//remove chip
 			if (it->second->fxVal[lane / 2] == 2) {

@@ -165,17 +165,11 @@ int EditWindow::getMouseGlobalLine() {
 	return -1;
 }
 
-//probably slow as shit but it's fiiiiiine
 int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 	int n = 0;
 	if (chart.measures.empty()) return -1;
-	for (auto m : chart.measures) {
-		if (m.pos > loc) {
-			return n - 1;
-		}
-		n++;
-	}
-	return 0;
+	auto nearest = chart.lines.lower_bound(loc);
+	return nearest->second->measurePos;
 }
 
 
@@ -188,10 +182,12 @@ std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 	for (int i = 0; i < 2; i++) {
 		float ourPos = 0;
 		if (line->laserPos[i] == -2) {
-			float startPos = line->prevLaser[i]->laserPos[i];
-			float endPos = line->nextLaser[i]->laserPos[i];
-			float diff = line->nextLaser[i]->pos - line->prevLaser[i]->pos;
-			ourPos = startPos - (startPos - endPos) * (float(line->pos - line->prevLaser[i]->pos) / diff);
+			ChartLine* prevLaser = line->getPrevLaser(i);
+			ChartLine* nextLaser = line->getNextLaser(i);
+			float startPos = prevLaser->laserPos[i];
+			float endPos = nextLaser->laserPos[i];
+			float diff = nextLaser->pos - prevLaser->pos;
+			ourPos = startPos - (startPos - endPos) * (float(line->pos - prevLaser->pos) / diff);
 		}
 		else {
 			ourPos = line->laserPos[i];
@@ -208,7 +204,48 @@ std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 	
 }
 
-//TODO: add proper support for nunstandard time signatures eg. 20/4
+int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
+	int mPulses = 192;
+
+	if (measure < chart.measures.size() && chart.measures.size() != 0) {
+		mPulses = chart.measures[measure].pulses;
+	}
+
+	//draw in beats
+	for (int i = startLine + pulsesPerBeat; i < startLine + mPulses; i += pulsesPerBeat) {
+		sf::Vector2f v = getNoteLocation(i);
+		sf::Vertex line[] = {
+			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(50, 50, 50)),
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y), sf::Color(50, 50, 50))
+		};
+		window->draw(line, 2, sf::Lines);
+	}
+
+	//draw the start line
+	if (editorLineStart <= startLine) {
+		sf::Vector2f v = getNoteLocation(startLine);
+		sf::Vertex line[] = {
+			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(255, 255, 0)),
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y), sf::Color(255, 255, 0))
+		};
+		window->draw(line, 2, sf::Lines);
+	}
+
+
+	//draw the end line
+	if (editorLineStart + beatsPerColumn * pulsesPerBeat * columns >= startLine + mPulses) {
+		sf::Vector2f v = getNoteLocation(startLine + mPulses);
+		sf::Vertex line[] = {
+			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(255, 255, 0)),
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y), sf::Color(255, 255, 0))
+		};
+		window->draw(line, 2, sf::Lines);
+	}
+
+
+	return mPulses;
+}
+
 void EditWindow::drawMap() {	
 	for (int i = 0; i < columns; i++) {
 		//draw measure lines
@@ -243,19 +280,26 @@ void EditWindow::drawMap() {
 }
 
 void EditWindow::drawLineButtons(ChartLine* line) {
-	int pos = line->pos - chart.measures[line->measurePos].pos;
-	int measureNum = line->measurePos - editorMeasure;
+	int pos = line->pos;
 	for (int lane = 0; lane < 2; lane += 1) {
 		//fx chips
 		if (line->fxVal[lane] == 2) {
-			fxSprite.setPosition(getNoteLocation(measureNum, lane * 2, pos));
+			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
 			window->draw(fxSprite);
 		}
 		//fx hold
 		else if (line->fxVal[lane] == 1) {
-			fxHoldSprite.setPosition(getNoteLocation(measureNum, lane * 2, pos));
+			fxHoldSprite.setPosition(getNoteLocation(lane * 2, pos));
 			fxHoldSprite.setScale(fxHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
 			window->draw(fxHoldSprite);
+		}
+		if (DEBUG) {
+			sf::Vector2f v = getNoteLocation(-1, pos);
+			sf::Vertex l[] = {
+				sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
+				sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
+			};
+			window->draw(l, 2, sf::Lines);
 		}
 	}
 
@@ -263,12 +307,12 @@ void EditWindow::drawLineButtons(ChartLine* line) {
 	for (int lane = 0; lane < 4; lane++) {
 		//bt chips
 		if (line->btVal[lane] == 1) {
-			btSprite.setPosition(getNoteLocation(measureNum, lane, pos));
+			btSprite.setPosition(getNoteLocation(lane, pos));
 			window->draw(btSprite);
 		}
 		//bt hold
 		else if (line->btVal[lane] == 2) {
-			btHoldSprite.setPosition(getNoteLocation(measureNum, lane, pos));
+			btHoldSprite.setPosition(getNoteLocation(lane, pos));
 			btHoldSprite.setScale(btHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
 			window->draw(btHoldSprite);
 		}
@@ -276,6 +320,23 @@ void EditWindow::drawLineButtons(ChartLine* line) {
 }
 
 void EditWindow::drawChart() {
+
+	int drawLine = editorLineStart;
+	while (drawLine <= editorLineStart + beatsPerColumn * columns * pulsesPerBeat) {
+		int m = getMeasureFromGlobal(editorLineStart);
+		int add = drawMeasure(m, drawLine);
+		drawLine += add;
+	}
+	for (int i = 0; i < columns; i++) {
+		//draw vertical lines
+		for (int j = 0; j < 5; j++) {
+			sf::Vertex line[] = {
+				sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) + (laneWidth * j), topPadding), sf::Color(100, 100, 100)),
+				sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) + (laneWidth * j), height + topPadding), sf::Color(100, 100, 100))
+			};
+			window->draw(line, 2, sf::Lines);
+		}
+	}
 
 	for (int i = 0; i < (measuresPerColumn * columns); i++) {
 		if ((i + editorMeasure) >= chart.measures.size())
@@ -313,28 +374,28 @@ void EditWindow::drawChart() {
 			if (line->laserPos[l] == -1 ||
 				line->next == nullptr ||
 				line->next->laserPos[l] == -1 ||
-				line->nextLaser[l] == nullptr) {
+				line->getNextLaser(l) == nullptr) {
 
 				line = line->next;
 				continue;
 			}
 
 			sf::VertexArray quad(sf::Quads, 4);
-			int lineNum = line->pos - chart.measures[line->measurePos].pos;
+			int lineNum = line->pos;
 			float x = 0;
 			float y = 0;
 			//draw entry point
-			if (line->prevLaser[l] == nullptr && line->laserPos[l] >= 0) {
+			if (line->getPrevLaser(l) == nullptr && line->laserPos[l] >= 0) {
 				//check wrapping
 				if (line == chart.measures[measureNum + editorMeasure].lines.begin()->second) {
-					x = getMeasureStart(measureNum - 1).x + getLaserX(line)[l];
+					x = getNoteLocation(lineNum).x + getLaserX(line)[l];
 					//TODO update this for weird time signatures
-					y = getNoteLocation(measureNum - 1, 0, 192).y;
+					y = getNoteLocation(lineNum).y;
 				}
 				else {
-					x = getMeasureStart(measureNum).x + getLaserX(line)[l];
+					x = getNoteLocation(lineNum).x + getLaserX(line)[l];
 					//TODO update this for weird time signatures
-					y = getNoteLocation(measureNum, 0, lineNum).y;
+					y = getNoteLocation(lineNum).y;
 				}
 
 				quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
@@ -354,27 +415,28 @@ void EditWindow::drawChart() {
 				window->draw(quad, &entryTex);
 			}
 
+			ChartLine* nextLaser = line->getNextLaser(l);
 			//check for slams, this is not kson compliant and checks based on timing
-			if ((line->nextLaser[l]->pos - line->pos) <= (192 / 32) &&
+			if ((line->getNextLaser(l)->pos - line->pos) <= (192 / 32) &&
 				 line->laserPos[l] != -2 &&
-				 line->laserPos[l] != line->nextLaser[l]->laserPos[l]) {
+				 line->laserPos[l] != line->getNextLaser(l)->laserPos[l]) {
 
-				x = std::max(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum).x;
-				y = getNoteLocation(measureNum, 0, lineNum).y;
+				x = std::max(getLaserX(line)[l], getLaserX(nextLaser)[l]) + getMeasureStart(measureNum).x;
+				y = getNoteLocation(lineNum).y;
 				// build laser quad
 				quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
 				quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth / 2.0), c);
 					
-				x = std::min(getLaserX(line)[l], getLaserX(line->nextLaser[l])[l]) + getMeasureStart(measureNum).x;
+				x = std::min(getLaserX(line)[l], getLaserX(nextLaser)[l]) + getMeasureStart(measureNum).x;
 				quad[2] = sf::Vertex(sf::Vector2f(x, y - laneWidth / 2.0), c);
 				quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
 
 				window->draw(quad);
 					
-				line = line->nextLaser[l];
+				line = nextLaser;
 
 				//draw tail if we need it
-				if (line->nextLaser[l] == nullptr) {
+				if (line->getNextLaser(l) == nullptr) {
 					x = getLaserX(line)[l] + getMeasureStart(measureNum).x;
 					quad[0] = sf::Vertex(sf::Vector2f(x, y - laneWidth / 2.0), c);
 					quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth / 2.0), c);
@@ -388,20 +450,26 @@ void EditWindow::drawChart() {
 			else {
 				
 				x = getLaserX(line)[l] + getMeasureStart(measureNum).x;
-				y = getNoteLocation(measureNum, 0, lineNum).y;
+				y = getNoteLocation(lineNum).y;
 				quad[0] = sf::Vertex(sf::Vector2f(x, y), c);
 				quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
 
-				int nextLineNum = line->nextLaser[l]->pos - chart.measures[line->measurePos].pos;
-				ChartLine* nextLine = line->nextLaser[l];
-				//check wraping, cutoff laser early if we wrap the measure
-				if (line->measurePos != line->nextLaser[l]->measurePos) {
-					nextLine = chart.measures[line->measurePos + 1].lines.begin()->second;
-					nextLineNum = nextLine->pos - chart.measures[line->measurePos].pos;
-				}
+				int nextLineNum = line->getNextLaser(l)->pos;
+				ChartLine* nextLine = line->getNextLaser(l);
+				
 
 				x = getLaserX(nextLine)[l] + getMeasureStart(measureNum).x;
-				y = getNoteLocation(measureNum, 0, nextLineNum).y;
+				y = getNoteLocation(nextLineNum).y;
+
+				//check wraping, cutoff laser early if we wrap the measure
+				if (line->measurePos != line->getNextLaser(l)->measurePos) {
+					nextLine = chart.measures[line->measurePos + 1].lines.begin()->second;
+					nextLineNum = nextLine->pos - 1;
+					x = getLaserX(nextLine)[l] + getMeasureStart(measureNum).x;
+					y = getNoteLocation(nextLineNum).y - height / (beatsPerColumn * pulsesPerBeat);
+				}
+
+				
 				// build laser quad
 				quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
 				quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
@@ -413,8 +481,8 @@ void EditWindow::drawChart() {
 	
 	int m = getMeasureFromGlobal(selectStart) - editorMeasure;
 	if (m >= 0) {
-		sf::Vector2f pos1 = getNoteLocation(m, -1, selectStart - chart.measures[m + editorMeasure].pos);
-		sf::Vector2f pos2 = getNoteLocation(m, 5, selectStart - chart.measures[m + editorMeasure].pos);
+		sf::Vector2f pos1 = getNoteLocation(-1, selectStart);
+		sf::Vector2f pos2 = getNoteLocation(5, selectStart);
 
 		sf::Vertex line[] = {
 			sf::Vertex(pos1, sf::Color(255, 0, 0)),
@@ -425,8 +493,8 @@ void EditWindow::drawChart() {
 
 	m = getMeasureFromGlobal(selectEnd) - editorMeasure;
 	if (m >= 0) {
-		sf::Vector2f pos1 = getNoteLocation(m, -1, selectEnd - chart.measures[m + editorMeasure].pos);
-		sf::Vector2f pos2 = getNoteLocation(m, 5, selectEnd - chart.measures[m + editorMeasure].pos);
+		sf::Vector2f pos1 = getNoteLocation(-1, selectEnd);
+		sf::Vector2f pos2 = getNoteLocation(5, selectEnd);
 
 		sf::Vertex line[] = {
 			sf::Vertex(pos1, sf::Color(255, 0, 0)),
@@ -444,8 +512,8 @@ void EditWindow::drawChart() {
 				float startMs = chart.measures[i - 1].msStart;
 				float endMs = chart.measures[i].msStart;
 
-				sf::Vector2f pos1 = getNoteLocation(i - 1 - editorMeasure, -1, 0);
-				sf::Vector2f pos2 = getNoteLocation(i - 1 - editorMeasure, 5, 0);
+				sf::Vector2f pos1 = getNoteLocation(-1, chart.measures[i].pos);
+				sf::Vector2f pos2 = getNoteLocation(5, chart.measures[i].pos);
 
 				pos1.y -= measureHeight * (player.getMs() - startMs) / (endMs - startMs);
 				pos2.y -= measureHeight * (player.getMs() - startMs) / (endMs - startMs);
@@ -572,15 +640,32 @@ void EditWindow::handleEvent(sf::Event event) {
 		}
 	}
 }
-
-
+/*
 sf::Vector2f EditWindow::getNoteLocation(int measure, int lane, int line) {
 	sf::Vector2f startPos = getMeasureStart(measure);
 	float snapHieght = measureHeight / 192;
 	return sf::Vector2f(startPos.x + lane * laneWidth, startPos.y + (192 - line) * snapHieght);
 }
+*/
+sf::Vector2f EditWindow::getNoteLocation(int lane, int line) {
+	line -= editorLineStart;
+	//48 is the number of lines per beat
+	int totalLines = beatsPerColumn * 48;
+	int columnNum = line / totalLines;
+	float startX = (4 * laneWidth) + (columnWidth * columnNum);
+	float y = topPadding + height - height * (static_cast<float>(line % totalLines) / static_cast<float>(totalLines));
+	return sf::Vector2f(startX + lane * laneWidth, y);
+}
+
+sf::Vector2f EditWindow::getNoteLocation(int line) {
+	return getNoteLocation(0, line);
+}
+
+
 
 void EditWindow::update() {
+	editorLineStart = editorMeasure * 192;
+	beatsPerColumn = measuresPerColumn * 4;
 	sf::Clock deltaClock;
 	//controlPtr->seekPos = 50;
 	sf::Vector2i position = sf::Mouse::getPosition(*window);
@@ -618,10 +703,10 @@ void EditWindow::update() {
 	ImGui::Text(s6.c_str());
 	std::string s7 = "measure start y: " + std::to_string(getMeasureStart(getMouseMeasure()).y);
 	ImGui::Text(s7.c_str());
-	std::string s8 = "note start x: " + std::to_string(getNoteLocation(getMouseMeasure(), getMouseLane(), getMouseLine()).x);
-	ImGui::Text(s8.c_str());
-	std::string s9 = "note start y: " + std::to_string(getNoteLocation(getMouseMeasure(), getMouseLane(), getMouseLine()).y);
-	ImGui::Text(s9.c_str());
+	//std::string s8 = "note start x: " + std::to_string(getNoteLocation(getMouseGlobalLine()).x);
+	//ImGui::Text(s8.c_str());
+	//std::string s9 = "note start y: " + std::to_string(getNoteLocation(getMouseGlobalLine()).y);
+	//ImGui::Text(s9.c_str());
 	std::string s10 = "hoverWindow: " + std::to_string(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow));
 	ImGui::Text(s10.c_str());
 	std::string s11 = "bufferSize: " + std::to_string(player.track.buffSize);
@@ -631,7 +716,7 @@ void EditWindow::update() {
 	
 	ImGui::End();
 	
-	drawMap();
+	//drawMap();
 	drawChart();
 }
 

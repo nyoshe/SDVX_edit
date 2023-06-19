@@ -54,6 +54,9 @@ public:
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
 
     float getMs(unsigned int lineNum);
+    void connectLines(ChartLine* l1, ChartLine* l2);
+    template <typename T> void connectLines(T l1, T l2);
+    void connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3);
 
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();

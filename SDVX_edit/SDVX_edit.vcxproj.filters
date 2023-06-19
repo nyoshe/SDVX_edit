@@ -19,6 +19,15 @@
     <Filter Include="fileDialog">
       <UniqueIdentifier>{709cb210-b9f6-455c-b32f-37ec6ee957dd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SoundTouch">
+      <UniqueIdentifier>{739ef502-b225-4e32-a5dc-2c0c2b88d9b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoundTouch\src">
+      <UniqueIdentifier>{b7c7c450-9ab4-4a3e-bd45-9fb391e655fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoundTouch\include">
+      <UniqueIdentifier>{2321e4d2-e6f3-40b1-b576-456ef7175861}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -65,6 +74,48 @@
     </ClCompile>
     <ClCompile Include="Chart.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\AAFilter.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\BPMDetect.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\cpu_detect_x86.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\FIFOSampleBuffer.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\InterpolateCubic.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\InterpolateLinear.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\InterpolateShannon.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\mmx_optimized.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\PeakFinder.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\RateTransposer.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\SoundTouch.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\sse_optimized.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\TDStretch.cpp">
+      <Filter>SoundTouch\src</Filter>
+    </ClCompile>
+    <ClCompile Include="soundtouch\src\FIRFilter.cpp">
+      <Filter>SoundTouch\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,14 +173,59 @@
     <ClInclude Include="imgui\imstb_textedit.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="audioManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Chart.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parser.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\AAFilter.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="audioManager.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\BPMDetect.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\cpu_detect.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\FIFOSampleBuffer.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\FIFOSamplePipe.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\FIRFilter.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\InterpolateCubic.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\InterpolateLinear.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\InterpolateShannon.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\PeakFinder.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\RateTransposer.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\SoundTouch.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\soundtouch_config.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\src\TDStretch.h">
+      <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="soundtouch\include\STTypes.h">
+      <Filter>SoundTouch\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

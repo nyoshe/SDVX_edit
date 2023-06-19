@@ -28,6 +28,8 @@ struct gameControl
     float speed = 1.0;
 };
 
+#define DEBUG false
+
 
 
 class EditWindow
@@ -45,6 +47,7 @@ private:
     float height = 0;
     float laneWidth = 0;
     float columnWidth = 0;
+    float columnHeight = 0;
     float measureHeight = 0;
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
@@ -86,6 +89,8 @@ public:
     void setWindow(sf::RenderWindow* _window);
     void update();
     void updateVars();
+    //the line specifies where we want to start drawing the measure, it returns the end location
+    int drawMeasure(unsigned int measure, unsigned int startLine);
     void drawMap();
     void drawChart();
     int getMouseLane();
@@ -99,17 +104,33 @@ public:
     void handleEvent(sf::Event event);
     std::vector <float> getLaserX(ChartLine* line);
     sf::Vector2f getMeasureStart(int measure);
+
+    sf::Vector2f getMeasureStartGlobal(int measure);
+
     sf::Vector2f getSnappedPos(ToolType type);
-    //get the note location from measure, lane, and line position given a snapping size
-    sf::Vector2f getNoteLocation(int measure, int lane, int line);
+    //get the note location from measure, lane, and line positio
+    //sf::Vector2f getNoteLocation(int measure, int lane, int line);
+
+    //get the note location from line (global) and lane
+    sf::Vector2f getNoteLocation(int lane, int line);
+    //get the note location from line (global) 
+    sf::Vector2f getNoteLocation(int line);
+
     void loadFile(std::string fileName);
 
     //vars
     boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;
+    int editorLineStart = 0;
     int columns = 6;
+    
+    //this is relative to 4/4, if we have say 6/4 it would only draw 3 columns
     int measuresPerColumn = 4;
+
+    //derived from 4/4 with 4 measures per column
+    int beatsPerColumn = 16;
     int snapGridSize = 16;
+    int pulsesPerBeat = 48;
     float playbackSpeed = 1.0;
     AudioManager player;
     std::string mapFilePath;

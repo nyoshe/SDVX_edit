@@ -105,8 +105,9 @@ Chart Parser::loadFile(std::string fileName)
 			if (s == "--") {
 				Measure m;
 				
-				int length = (lineBuffer.size() * timeSigTop) / timeSigBottom;
+				int length = lineBuffer.size();
 				m.topSig = timeSigTop;
+				m.bottomSig = timeSigBottom;
 				m.pos = pos;
 
 				for (int i = 0; i < lineBuffer.size(); i++) {
@@ -117,8 +118,11 @@ Chart Parser::loadFile(std::string fileName)
 					if (!lineBuffer[i]->cmds.empty()) {
 						chart.cmds[pos] = lineBuffer[i]->cmds;
 					}
-					pos += ((192 * timeSigTop) / timeSigBottom) / length;
+					int linesPerMeasure = ((192 * timeSigTop) / timeSigBottom) / length;
+					pos += linesPerMeasure;
 				}
+				m.pulses = ((192 * timeSigTop) / timeSigBottom);
+
 				chart.measures.push_back(m);
 				lineBuffer.clear();
 				measurePos++;
@@ -170,16 +174,6 @@ Chart Parser::loadFile(std::string fileName)
 					break;
 				default:
 					line->laserPos[i] = laserVals.find(s[8 + i]);
-					if (lastLaser[i] != nullptr) {
-						
-						for (ChartLine* line2 = lastLaser[i]->next; line2 != nullptr; line2 = line2->next) {
-							line2->nextLaser[i] = line;
-							line2->prevLaser[i] = lastLaser[i];
-						}
-						line->prevLaser[i] = lastLaser[i];
-						lastLaser[i]->nextLaser[i] = line;
-					}
-					lastLaser[i] = line;
 					break;
 				}
 

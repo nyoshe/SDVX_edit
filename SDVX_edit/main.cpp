@@ -16,7 +16,7 @@
 
 int main() {
 
-    sf::RenderWindow window(sf::VideoMode(800, 600), "voltexEdit");
+    sf::RenderWindow window(sf::VideoMode(1600, 900), "voltexEdit");
     ImGui::SFML::Init(window);
 
     sf::Clock deltaClock;
