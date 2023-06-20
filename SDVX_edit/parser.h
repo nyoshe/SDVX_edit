@@ -45,7 +45,7 @@ private:
 	Command parseCommand(std::string s);
 	
 public:
-    Chart loadFile(std::string fileName);
-	void saveFile(Chart chart, std::string fileName);
+    void loadFile(std::string fileName, Chart& chart);
+	void saveFile(Chart& chart, std::string fileName);
 };
 

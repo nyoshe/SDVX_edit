@@ -45,7 +45,7 @@ public:
     //collection of all measures
 
     std::vector<Measure> measures = {};
-    std::map<int, ChartLine*> lines;
+    std::map<unsigned int, ChartLine*> lines;
     std::map<int, std::vector<Command>> cmds;
 
     //this is our undo stack, the first pair value is the pointer value, and the second is the previous value
@@ -54,6 +54,9 @@ public:
 
     //the redo stick contains the next value in the second field
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
+
+    ~Chart();
+    Chart() = default;
 
     float getMs(unsigned int lineNum);
     void connectLines(ChartLine* l1, ChartLine* l2);
@@ -67,5 +70,7 @@ public:
     void undo();
     void redo();
     void clearRedoStack();
+    void clearUndoStack();
+    int appendNewMeasure();
 };
 

@@ -13,6 +13,7 @@ class MyStream : public sf::SoundStream
 public:
     void load(const sf::SoundBuffer& buffer)
     {
+
         processor.setChannels(buffer.getChannelCount());
         processor.setSampleRate(buffer.getSampleRate());
         processor.setSetting(SETTING_USE_AA_FILTER, 0);
@@ -39,6 +40,7 @@ public:
     ~MyStream() {
         free(output);
         free(input);
+
     }
     void setProcessorPitch(float p) {
         processor.setPitch(p);

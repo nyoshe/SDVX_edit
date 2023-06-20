@@ -1,4 +1,14 @@
 #include "Chart.h"
+
+Chart::~Chart() {
+	//iterate through lines and delete them
+	for (auto& it : lines) {
+		delete it.second;
+	}
+	clearUndoStack();
+	clearRedoStack();
+}
+
 float Chart::getMs(unsigned int lineNum) {
     float currentMs = 0;
     unsigned int lastChange = 0;
@@ -55,8 +65,32 @@ void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
 ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 	unsigned int absPos = line;
 	auto it = lines.find(absPos);
-	int measure = lines.lower_bound(absPos)->second->measurePos;
-	int localPos = line - measures[measure].pos;
+	//check to see if we are on a new measure
+	if (measures.size() == 0) {
+		appendNewMeasure();
+	}
+
+	int measure = 0;
+
+	if (absPos > measures.back().pos + measures.back().pulses) {
+		int loc = measures.back().pos + measures.back().pulses;
+		while (loc < absPos) {
+			loc += appendNewMeasure();
+			measure += 1;
+		}
+		calcTimings();
+	}
+	else {
+		if (lines.lower_bound(absPos) == lines.end()) {
+			measure = std::prev(lines.end(), 1)->second->measurePos;
+		}
+		else {
+			measure = lines.lower_bound(absPos)->second->measurePos;
+		}
+		
+	}
+
+	int localPos = measures[measure].pulses + line - measures[measure].pos;
 
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
 
@@ -221,4 +255,44 @@ void Chart::clearRedoStack() {
 		}
 		redoStack.pop();
 	}
+}
+
+
+void Chart::clearUndoStack() {
+	while (!undoStack.empty()) {
+		for (auto it : undoStack.top()) {
+			delete it.second;
+		}
+		undoStack.pop();
+	}
+}
+
+//insert new measure with a dummy line, and also returns the pulses of the appended measure
+int Chart::appendNewMeasure() {
+	
+	int measureStart = 0;
+	if (measures.size() == 0) {
+		Measure m;
+		ChartLine* newLine = new ChartLine;
+		measures.push_back(m);
+		measures[0].lines[0] = newLine;
+	}
+	else {
+		Measure prevMeasure = measures.back();
+		measureStart = prevMeasure.pos + prevMeasure.pulses;
+		Measure m;
+		m.pos = measureStart;
+		m.topSig = prevMeasure.topSig;
+		m.bottomSig = prevMeasure.bottomSig;
+		m.pulses = prevMeasure.pulses;
+
+		measures.push_back(m);
+		ChartLine* newLine = new ChartLine;
+		newLine->prev = std::prev(prevMeasure.lines.end(), 1)->second;
+		newLine->measurePos = measures.size() - 1;
+		newLine->pos = measureStart;
+		std::prev(prevMeasure.lines.end(), 1)->second->next = newLine;
+		measures.back().lines[0] = newLine;
+	}
+	return measures.back().pulses;
 }

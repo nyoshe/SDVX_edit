@@ -5,7 +5,8 @@ void StatusBar::update()
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {
-                //Do something
+                Chart newChart;
+                EditWindow::getInstance().chart = newChart;
             }
             if (ImGui::MenuItem("Open")) {
                 ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".ksh", ".");
@@ -26,7 +27,6 @@ void StatusBar::update()
             if (ImGui::BeginMenu(("Measures per column: " + std::to_string(EditWindow::getInstance().measuresPerColumn)).c_str())) {
                 for (int i = 1; i < 10; i++) {
                     if (ImGui::MenuItem(std::to_string(i).c_str())) {
-                        //Do something
                         EditWindow::getInstance().measuresPerColumn = i;
                         EditWindow::getInstance().updateVars();
                     }

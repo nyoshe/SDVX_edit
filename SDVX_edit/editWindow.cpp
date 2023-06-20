@@ -1,7 +1,9 @@
 #include "editWindow.h"
 void EditWindow::loadFile(std::string fileName) {
 	Parser p;
-	chart = p.loadFile(fileName);
+	Chart newChart;
+	chart = newChart;
+	p.loadFile(fileName, chart);
 	chart.calcTimings();
 
 	struct shm_remove
@@ -129,20 +131,6 @@ int EditWindow::getMouseMeasure() {
 	return -1;
 }
 
-//returns the line relative to the selected snapping value, -1 if not found
-int EditWindow::getMouseLine() {
-	for (int j = 0; j < measuresPerColumn; j++) {
-		if (
-			mouseY >= (topPadding + measureHeight * j) &&
-			mouseY <= (topPadding + measureHeight * (j + 1)))
-		{
-			float pos = (topPadding + measureHeight * j) - mouseY;
-			return (pos / measureHeight) * snapGridSize + snapGridSize;
-		}
-	}
-	return -1;
-}
-
 int EditWindow::getMouseLine(int snapSize) {
 	for (int j = 0; j < measuresPerColumn; j++) {
 		if (
@@ -256,45 +244,13 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 	return mPulses;
 }
 
-void EditWindow::drawMap() {	
-	for (int i = 0; i < columns; i++) {
-		//draw measure lines
-		for (int j = 0; j < (measuresPerColumn + 1); j++) {
-			sf::Vertex line[] = {
-				sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) , topPadding + measureHeight * j), sf::Color(255, 255, 0)),
-				sf::Vertex(sf::Vector2f((8 * laneWidth) + (columnWidth * i) , topPadding + measureHeight * j), sf::Color(255, 255, 0))
-			};
-			window->draw(line, 2, sf::Lines);
-		}
-	
-		//draw horizontal lines
-		for (int j = 0; j < measuresPerColumn; j++) {
-			for (int k = 1; k < 4; k++) {
-				sf::Vertex line[] = {
-					sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) , topPadding + (measureHeight * j) + ((measureHeight / 4) * k)), sf::Color(50, 50, 50)),
-					sf::Vertex(sf::Vector2f((8 * laneWidth) + (columnWidth * i) , topPadding + (measureHeight * j) + ((measureHeight / 4) * k)), sf::Color(50, 50, 50))
-				};
-				window->draw(line, 2, sf::Lines);
-			}
-		}
-
-		//draw vertical lines
-		for (int j = 0; j < 5; j++) {
-			sf::Vertex line[] = {
-				sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) + (laneWidth * j), topPadding), sf::Color(100, 100, 100)),
-				sf::Vertex(sf::Vector2f((4 * laneWidth) + (columnWidth * i) + (laneWidth * j), height + topPadding), sf::Color(100, 100, 100))
-			};
-			window->draw(line, 2, sf::Lines);
-		}
-	}
-}
-
 void EditWindow::drawLineButtons(ChartLine* line) {
 	int pos = line->pos;
-	for (int lane = 0; lane < 2; lane += 1) {
+	for (int lane = 0; lane < 2; lane ++) {
 		//fx chips
 		if (line->fxVal[lane] == 2) {
 			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
+			sf::Rect r = fxSprite.getLocalBounds();
 			window->draw(fxSprite);
 		}
 		//fx hold
@@ -334,6 +290,9 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> EditWindow::gen
 	std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> vertexBuffer;
 	if (editorMeasure >= chart.measures.size())
 		return vertexBuffer;
+	if (chart.lines.lower_bound(editorLineStart) == chart.lines.end()) {
+		return vertexBuffer;
+	}
 	ChartLine* line = chart.lines.lower_bound(editorLineStart)->second;
 	ChartLine* start = line;
 	
@@ -500,22 +459,29 @@ void EditWindow::drawChart() {
 		}
 	}
 
-	for (int i = 0; i < (measuresPerColumn * columns); i++) {
-		if ((i + editorMeasure) >= chart.measures.size())
-			break;
-		for (auto line : chart.measures[i + editorMeasure].lines) {
-			if (line.second->pos >= std::min(selectStart, selectEnd) &&
-				line.second->pos <= std::max(selectStart, selectEnd))
+	//draw note lines
+
+	auto lineIt = chart.lines.lower_bound(editorLineStart);
+	if (lineIt != chart.lines.end()) {
+		ChartLine* line = lineIt->second;
+		while (line != nullptr && line->pos <= editorLineStart + columns * pulsesPerBeat * beatsPerColumn) {
+			if (line->pos >= std::min(selectStart, selectEnd) &&
+				line->pos <= std::max(selectStart, selectEnd))
 			{
-				fxSprite.setColor(sf::Color(100, 255, 0));
-				btSprite.setColor(sf::Color(100, 255, 0));
+				fxSprite.setColor(sf::Color(255, 0, 0));
+				btSprite.setColor(sf::Color(255, 0, 0));
 			}
-			drawLineButtons(line.second);
+			drawLineButtons(line);
 
 			fxSprite.setColor(sf::Color(255, 255, 255));
 			btSprite.setColor(sf::Color(255, 255, 255));
+			line = line->next;
 		}
 	}
+	
+
+
+
 
 	for (int l = 0; l < 2; l++) {
 		
@@ -523,7 +489,7 @@ void EditWindow::drawChart() {
 		
 		//run over the buffer and then check for collision
 		for (auto& vBuffer : vertexBuffer) {
-			if (vBuffer.first->laserPos[l] == -2) {
+			if (vBuffer.first->laserPos[l] == -2 || vBuffer.first->next->laserPos[l] == -1) {
 				vBuffer.first = vBuffer.first->getPrevLaser(l);
 			}
 			bool laserSelect = false;
@@ -617,14 +583,15 @@ sf::Vector2f EditWindow::getMeasureStart(int measure) {
 sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 	//first check if we have a valid position
 	int measure = getMouseMeasure() - editorMeasure;
+	int snappedLine = (getMouseGlobalLine() / (192 / snapGridSize)) * (192 / snapGridSize);
 	sf::Vector2f start = getMeasureStart(measure);
 	float snapSize = measureHeight / snapGridSize;
 	if (measure != -1) {
 		switch (type){
 		case ToolType::BT:
-			return sf::Vector2f(start.x + getMouseLane() * laneWidth, start.y + snapSize * (snapGridSize - getMouseLine()));
+			return sf::Vector2f(getNoteLocation(getMouseLane(), snappedLine));
 		case ToolType::FX:
-			return sf::Vector2f(start.x + (getMouseLane() / 2) * (laneWidth * 2), start.y + snapSize * (snapGridSize - getMouseLine()));
+			return sf::Vector2f(getNoteLocation((getMouseLane() / 2) * 2, snappedLine));
 		case ToolType::LASER_L:
 			return sf::Vector2f(-1,-1);
 			//placeholder
@@ -661,7 +628,7 @@ void EditWindow::handleEvent(sf::Event event) {
 				
 				if (getMouseMeasure() != -1 && !select) {
 					chart.clearRedoStack();
-					chart.insertChartLine((getMouseGlobalLine() / (192 / snapGridSize)) * (192 / snapGridSize), newLine);
+					chart.insertChartLine((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)), newLine);
 				}
 			}
 			if (select && laserHover.second != nullptr) {
@@ -670,7 +637,7 @@ void EditWindow::handleEvent(sf::Event event) {
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
 			if (getMouseMeasure() != -1 && !select) {
-				chart.removeChartLine((getMouseGlobalLine() / (192 / snapGridSize)) * (192 / snapGridSize), getMouseLane(), tool);
+				chart.removeChartLine((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)), getMouseLane(), tool);
 				chart.clearRedoStack();
 			}
 			
@@ -777,23 +744,7 @@ void EditWindow::update() {
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
 
-	
-	if (!select) {
-		switch (tool) {
-		case ToolType::BT:
-			toolSprite = btSprite;
-			break;
-		case ToolType::FX:
-			toolSprite = fxSprite;
-			break;
-		}
-		if (getMouseLane() != -1) {
-			toolSprite.setPosition(getSnappedPos(tool));
-			toolSprite.setColor(sf::Color(255, 255, 255, 128));
-			window->draw(toolSprite);
-		}
-	}
-	
+
 	
 
 	ImGui::Begin("Debug");
@@ -804,11 +755,9 @@ void EditWindow::update() {
 	ImGui::Text(s3.c_str());
 	std::string s4 = "lane: " + std::to_string(getMouseLane());
 	ImGui::Text(s4.c_str());
-	std::string s5 = "line: " + std::to_string(getMouseLine());
-	ImGui::Text(s5.c_str());
 	std::string s6 = "Mouse Line: " + std::to_string(getMouseGlobalLine());
 	ImGui::Text(s6.c_str());
-	std::string s7 = "Mouse Line Snapped: " + std::to_string((getMouseGlobalLine() / (192 / snapGridSize)) * (192 / snapGridSize));
+	std::string s7 = "Mouse Line Snapped: " + std::to_string((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)));
 	ImGui::Text(s7.c_str());
 	//std::string s8 = "note start x: " + std::to_string(getNoteLocation(getMouseGlobalLine()).x);
 	//ImGui::Text(s8.c_str());
@@ -825,5 +774,23 @@ void EditWindow::update() {
 	
 	//drawMap();
 	drawChart();
+
+
+	if (!select) {
+		switch (tool) {
+		case ToolType::BT:
+			toolSprite = btSprite;
+			break;
+		case ToolType::FX:
+			toolSprite = fxSprite;
+			break;
+		}
+		if (getMouseLane() != -1) {
+			toolSprite.setPosition(getSnappedPos(tool));
+			toolSprite.setColor(sf::Color(255, 255, 255, 128));
+			window->draw(toolSprite);
+		}
+	}
+
 }
 

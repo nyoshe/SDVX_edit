@@ -54,6 +54,7 @@ private:
     unsigned int playbackPos = 0;
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
+
     std::vector<Measure> measures;
     float mouseX = 0;
     float mouseY = 0;
@@ -74,9 +75,8 @@ private:
 
     sf::Sprite toolSprite;
 
-    Chart chart;
 public:
-
+    Chart chart;
     //functions
 
     EditWindow(const EditWindow&) = delete;
@@ -96,11 +96,10 @@ public:
 
     //hackey but this function essentially generates the laser vertices
     std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> generateLaserQuads(int l);
-    void drawMap();
     void drawChart();
     int getMouseLane();
     int getMouseMeasure();
-    int getMouseLine();
+
     int getMouseLine(int snapSize);
     int getMouseGlobalLine();
     int getMeasureFromGlobal(unsigned int loc);

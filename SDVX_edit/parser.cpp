@@ -21,13 +21,13 @@ Command Parser::parseCommand(std::string s) {
 	return c;
 }
 
-Chart Parser::loadFile(std::string fileName)
+void Parser::loadFile(std::string fileName, Chart& chart)
 {
 	std::ifstream mapFile;
 	mapFile.open(fileName);
 	//ignore first 3 bytes
 	mapFile.seekg(3);
-	Chart chart;
+	//Chart chart;
 
 	if (mapFile.is_open()) {
 		std::string s;
@@ -220,10 +220,9 @@ Chart Parser::loadFile(std::string fileName)
 		}
 	}
 
-	return chart;
 }
 
-void Parser::saveFile(Chart chart, std::string fileName)
+void Parser::saveFile(Chart& chart, std::string fileName)
 {
 	//TODO: handle comments
 	std::ofstream mapFile;
