@@ -26,6 +26,11 @@ int main() {
     StatusBar status_bar;
     toolWindow tool_window;
     EditWindow::getInstance().setWindow(&window);
+    std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
+    std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
+    EditWindow::getInstance().mapFilePath = filePath;
+    EditWindow::getInstance().loadFile(filePathName);
+
 
     while (window.isOpen()) {
         sf::Event event;

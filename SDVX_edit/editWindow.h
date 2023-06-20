@@ -52,6 +52,8 @@ private:
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
     unsigned int playbackPos = 0;
+    std::pair<int, ChartLine*> laserHover;
+    std::pair<int, ChartLine*> selectedLaser;
     std::vector<Measure> measures;
     float mouseX = 0;
     float mouseY = 0;
@@ -91,6 +93,9 @@ public:
     void updateVars();
     //the line specifies where we want to start drawing the measure, it returns the end location
     int drawMeasure(unsigned int measure, unsigned int startLine);
+
+    //hackey but this function essentially generates the laser vertices
+    std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> generateLaserQuads(int l);
     void drawMap();
     void drawChart();
     int getMouseLane();
@@ -116,6 +121,9 @@ public:
     //get the note location from line (global) 
     sf::Vector2f getNoteLocation(int line);
 
+    float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
+    bool getMouseOverlap(const sf::VertexArray quad);
+
     void loadFile(std::string fileName);
 
     //vars
@@ -134,6 +142,8 @@ public:
     float playbackSpeed = 1.0;
     AudioManager player;
     std::string mapFilePath;
+
+    bool select = false;
 
     ToolType tool = ToolType::BT;
 

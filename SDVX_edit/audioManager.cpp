@@ -10,8 +10,10 @@ void AudioManager::loadFile(std::string fileName) {
 }
 
 void AudioManager::playFrom(int ms) {
+	seekTime = ms;
 	track.setPlayingOffset(sf::milliseconds(ms));
 	track.play();
+	playClock.restart();
 }
 
 void AudioManager::stop() {
@@ -19,7 +21,8 @@ void AudioManager::stop() {
 }
 
 unsigned int AudioManager::getMs() {
-	return track.getPlayingOffset().asMilliseconds();
+	//return playClock.getElapsedTime().asMilliseconds() + seekTime;
+	return track.getPlayingOffset().asMilliseconds() - track.delayMs;
 }
 
 bool AudioManager::isPlaying() {

@@ -8,14 +8,15 @@ float Chart::getMs(unsigned int lineNum) {
     for (auto cList : cmds) {
         if (cList.first > lineNum) break;
         for (auto cmd : cList.second) {
+			int pulses = (192 * topSig) / bottomSig;
             if (cmd.type == CommandType::TEMPO_CHANGE) {
-                currentMs += ((cList.first - lastChange) / 192.0) * 1000.0 * topSig * (60.0 / currentBpm);
+                currentMs += ((cList.first - lastChange) / pulses) * 1000.0 * topSig * (60.0 / currentBpm);
                 lastChange = cList.first;
                 currentBpm = std::stof(cmd.val);
 
             }
             else if (cmd.type == CommandType::BEAT_CHANGE) {
-                currentMs += ((cList.first - lastChange) / 192.0) * 1000.0 * topSig * (60.0 / currentBpm);
+                currentMs += ((cList.first - lastChange) / pulses) * 1000.0 * topSig * (60.0 / currentBpm);
                 lastChange = cList.first;
 
                 topSig = std::stoi(cmd.val.substr(0, cmd.val.find('/')));
@@ -51,16 +52,18 @@ void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
 	connectLines(l2, l3);
 }
 
-ChartLine* Chart::insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine) {
-	unsigned int absPos = measures[measure].pos + line;
+ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
+	unsigned int absPos = line;
 	auto it = lines.find(absPos);
+	int measure = lines.lower_bound(absPos)->second->measurePos;
+	int localPos = line - measures[measure].pos;
 
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
 
 	//if we don't exist
 	if (it == lines.end()) {
 
-		measures[measure].lines[line] = cLine;
+		measures[measure].lines[localPos] = cLine;
 		lines[absPos] = cLine;
 
 		cLine->pos = absPos;
@@ -122,20 +125,36 @@ ChartLine* Chart::insertChartLine(unsigned int measure, unsigned int line, Chart
 }
 
 //this should only really be called for user input
-ChartLine* Chart::removeChartLine(unsigned int measure, unsigned int line, unsigned int lane, ToolType type) {
-	unsigned int absPos = measures[measure].pos + line;
+void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type) {
+
+	if (lane > 3 || lane < 0) {
+		return;
+	}
+	unsigned int absPos = line;
+	int measure = lines.lower_bound(absPos)->second->measurePos;
 	auto it = lines.find(absPos);
 
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
+
+	if (type == ToolType::BT) {
+		//check to see if we have a hold before and after our note
+		if (lines.lower_bound(line)->second->btVal[lane] == 2 && lines.upper_bound(line)->second->btVal[lane] == 2) {
+			std::vector<std::pair<ChartLine*, ChartLine*>> newList = lines.lower_bound(line)->second->clearBtHold(lane);
+			actionList.insert(actionList.end(), newList.begin(), newList.end());
+		}
+	}
+	if (type == ToolType::FX) {
+		//check to see if we have a hold before and after our note
+		if (lines.lower_bound(line)->second->fxVal[lane / 2] == 1 && lines.upper_bound(line)->second->fxVal[lane / 2] == 1) {
+			std::vector<std::pair<ChartLine*, ChartLine*>> newList = lines.lower_bound(line)->second->clearFxHold(lane / 2);
+			actionList.insert(actionList.end(), newList.begin(), newList.end());
+		}
+	}
 
 	if (it != lines.end()) {
 
 
 		if (type == ToolType::BT) {
-			if (it->second->btVal[lane] == 2) {
-				std::vector<std::pair<ChartLine*, ChartLine*>> newList = it->second->clearBtHold(lane);
-				actionList.insert(actionList.end(), newList.begin(), newList.end());
-			}
 			//remove chip
 			if (it->second->btVal[lane] == 1) {
 				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
@@ -143,23 +162,16 @@ ChartLine* Chart::removeChartLine(unsigned int measure, unsigned int line, unsig
 			}
 		}
 		if (type == ToolType::FX) {
-			if (it->second->fxVal[lane / 2] == 1) {
-				std::vector<std::pair<ChartLine*, ChartLine*>> newList = it->second->clearFxHold(lane);
-				actionList.insert(actionList.end(), newList.begin(), newList.end());
-			}
 			//remove chip
 			if (it->second->fxVal[lane / 2] == 2) {
 				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
 				it->second->fxVal[lane / 2] = 0;
 			}
 		}
-
+	}
+	if (actionList.size() > 0) {
 		undoStack.push(actionList);
 	}
-	else {
-		return nullptr;
-	}
-
 }
 
 

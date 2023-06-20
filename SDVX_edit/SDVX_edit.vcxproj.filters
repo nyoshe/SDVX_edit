@@ -117,6 +117,9 @@
     <ClCompile Include="soundtouch\src\FIRFilter.cpp">
       <Filter>SoundTouch\src</Filter>
     </ClCompile>
+    <ClCompile Include="chartLine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="editWindow.h">
@@ -226,6 +229,9 @@
     </ClInclude>
     <ClInclude Include="soundtouch\include\STTypes.h">
       <Filter>SoundTouch\include</Filter>
+    </ClInclude>
+    <ClInclude Include="chartLine.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

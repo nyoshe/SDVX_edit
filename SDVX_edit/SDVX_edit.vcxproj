@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="audioManager.cpp" />
     <ClCompile Include="chart.cpp" />
+    <ClCompile Include="chartLine.cpp" />
     <ClCompile Include="editWindow.cpp" />
     <ClCompile Include="fileDialog\ImGuiFileDialog.cpp" />
     <ClCompile Include="imgui\imgui-SFML.cpp" />
@@ -176,6 +177,7 @@
   <ItemGroup>
     <ClInclude Include="audioManager.h" />
     <ClInclude Include="chart.h" />
+    <ClInclude Include="chartLine.h" />
     <ClInclude Include="editWindow.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="fileDialog\dirent\dirent.h" />

@@ -1,6 +1,7 @@
 #pragma once
 #include "structs.h"
 #include "chart.h"
+#include "chartLine.h"
 
 #include <iostream>
 #include <fstream>

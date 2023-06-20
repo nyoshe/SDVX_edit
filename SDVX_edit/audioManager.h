@@ -49,6 +49,7 @@ public:
     int sampleDelay;
     SoundTouch processor;
     int buffSize = 50000;
+    float delayMs = 0;
 private:
 
     virtual bool onGetData(Chunk& data)
@@ -67,6 +68,7 @@ private:
         int buffSizeSamples = buffSize / getChannelCount();
 
         nSamples = processor.receiveSamples(output, buffSizeSamples);
+        delayMs = 1000.0 * static_cast<float>(buffSizeSamples - nSamples) / getSampleRate();
         
        
         // have we reached the end of the sound?
@@ -99,7 +101,6 @@ private:
     //int16_t* input;
     int16_t* output;
 
-
     long inputSize;
     int16_t* input;
     std::size_t m_currentSample;
@@ -110,11 +111,12 @@ class AudioManager
 {
 private:
     sf::SoundBuffer buffer;
-
+    float seekTime;
 
     float playbackSpeed;
 public:
 
+    sf::Clock playClock;
     MyStream track;
     void loadFile(std::string fileName);
     void playFrom(int ms);

@@ -12,7 +12,7 @@
 class toolWindow
 {
 private:
-    
+    sf::Texture selectIcon;
     sf::Texture fxIcon;
     sf::Texture btIcon;
     sf::Texture fxHoldIcon;
@@ -21,6 +21,7 @@ private:
     sf::Texture knobLIcon;
 
 public:
+    float iconSize = 50;
     toolWindow();
     ~toolWindow() = default;
     void update();

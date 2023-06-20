@@ -4,6 +4,8 @@
 #include <stack>
 #include <vector>
 #include "structs.h"
+#include "chartLine.h"
+
 class Chart
 {
 public:
@@ -60,8 +62,8 @@ public:
 
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
-    ChartLine* insertChartLine(unsigned int measure, unsigned int line, ChartLine* cLine);
-    ChartLine* removeChartLine(unsigned int measure, unsigned int line, unsigned int lane, ToolType type);
+    ChartLine* insertChartLine(unsigned int line, ChartLine* cLine);
+    void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
     void undo();
     void redo();
     void clearRedoStack();
