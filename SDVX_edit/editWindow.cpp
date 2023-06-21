@@ -51,6 +51,7 @@ void EditWindow::updateVars() {
 	laneWidth = width / (11 * columns);
 	columnWidth = width / columns;
 	measureHeight = float(height) / measuresPerColumn;
+	viewLines = beatsPerColumn * pulsesPerBeat * columns;
 }
 
 void EditWindow::setWindow(sf::RenderWindow* _window) {
@@ -307,19 +308,19 @@ void EditWindow::drawLineButtons(ChartLine* line) {
 	}
 }
 
-std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::generateLaserQuads(int l){
+QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, ChartLine*> &objects, LineIterator startIter, LineIterator endIter){
 	std::vector<sf::VertexArray> laserBuffer;
-	auto vertexBuffer = new std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>;
+	QuadArray vertexBuffer;
 	if (editorMeasure >= chart.measures.size())
 		return vertexBuffer;
-	if (chart.lines.lower_bound(editorLineStart) == chart.lines.end()) {
+	if (startIter == objects.end()) {
 		return vertexBuffer;
 	}
-	ChartLine* line = chart.lines.lower_bound(editorLineStart)->second;
+	ChartLine* line = startIter->second;
 	ChartLine* start = line;
 	
 	bool isSelected = false;
-	while (line != nullptr && line->measurePos <= (editorMeasure + columns * measuresPerColumn)) {
+	while (line != nullptr && line->pos <= (endIter->second->pos)) {
 
 		//int measureNum = line->measurePos - editorMeasure;
 		sf::Color c;
@@ -338,7 +339,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::ge
 			line->getNextLaser(l) == nullptr) {
 
 			if (laserBuffer.size() > 0) {
-				vertexBuffer->push_back(std::make_pair(line, laserBuffer));
+				vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			}
 			laserBuffer.clear();
 			line = line->next;
@@ -411,7 +412,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::ge
 
 			}
 
-			vertexBuffer->push_back(std::make_pair(line, laserBuffer));
+			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			laserBuffer.clear();
 
 			line = nextLaser;
@@ -451,7 +452,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::ge
 			line->measurePos == nextLine->measurePos ||
 			nextLine->measurePos > (editorMeasure + columns * measuresPerColumn)) {
 
-			vertexBuffer->push_back(std::make_pair(line, laserBuffer));
+			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			laserBuffer.clear();
 		}
 
@@ -465,7 +466,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::ge
 void EditWindow::drawChart() {
 
 	int drawLine = editorLineStart;
-	while (drawLine <= editorLineStart + beatsPerColumn * columns * pulsesPerBeat) {
+	while (drawLine <= editorLineStart + viewLines) {
 		int m = getMeasureFromGlobal(drawLine);
 		int add = drawMeasure(m, drawLine);
 		drawLine += add;
@@ -486,7 +487,7 @@ void EditWindow::drawChart() {
 	auto lineIt = chart.lines.lower_bound(editorLineStart);
 	if (lineIt != chart.lines.end()) {
 		ChartLine* line = lineIt->second;
-		while (line != nullptr && line->pos <= editorLineStart + columns * pulsesPerBeat * beatsPerColumn) {
+		while (line != nullptr && line->pos <= editorLineStart + viewLines) {
 			if (line->pos >= std::min(selectStart, selectEnd) &&
 				line->pos <= std::max(selectStart, selectEnd))
 			{
@@ -507,10 +508,10 @@ void EditWindow::drawChart() {
 
 	for (int l = 0; l < 2; l++) {
 		
-		std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* vertexBuffer = generateLaserQuads(l);
+		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, getEditorStartLine(), getEditorEndLine());
 		
 		//run over the buffer and then check for collision
-		for (auto& vBuffer : *vertexBuffer) {
+		for (auto& vBuffer : vertexBuffer) {
 			if (vBuffer.first->laserPos[l] == -2 || vBuffer.first->next->laserPos[l] == -1) {
 				vBuffer.first = vBuffer.first->getPrevLaser(l);
 			}
@@ -544,11 +545,18 @@ void EditWindow::drawChart() {
 				}
 			}
 		}
-		
-		vertexBuffer->clear();
-		delete vertexBuffer;
+
+	}
+	if (selectedLaserEnd.second != nullptr){
+		sf::Vector2f v = getNoteLocation(-1, selectedLaserEnd.second->pos);
+		sf::Vertex l[] = {
+			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
+			sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
+		};
+		window->draw(l, 2, sf::Lines);
 	}
 	
+
 
 	sf::Vector2f pos1 = getNoteLocation(-1, selectStart);
 	sf::Vector2f pos2 = getNoteLocation(5, selectStart);
@@ -710,20 +718,24 @@ void EditWindow::handleEvent(sf::Event event) {
 				if (getMouseMeasure() != -1 && !select) {
 					chart.clearRedoStack();
 					chart.insertChartLine(getMouseSnappedLine(), newLine);
+					chart.pushUndoBuffer();
 				}
 			}
 			if (select && laserHover.second != nullptr) {
 				selectedLaser = laserHover;
+				selectedLaserEnd = std::make_pair(selectedLaser.first, selectedLaser.second->getNextLaser(selectedLaser.first));
 			}
 			else {
 				//deselect
 				chart.pushUndoBuffer();
 				selectedLaser = std::make_pair(0, nullptr);
+				selectedLaserEnd = std::make_pair(0, nullptr);
 			}
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
 			if (getMouseMeasure() != -1 && !select) {
 				chart.removeChartLine(getMouseSnappedLine(), getMouseLane(), tool);
+				chart.pushUndoBuffer();
 				chart.clearRedoStack();
 			}
 			
@@ -744,26 +756,40 @@ void EditWindow::handleEvent(sf::Event event) {
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)){ 
 			if (event.key.code == sf::Keyboard::Z) {
 				chart.pushUndoBuffer();
+				selectedLaser = std::make_pair(0, nullptr);
+				selectedLaserEnd = std::make_pair(0, nullptr);
 				chart.undo();
 			}
 			if (event.key.code == sf::Keyboard::Y) {
 				chart.pushRedoBuffer();
+				selectedLaser = std::make_pair(0, nullptr);
+				selectedLaserEnd = std::make_pair(0, nullptr);
 				chart.redo();
 			}
 		}
-
-		if (event.key.code == sf::Keyboard::Left) {
-			if (selectedLaser.second != nullptr) {
-				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
+		if (selectedLaser.second != nullptr) {
+			if (event.key.code == sf::Keyboard::Left) {
+				ChartLine* laserToEdit = selectedLaserEnd.second;
 				chart.addUndoBuffer(laserToEdit);
+				//should probably change modifyLaserPos to chart
 				laserToEdit->modifyLaserPos(selectedLaser.first, -laserMoveSize);
 			}
-		}
-		if (event.key.code == sf::Keyboard::Right) {
-			if (selectedLaser.second != nullptr) {
-				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
+			if (event.key.code == sf::Keyboard::Right) {
+				ChartLine* laserToEdit = selectedLaserEnd.second;
 				chart.addUndoBuffer(laserToEdit);
 				laserToEdit->modifyLaserPos(selectedLaser.first, laserMoveSize);
+			}
+			if (event.key.code == sf::Keyboard::Up) {
+				ChartLine moveMask;
+				moveMask.laserPos[selectedLaser.first] = selectedLaserEnd.second->laserPos[selectedLaser.first];
+				chart.addUndoBuffer(selectedLaserEnd.second);
+				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, 192 / snapGridSize);
+			}
+			if (event.key.code == sf::Keyboard::Down) {
+				ChartLine moveMask;
+				moveMask.laserPos[selectedLaser.first] = selectedLaserEnd.second->laserPos[selectedLaser.first];
+				chart.addUndoBuffer(selectedLaserEnd.second);
+				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, -192 / snapGridSize);
 			}
 		}
 	}
@@ -833,6 +859,17 @@ bool EditWindow::getMouseOverlap(const sf::VertexArray quad) {
 
 }
 
+LineIterator EditWindow::getEditorStartLine() {
+	return chart.lines.lower_bound(editorLineStart);
+}
+
+LineIterator EditWindow::getEditorEndLine() {
+	if (chart.lines.upper_bound(editorLineStart + viewLines) == chart.lines.end() && chart.lines.size() > 0) {
+		return std::prev(chart.lines.end(), 1);
+	}
+	return chart.lines.upper_bound(editorLineStart + viewLines);
+}
+
 void EditWindow::update() {
 	laserHover.second = nullptr;
 
@@ -847,7 +884,7 @@ void EditWindow::update() {
 	std::vector<sf::VertexArray> arr = generateSlamQuads(getMouseSnappedLine(), 25, (getMouseLaserPos(true) / laserMoveSize) * laserMoveSize, 1, true);
 
 	for (auto quad : arr) {
-		window->draw(quad);
+		//window->draw(quad);
 	}
 
 	ImGui::Begin("Debug");

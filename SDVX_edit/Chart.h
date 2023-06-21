@@ -82,13 +82,11 @@ public:
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
     ChartLine* insertChartLine(unsigned int line, ChartLine* cLine);
-    void moveChartLine(unsigned int line, int change);
+
+    //returns a pointer to the moved object
+    ChartLine* moveChartLine(int line, ChartLine moveMask, int change);
     void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
     //void moveChartLine();
-
-    beginAction() {
-
-    }
 
     //this should be done before an action is performed
     void addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList);

@@ -4,6 +4,8 @@
 #include "enums.h"
 #include <iostream>
 
+
+
 struct Command {
     CommandType type = CommandType::INVALID;
     std::string val = "";

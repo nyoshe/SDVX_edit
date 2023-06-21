@@ -30,7 +30,8 @@ struct gameControl
 
 #define DEBUG false
 
-
+typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
+typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 
 class EditWindow
 {
@@ -49,13 +50,15 @@ private:
     float columnWidth = 0;
     float columnHeight = 0;
     float measureHeight = 0;
+    float viewLines = 0;
+    
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
     unsigned int playbackPos = 0;
-    int mouseDownLine = 0;
-    int mouseDownLaserPos = 0;
+
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
+    std::pair<int, ChartLine*> selectedLaserEnd;
 
     std::vector<Measure> measures;
     float mouseX = 0;
@@ -99,7 +102,7 @@ public:
     int drawMeasure(unsigned int measure, unsigned int startLine);
 
     //hackey but this function essentially generates the laser vertices
-    std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* generateLaserQuads(int l);
+    QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*> &objects, LineIterator startIter, LineIterator endIter);
     void drawChart();
     std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, int start, int end, int laser, bool isWide);
 
@@ -130,6 +133,9 @@ public:
     void loadFile(std::string mapFilePath, std::string mapFileName);
     void saveFile(std::string fileName);
     void saveFile();
+
+    LineIterator getEditorStartLine();
+    LineIterator getEditorEndLine();
 
     //vars
     boost::interprocess::managed_shared_memory memSegment;

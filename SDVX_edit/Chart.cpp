@@ -81,11 +81,12 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		calcTimings();
 	}
 	else {
-		if (lines.lower_bound(absPos) == lines.end()) {
+		if (lines.upper_bound(absPos) == lines.end()) {
 			measure = std::prev(lines.end(), 1)->second->measurePos;
 		}
 		else {
-			measure = lines.lower_bound(absPos)->second->measurePos;
+			ChartLine* t = std::prev(lines.lower_bound(absPos), 1)->second;
+			measure = std::prev(lines.lower_bound(absPos), 1)->second->measurePos;
 		}
 	}
 
@@ -153,7 +154,6 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		delete cLine;
 	}
 
-	pushUndoBuffer();
 	return lines[absPos];
 }
 
@@ -200,7 +200,6 @@ void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type)
 			}
 		}
 	}
-	pushUndoBuffer();
 }
 
 
@@ -399,7 +398,34 @@ void Chart::addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionL
 	redoBuffer.insert(redoBuffer.end(), actionList.begin(), actionList.end());
 }
 
-void moveChartLine(unsigned int line, int change) {
+//I'm 90% sure that the bug is that it isn't also setting laser connection points for the ammount it moves
+//also, it doesn't reset the select end on undo
+//also, respect laser wide values
+ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
+	
+	if (line - change < 0) {
+		change += line- change;
+	}
+	if (lines.find(line + change) == lines.end()) {
+		ChartLine* newLine = new ChartLine;
+		insertChartLine(line+ change, newLine);
+	}
+	else {
+		addUndoBuffer(lines[line + change]);
+	}
+	addUndoBuffer(lines[line]);
 
+	if (change > 0) {
+		for (int i = 0; i < 2; i++) {
+			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
+				lines[line]->laserPos[i] = -2;
+			}
+		}
+	}
+	
+	*(lines[line + change]) += moveMask;
+
+	return lines[line + change];
+	
 }
 
