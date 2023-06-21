@@ -2,13 +2,12 @@
 #include <vector>
 #include <string>
 #include "enums.h"
+#include <iostream>
 
 struct Command {
     CommandType type = CommandType::INVALID;
     std::string val = "";
 };
-
-
 
 class ChartLine {
 public:
@@ -39,5 +38,7 @@ public:
 
     std::vector<std::pair<ChartLine*, ChartLine*>> clearBtHold(int lane);
     std::vector<std::pair<ChartLine*, ChartLine*>> clearFxHold(int lane);
+
+    void modifyLaserPos(int laser, int val);
 };
 

@@ -5,6 +5,9 @@
 #include <vector>
 #include "structs.h"
 #include "chartLine.h"
+#include <iostream>
+
+const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
 
 class Chart
 {
@@ -48,6 +51,9 @@ public:
     std::map<unsigned int, ChartLine*> lines;
     std::map<int, std::vector<Command>> cmds;
 
+    std::vector<std::pair<ChartLine*, ChartLine*>> redoBuffer;
+    std::vector<std::pair<ChartLine*, ChartLine*>> undoBuffer;
+
     //this is our undo stack, the first pair value is the pointer value, and the second is the previous value
     //the vector is to group multiple movements into one group
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
@@ -67,10 +73,21 @@ public:
     void calcTimings();
     ChartLine* insertChartLine(unsigned int line, ChartLine* cLine);
     void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
+
+    //this should be done before an action is performed
+    void addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList);
+    void addUndoBuffer(ChartLine* line);
+    void pushUndoBuffer();
+
+    void addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList);
+    void addRedoBuffer(ChartLine* line);
+    void pushRedoBuffer();
+
     void undo();
     void redo();
     void clearRedoStack();
     void clearUndoStack();
     int appendNewMeasure();
+    void minimize();
 };
 

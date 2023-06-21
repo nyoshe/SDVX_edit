@@ -1,7 +1,7 @@
 #include "audioManager.h"
 
 void AudioManager::loadFile(std::string fileName) {
-
+	sf::SoundBuffer buffer;
 	if (!buffer.loadFromFile(fileName)) {
 		std::cout << "couldn't find sound file at: " + fileName;
 	}

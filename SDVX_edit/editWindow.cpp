@@ -1,5 +1,6 @@
 #include "editWindow.h"
 void EditWindow::loadFile(std::string fileName) {
+	
 	Parser p;
 	Chart newChart;
 	chart = newChart;
@@ -30,6 +31,7 @@ void EditWindow::loadFile(std::string fileName) {
 
 	player.loadFile(mapFilePath + "\\" + chart.songFile);
 
+	chart.minimize();
 	p.saveFile(chart, "test.ksh");
 }
 
@@ -41,6 +43,7 @@ void EditWindow::updateVars() {
 }
 
 void EditWindow::setWindow(sf::RenderWindow* _window) {
+	font.loadFromFile("Fonts/CONSOLA.TTF");
 	window = _window;
 	width = window->getSize().x;
 	height = window->getSize().y - topPadding - bottomPadding;
@@ -131,24 +134,10 @@ int EditWindow::getMouseMeasure() {
 	return -1;
 }
 
-int EditWindow::getMouseLine(int snapSize) {
-	for (int j = 0; j < measuresPerColumn; j++) {
-		if (
-			mouseY >= (topPadding + measureHeight * j) &&
-			mouseY <= (topPadding + measureHeight * (j + 1)))
-		{
-			float pos = (topPadding + measureHeight * j) - mouseY;
-			return (pos / measureHeight) * snapSize + snapSize;
-		}
-	}
-	return -1;
-}
-
 //gives is the global location in 1/192 snapping
-int EditWindow::getMouseGlobalLine() {
+int EditWindow::getMouseLine() {
 	if (getMouseMeasure() != -1) {
 		//unsigned int measure = chart.measures[getMouseMeasure()].pos;
-		//return getMouseLine(192) + measure;
 		for (int i = 0; i < columns; i++) {
 			if (mouseX >= (1 * laneWidth) + (columnWidth * i) &&
 				mouseX <= (11 * laneWidth) + (columnWidth * i)) {
@@ -169,8 +158,6 @@ int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 	}
 	return nearest->second->measurePos;
 }
-
-
 
 //gets left x position of leaser start
 std::vector <float> EditWindow::getLaserX(ChartLine* line) {
@@ -285,9 +272,9 @@ void EditWindow::drawLineButtons(ChartLine* line) {
 	}
 }
 
-std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> EditWindow::generateLaserQuads(int l){
+std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* EditWindow::generateLaserQuads(int l){
 	std::vector<sf::VertexArray> laserBuffer;
-	std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> vertexBuffer;
+	auto vertexBuffer = new std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>;
 	if (editorMeasure >= chart.measures.size())
 		return vertexBuffer;
 	if (chart.lines.lower_bound(editorLineStart) == chart.lines.end()) {
@@ -316,7 +303,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> EditWindow::gen
 			line->getNextLaser(l) == nullptr) {
 
 			if (laserBuffer.size() > 0) {
-				vertexBuffer.push_back(std::make_pair(line, laserBuffer));
+				vertexBuffer->push_back(std::make_pair(line, laserBuffer));
 			}
 			laserBuffer.clear();
 			line = line->next;
@@ -389,7 +376,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> EditWindow::gen
 
 			}
 
-			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
+			vertexBuffer->push_back(std::make_pair(line, laserBuffer));
 			laserBuffer.clear();
 
 			line = nextLaser;
@@ -429,7 +416,7 @@ std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> EditWindow::gen
 			line->measurePos == nextLine->measurePos ||
 			nextLine->measurePos > (editorMeasure + columns * measuresPerColumn)) {
 
-			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
+			vertexBuffer->push_back(std::make_pair(line, laserBuffer));
 			laserBuffer.clear();
 		}
 
@@ -485,10 +472,10 @@ void EditWindow::drawChart() {
 
 	for (int l = 0; l < 2; l++) {
 		
-		std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> vertexBuffer = generateLaserQuads(l);
+		std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* vertexBuffer = generateLaserQuads(l);
 		
 		//run over the buffer and then check for collision
-		for (auto& vBuffer : vertexBuffer) {
+		for (auto& vBuffer : *vertexBuffer) {
 			if (vBuffer.first->laserPos[l] == -2 || vBuffer.first->next->laserPos[l] == -1) {
 				vBuffer.first = vBuffer.first->getPrevLaser(l);
 			}
@@ -523,7 +510,8 @@ void EditWindow::drawChart() {
 			}
 		}
 		
-		vertexBuffer.clear();
+		vertexBuffer->clear();
+		delete vertexBuffer;
 	}
 	
 
@@ -583,7 +571,7 @@ sf::Vector2f EditWindow::getMeasureStart(int measure) {
 sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 	//first check if we have a valid position
 	int measure = getMouseMeasure() - editorMeasure;
-	int snappedLine = (getMouseGlobalLine() / (192 / snapGridSize)) * (192 / snapGridSize);
+	int snappedLine = (getMouseLine() / (192 / snapGridSize)) * (192 / snapGridSize);
 	sf::Vector2f start = getMeasureStart(measure);
 	float snapSize = measureHeight / snapGridSize;
 	if (measure != -1) {
@@ -603,18 +591,17 @@ sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 
 
 void EditWindow::handleEvent(sf::Event event) {
-	if (event.type == sf::Event::MouseButtonPressed) {
-
-		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) return;
+	if (event.type == sf::Event::MouseButtonPressed && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
 
 		if (event.mouseButton.button == sf::Mouse::Left) {
 
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) && sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt)) {
-				if (getMouseGlobalLine() != -1) {
-					selectStart = getMouseGlobalLine();
-					selectEnd = getMouseGlobalLine();
+				if (getMouseLine() != -1) {
+					selectStart = getMouseLine();
+					selectEnd = getMouseLine();
 				}
 			}
+
 			else if (getMouseLane() != -1) {
 				ChartLine* newLine = new ChartLine;
 				switch (tool) {
@@ -628,21 +615,27 @@ void EditWindow::handleEvent(sf::Event event) {
 				
 				if (getMouseMeasure() != -1 && !select) {
 					chart.clearRedoStack();
-					chart.insertChartLine((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)), newLine);
+					chart.insertChartLine((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)), newLine);
 				}
 			}
 			if (select && laserHover.second != nullptr) {
 				selectedLaser = laserHover;
 			}
+			else {
+				//deselect
+				chart.pushUndoBuffer();
+				selectedLaser = std::make_pair(0, nullptr);
+			}
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
 			if (getMouseMeasure() != -1 && !select) {
-				chart.removeChartLine((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)), getMouseLane(), tool);
+				chart.removeChartLine((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)), getMouseLane(), tool);
 				chart.clearRedoStack();
 			}
 			
 		}
 	}
+
 	if (event.type == sf::Event::KeyPressed) {
 		if (event.key.code == sf::Keyboard::Space) {
 			if (player.isPlaying()) {
@@ -662,7 +655,23 @@ void EditWindow::handleEvent(sf::Event event) {
 				chart.redo();
 			}
 		}
+
+		if (event.key.code == sf::Keyboard::Left) {
+			if (selectedLaser.second != nullptr) {
+				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
+				chart.addUndoBuffer(laserToEdit);
+				laserToEdit->modifyLaserPos(selectedLaser.first, -1);
+			}
+		}
+		if (event.key.code == sf::Keyboard::Right) {
+			if (selectedLaser.second != nullptr) {
+				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
+				chart.addUndoBuffer(laserToEdit);
+				laserToEdit->modifyLaserPos(selectedLaser.first, 1);
+			}
+		}
 	}
+
 	if (event.type == sf::Event::MouseWheelScrolled)
 	{
 		if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
@@ -674,29 +683,23 @@ void EditWindow::handleEvent(sf::Event event) {
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
 		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
-		getMouseGlobalLine() != -1) {
+		getMouseLine() != -1) {
 		if (event.type == sf::Event::MouseButtonReleased) {
-			selectEnd = getMouseGlobalLine();
+			selectEnd = getMouseLine();
 		}
 	}
 	
 	if (sf::Mouse::isButtonPressed(sf::Mouse::Left) && 
 		sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
 		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
-		getMouseGlobalLine() != -1){
+		getMouseLine() != -1){
 
 		if (event.type == sf::Event::MouseMoved) {
-			selectEnd = getMouseGlobalLine();
+			selectEnd = getMouseLine();
 		}
 	}
 }
-/*
-sf::Vector2f EditWindow::getNoteLocation(int measure, int lane, int line) {
-	sf::Vector2f startPos = getMeasureStart(measure);
-	float snapHieght = measureHeight / 192;
-	return sf::Vector2f(startPos.x + lane * laneWidth, startPos.y + (192 - line) * snapHieght);
-}
-*/
+
 sf::Vector2f EditWindow::getNoteLocation(int lane, int line) {
 	line -= editorLineStart;
 	//48 is the number of lines per beat
@@ -744,9 +747,6 @@ void EditWindow::update() {
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
 
-
-	
-
 	ImGui::Begin("Debug");
 	
 	ImGui::Text(std::to_string(mouseX).c_str());
@@ -755,9 +755,9 @@ void EditWindow::update() {
 	ImGui::Text(s3.c_str());
 	std::string s4 = "lane: " + std::to_string(getMouseLane());
 	ImGui::Text(s4.c_str());
-	std::string s6 = "Mouse Line: " + std::to_string(getMouseGlobalLine());
+	std::string s6 = "Mouse Line: " + std::to_string(getMouseLine());
 	ImGui::Text(s6.c_str());
-	std::string s7 = "Mouse Line Snapped: " + std::to_string((getMouseGlobalLine() / (192 / snapGridSize) * (192 / snapGridSize)));
+	std::string s7 = "Mouse Line Snapped: " + std::to_string((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)));
 	ImGui::Text(s7.c_str());
 	//std::string s8 = "note start x: " + std::to_string(getNoteLocation(getMouseGlobalLine()).x);
 	//ImGui::Text(s8.c_str());

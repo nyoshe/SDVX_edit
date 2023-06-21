@@ -87,12 +87,10 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		else {
 			measure = lines.lower_bound(absPos)->second->measurePos;
 		}
-		
 	}
 
 	int localPos = measures[measure].pulses + line - measures[measure].pos;
 
-	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
 
 	//if we don't exist
 	if (it == lines.end()) {
@@ -106,14 +104,14 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 
 		//check if we are not the first object
 		if (it != lines.begin()) {
-			actionList.push_back(std::make_pair(std::prev(it, 1)->second, new ChartLine(*std::prev(it, 1)->second)));
+			addUndoBuffer(std::prev(it, 1)->second);
 			connectLines(std::prev(it, 1), it);
 			//we must push the change in the next line
 		}
 
 		//check if we are not the first object
 		if (std::next(it, 1) != lines.end()) {
-			actionList.push_back(std::make_pair(std::next(it, 1)->second, new ChartLine(*std::next(it, 1)->second)));
+			addUndoBuffer(std::next(it, 1)->second);
 			connectLines(it, std::next(it, 1));
 			//we must push the change in the next line
 		}
@@ -139,22 +137,23 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 
 
 
-		//add to the undo list, the new pointer we created
-		actionList.push_back(std::make_pair(nullptr, cLine));
+		//should fix this and not access directly
+		undoBuffer.push_back(std::make_pair(nullptr, cLine));
 
 	}
 	//if the object already exists, merge them
 	else {
 		ChartLine* existingLine = lines[absPos];
 
-		actionList.push_back(std::make_pair(existingLine, new ChartLine(*lines[absPos])));
+		addUndoBuffer(existingLine);
+		//actionList.push_back(std::make_pair(existingLine, new ChartLine(*lines[absPos])));
 
 		*existingLine += *cLine;
 
 		delete cLine;
 	}
 
-	undoStack.push(actionList);
+	pushUndoBuffer();
 	return lines[absPos];
 }
 
@@ -173,15 +172,13 @@ void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type)
 	if (type == ToolType::BT) {
 		//check to see if we have a hold before and after our note
 		if (lines.lower_bound(line)->second->btVal[lane] == 2 && lines.upper_bound(line)->second->btVal[lane] == 2) {
-			std::vector<std::pair<ChartLine*, ChartLine*>> newList = lines.lower_bound(line)->second->clearBtHold(lane);
-			actionList.insert(actionList.end(), newList.begin(), newList.end());
+			addUndoBuffer(lines.lower_bound(line)->second->clearBtHold(lane));
 		}
 	}
 	if (type == ToolType::FX) {
 		//check to see if we have a hold before and after our note
 		if (lines.lower_bound(line)->second->fxVal[lane / 2] == 1 && lines.upper_bound(line)->second->fxVal[lane / 2] == 1) {
-			std::vector<std::pair<ChartLine*, ChartLine*>> newList = lines.lower_bound(line)->second->clearFxHold(lane / 2);
-			actionList.insert(actionList.end(), newList.begin(), newList.end());
+			addUndoBuffer(lines.lower_bound(line)->second->clearFxHold(lane / 2));
 		}
 	}
 
@@ -191,59 +188,64 @@ void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type)
 		if (type == ToolType::BT) {
 			//remove chip
 			if (it->second->btVal[lane] == 1) {
-				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
+				addUndoBuffer(it->second);
 				it->second->btVal[lane] = 0;
 			}
 		}
 		if (type == ToolType::FX) {
 			//remove chip
 			if (it->second->fxVal[lane / 2] == 2) {
-				actionList.push_back(std::make_pair(it->second, new ChartLine(*it->second)));
+				addUndoBuffer(it->second);
 				it->second->fxVal[lane / 2] = 0;
 			}
 		}
 	}
-	if (actionList.size() > 0) {
-		undoStack.push(actionList);
-	}
+	pushUndoBuffer();
 }
 
 
 void Chart::undo() {
 	if (undoStack.empty()) return;
-	std::vector<std::pair<ChartLine*, ChartLine*>> redoBuffer;
+	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
 	for (auto it : undoStack.top()) {
 		if (it.first == nullptr) {
+			//buffer.push_back(it);
 			redoBuffer.push_back(it);
 			lines.erase(it.second->pos);
 			measures[it.second->measurePos].lines.erase(it.second->pos - measures[it.second->measurePos].pos);
 		}
 		else {
-			redoBuffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
+			addRedoBuffer(it.first);
+			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
 			*(it.first) = *(it.second);
 			delete it.second;
 		}
 	}
-	redoStack.push(redoBuffer);
+	
+	//redoStack.push(buffer);
+	pushRedoBuffer();
 	undoStack.pop();
 }
 
 void Chart::redo() {
 	if (redoStack.empty()) return;
-	std::vector<std::pair<ChartLine*, ChartLine*>> undoBuffer;
+	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
 	for (auto it : redoStack.top()) {
 		if (it.first == nullptr) {
+			//buffer.push_back(it);
 			undoBuffer.push_back(it);
 			lines[it.second->pos] = it.second;
 			measures[it.second->measurePos].lines[it.second->pos - measures[it.second->measurePos].pos] = it.second;
 		}
 		else {
-			undoBuffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
+			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
+			addUndoBuffer(it.first);
 			*(it.first) = *(it.second);
 			delete it.second;
 		}
 	}
-	undoStack.push(undoBuffer);
+	//undoStack.push(buffer);
+	pushUndoBuffer();
 	redoStack.pop();
 }
 
@@ -251,7 +253,9 @@ void Chart::redo() {
 void Chart::clearRedoStack() {
 	while (!redoStack.empty()) {
 		for (auto it : redoStack.top()) {
-			delete it.second;
+			if (it.first != nullptr) {
+				delete it.second;
+			}
 		}
 		redoStack.pop();
 	}
@@ -261,7 +265,9 @@ void Chart::clearRedoStack() {
 void Chart::clearUndoStack() {
 	while (!undoStack.empty()) {
 		for (auto it : undoStack.top()) {
-			delete it.second;
+			if (it.first != nullptr) {
+				delete it.second;
+			}
 		}
 		undoStack.pop();
 	}
@@ -296,3 +302,100 @@ int Chart::appendNewMeasure() {
 	}
 	return measures.back().pulses;
 }
+
+void Chart::minimize() {
+
+	for (int m = 0; m < measures.size(); m++){
+		int nonEmpty = 0;
+		int minJumpSize = 1;
+		for (auto jumpSize : validSnapSizes) {
+			int nonEmptyCounter = 0;
+			bool valid = true;
+			ChartLine* prev = nullptr;
+			//we want to find the smallest number for jump size where all values are non empty
+			for (int i = 0; i < measures[m].pulses; i += jumpSize) {
+				if (measures[m].lines.find(i) == measures[m].lines.end()) continue;
+				if (!measures[m].lines[i]->empty()) nonEmptyCounter++;
+				if (prev != nullptr) {
+					for (int j = 0; j < 2; j++) {
+						if (prev->laserPos[j] >= 0 && measures[m].lines[i]->laserPos[j] >= 0) {
+							valid = false;
+						}
+					}
+				}
+				if (!valid) break;
+				prev = measures[m].lines[i];
+			}
+			if (nonEmptyCounter >= nonEmpty && valid) {
+				nonEmpty = nonEmptyCounter;
+				minJumpSize = jumpSize;
+			}
+		}
+		//now clear our measures
+		for (int i = 0; i < measures[m].pulses; i++) {
+			if (i % minJumpSize != 0) {
+				if (measures[m].lines.find(i) != measures[m].lines.end()) {
+					ChartLine* line = measures[m].lines[i];
+					if (line->prev != nullptr && line->next != nullptr) {
+						line->prev->next = line->next;
+						line->next->prev = line->prev;
+					}
+					if (line->prev != nullptr && line->next == nullptr) {
+						line->prev->next = nullptr;
+					}
+					if (line->prev == nullptr && line->next != nullptr) {
+						line->next->prev = nullptr;
+					}
+					int pos = line->pos;
+					delete measures[m].lines[i];
+					measures[m].lines.erase(i);
+					lines.erase(pos);
+				}
+			}
+		}
+		//std::cout << m << ": " << 192 / minJumpSize << std::endl;
+	}
+	//reconnect between measure boundaries
+	for (int i = 1; i < measures.size(); i++) {
+		std::prev(measures[i-1].lines.end(), 1)->second->next = measures[i].lines.begin()->second;
+	}
+}
+
+void Chart::addUndoBuffer(ChartLine* line) {
+	undoBuffer.push_back(std::make_pair(line, new ChartLine(*line)));
+}
+
+//pushes the undo buffer onto the undo stack, this signifies the end of a list of actions
+void Chart::pushUndoBuffer() {
+	if (undoBuffer.size() > 0) {
+		std::reverse(undoBuffer.begin(), undoBuffer.end());
+		undoStack.push(undoBuffer);
+		undoBuffer.clear();
+	}
+}
+
+
+void Chart::addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList) {
+	undoBuffer.insert(undoBuffer.end(), actionList.begin(), actionList.end());
+}
+
+
+
+void Chart::addRedoBuffer(ChartLine* line) {
+	redoBuffer.push_back(std::make_pair(line, new ChartLine(*line)));
+}
+
+//pushes the undo buffer onto the undo stack, this signifies the end of a list of actions
+void Chart::pushRedoBuffer() {
+	if (redoBuffer.size() > 0) {
+		std::reverse(redoBuffer.begin(), redoBuffer.end());
+		redoStack.push(redoBuffer);
+		redoBuffer.clear();
+	}
+}
+
+
+void Chart::addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList) {
+	redoBuffer.insert(redoBuffer.end(), actionList.begin(), actionList.end());
+}
+

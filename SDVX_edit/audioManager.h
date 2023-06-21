@@ -112,7 +112,6 @@ private:
 class AudioManager
 {
 private:
-    sf::SoundBuffer buffer;
     float seekTime;
 
     float playbackSpeed;

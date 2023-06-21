@@ -2,17 +2,37 @@
 
 bool ChartLine::empty() {
     for (int i = 0; i < 4; i++) {
-        if (btVal[i]) {
+        if (btVal[i] == 1) {
             return false;
+        }
+        //we are considered non empty if we are the start of a hold note
+        if (prev != nullptr) {
+            if ((prev->btVal[i] == 0 || prev->btVal[i] == 1) && btVal[i] == 2) {
+                return false;
+            }
         }
     }
     for (int i = 0; i < 2; i++) {
-        if (fxVal[i]) {
+        if (fxVal[i] == 2) {
             return false;
         }
-        if (laserPos[i] != -1) {
+        if (prev != nullptr) {
+            if ((prev->fxVal[i] == 0 || prev->fxVal[i] == 2) && fxVal[i] == 1) {
+                return false;
+            }
+        }
+        if (laserPos[i] >= 0) {
             return false;
         }
+        //we are considered empty only if we are the connector to a following laser point
+        if (next != nullptr && prev != nullptr && laserPos[i] == -2) {
+            if (next->laserPos[i] >= 0 && prev->laserPos[i] >= 0) {
+                return false;
+            }
+        }
+    }
+    if (cmds.size() > 0) {
+        return false;
     }
     return true;
 }
@@ -125,4 +145,16 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearFxHold(int lane) 
     actionList.push_back(std::make_pair(end, new ChartLine(*end)));
     end->fxVal[lane] = 0;
     return actionList;
+}
+
+void ChartLine::modifyLaserPos(int laser, int val) {
+    if (laserPos[laser] + val >= 50) {
+        laserPos[laser] = 50;
+    }
+    else if (laserPos[laser] + val <= 0) {
+        laserPos[laser] = 0;
+    }
+    else {
+        laserPos[laser] += val;
+    }
 }

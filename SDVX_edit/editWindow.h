@@ -75,6 +75,7 @@ private:
 
     sf::Sprite toolSprite;
 
+    sf::Font font;
 public:
     Chart chart;
     //functions
@@ -95,13 +96,12 @@ public:
     int drawMeasure(unsigned int measure, unsigned int startLine);
 
     //hackey but this function essentially generates the laser vertices
-    std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> generateLaserQuads(int l);
+    std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* generateLaserQuads(int l);
     void drawChart();
     int getMouseLane();
     int getMouseMeasure();
 
-    int getMouseLine(int snapSize);
-    int getMouseGlobalLine();
+    int getMouseLine();
     int getMeasureFromGlobal(unsigned int loc);
 
 
