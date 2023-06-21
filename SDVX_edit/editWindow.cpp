@@ -1,11 +1,13 @@
 #include "editWindow.h"
-void EditWindow::loadFile(std::string fileName) {
+void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	
 	Parser p;
 	Chart newChart;
 	chart = newChart;
-	p.loadFile(fileName, chart);
+	p.loadFile(mapFileName, chart);
 	chart.calcTimings();
+	chart.metadata.mapFileName = mapFileName;
+	chart.metadata.mapFilePath = mapFilePath;
 
 	struct shm_remove
 	{
@@ -29,10 +31,19 @@ void EditWindow::loadFile(std::string fileName) {
 	//Launch child process
 	//std::system(s.str().c_str());
 
-	player.loadFile(mapFilePath + "\\" + chart.songFile);
+	player.loadFile(mapFilePath + "\\" + chart.metadata.songFile);
 
 	chart.minimize();
 	p.saveFile(chart, "test.ksh");
+}
+
+void EditWindow::saveFile(std::string fileName) {
+	Parser p;
+	p.saveFile(chart, fileName);
+}
+
+void EditWindow::saveFile() {
+	saveFile(chart.metadata.mapFileName);
 }
 
 void EditWindow::updateVars() {
@@ -149,6 +160,24 @@ int EditWindow::getMouseLine() {
 	return -1;
 }
 
+int EditWindow::getMouseSnappedLine() {
+	return (getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize));
+}
+
+int EditWindow::getMouseLaserPos(bool isWide) {
+	if (mouseY > (height + topPadding) || mouseY < topPadding) return -1;
+	for (int i = 0; i < columns; i++) {
+		if (mouseX >= (1 * laneWidth) + (columnWidth * i) &&
+			mouseX <= (11 * laneWidth) + (columnWidth * i)) {
+			int selectAreaWidth = isWide ? (9 * laneWidth) : (5 * laneWidth);
+			int mouseLocal = (mouseX - ((6 * laneWidth) + (columnWidth * i)));
+			return std::clamp((50 * mouseLocal / selectAreaWidth) + 25, 0, 50);
+		}
+	}
+	return -1;
+}
+
+
 int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 	int n = 0;
 	if (chart.measures.empty()) return -1;
@@ -237,7 +266,13 @@ void EditWindow::drawLineButtons(ChartLine* line) {
 		//fx chips
 		if (line->fxVal[lane] == 2) {
 			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
-			sf::Rect r = fxSprite.getLocalBounds();
+			sf::RectangleShape rectangle(sf::Vector2f(fxSprite.getTexture()->getSize()));
+			rectangle.setPosition(fxSprite.getPosition());
+			rectangle.setScale(fxSprite.getScale());
+			rectangle.setOutlineThickness(2.0);
+			rectangle.setOutlineColor(sf::Color(0, 255, 0));
+			rectangle.setOrigin(fxSprite.getOrigin());
+			//window->draw(rectangle);
 			window->draw(fxSprite);
 		}
 		//fx hold
@@ -563,6 +598,65 @@ void EditWindow::drawChart() {
 	}
 }
 
+std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, int start, int end, int laser, bool isWide) {
+	std::vector<sf::VertexArray> drawVec;
+	float xStart = getNoteLocation(lineNum).x;
+	float xEnd = getNoteLocation(lineNum).x;
+	float y = getNoteLocation(lineNum).y;
+
+	if (isWide) {
+		xStart += start * (9 * laneWidth) / 50.0 - 3 * laneWidth;
+		xEnd += end * (9 * laneWidth) / 50.0 - 3 * laneWidth;
+	}
+	else {
+		xStart += start * (5 * laneWidth) / 50.0 - laneWidth;
+		xEnd += end * (5 * laneWidth) / 50.0 - laneWidth;
+	}
+
+	sf::Color c;
+	if (laser == 1) {
+		//pink
+		c = sf::Color(255, 0, 200, 150);
+	}
+	else {
+		//blue
+		c = sf::Color(0, 160, 255, 150);
+	}
+
+	sf::VertexArray quad(sf::Quads, 4);
+
+	quad[0] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y), c);
+	quad[1] = sf::Vertex(sf::Vector2f(xStart, y), c);
+	quad[2] = sf::Vertex(sf::Vector2f(xStart, y + laneWidth), c);
+	quad[3] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y + laneWidth), c);
+	//window->draw(quad);
+	drawVec.push_back(quad);
+
+	if (xStart < xEnd) {
+		quad[0] = sf::Vertex(sf::Vector2f(xStart, y), c);
+		quad[1] = sf::Vertex(sf::Vector2f(xStart, y - laneWidth / 2.0), c);
+		quad[2] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth / 2.0), c);
+		quad[3] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y), c);
+	}
+	else {
+		quad[0] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y), c);
+		quad[1] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y - laneWidth / 2.0), c);
+		quad[2] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth / 2.0), c);
+		quad[3] = sf::Vertex(sf::Vector2f(xEnd, y), c);
+	}
+
+	drawVec.push_back(quad);
+
+	quad[0] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth / 2.0), c);
+	quad[1] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth / 2.0), c);
+	quad[2] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth * 1.5), c);
+	quad[3] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth * 1.5), c);
+	//window->draw(quad);
+	drawVec.push_back(quad);
+
+	return drawVec;
+}
+
 sf::Vector2f EditWindow::getMeasureStart(int measure) {
 	int columnNum = measure / measuresPerColumn;
 	return sf::Vector2f((4 * laneWidth) + (columnWidth * columnNum), topPadding + measureHeight * (measuresPerColumn - (measure % measuresPerColumn) - 1));
@@ -615,7 +709,7 @@ void EditWindow::handleEvent(sf::Event event) {
 				
 				if (getMouseMeasure() != -1 && !select) {
 					chart.clearRedoStack();
-					chart.insertChartLine((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)), newLine);
+					chart.insertChartLine(getMouseSnappedLine(), newLine);
 				}
 			}
 			if (select && laserHover.second != nullptr) {
@@ -629,7 +723,7 @@ void EditWindow::handleEvent(sf::Event event) {
 		}
 		if (event.mouseButton.button == sf::Mouse::Right) {
 			if (getMouseMeasure() != -1 && !select) {
-				chart.removeChartLine((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)), getMouseLane(), tool);
+				chart.removeChartLine(getMouseSnappedLine(), getMouseLane(), tool);
 				chart.clearRedoStack();
 			}
 			
@@ -649,9 +743,11 @@ void EditWindow::handleEvent(sf::Event event) {
 
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)){ 
 			if (event.key.code == sf::Keyboard::Z) {
+				chart.pushUndoBuffer();
 				chart.undo();
 			}
 			if (event.key.code == sf::Keyboard::Y) {
+				chart.pushRedoBuffer();
 				chart.redo();
 			}
 		}
@@ -660,14 +756,14 @@ void EditWindow::handleEvent(sf::Event event) {
 			if (selectedLaser.second != nullptr) {
 				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
 				chart.addUndoBuffer(laserToEdit);
-				laserToEdit->modifyLaserPos(selectedLaser.first, -1);
+				laserToEdit->modifyLaserPos(selectedLaser.first, -laserMoveSize);
 			}
 		}
 		if (event.key.code == sf::Keyboard::Right) {
 			if (selectedLaser.second != nullptr) {
 				ChartLine* laserToEdit = selectedLaser.second->getNextLaser(selectedLaser.first);
 				chart.addUndoBuffer(laserToEdit);
-				laserToEdit->modifyLaserPos(selectedLaser.first, 1);
+				laserToEdit->modifyLaserPos(selectedLaser.first, laserMoveSize);
 			}
 		}
 	}
@@ -680,6 +776,7 @@ void EditWindow::handleEvent(sf::Event event) {
 			}
 		}
 	}
+
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
 		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
@@ -747,6 +844,12 @@ void EditWindow::update() {
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
 
+	std::vector<sf::VertexArray> arr = generateSlamQuads(getMouseSnappedLine(), 25, (getMouseLaserPos(true) / laserMoveSize) * laserMoveSize, 1, true);
+
+	for (auto quad : arr) {
+		window->draw(quad);
+	}
+
 	ImGui::Begin("Debug");
 	
 	ImGui::Text(std::to_string(mouseX).c_str());
@@ -757,13 +860,13 @@ void EditWindow::update() {
 	ImGui::Text(s4.c_str());
 	std::string s6 = "Mouse Line: " + std::to_string(getMouseLine());
 	ImGui::Text(s6.c_str());
-	std::string s7 = "Mouse Line Snapped: " + std::to_string((getMouseLine() / (192 / snapGridSize) * (192 / snapGridSize)));
+	std::string s7 = "Mouse Line Snapped: " + std::to_string(getMouseSnappedLine());
 	ImGui::Text(s7.c_str());
 	//std::string s8 = "note start x: " + std::to_string(getNoteLocation(getMouseGlobalLine()).x);
 	//ImGui::Text(s8.c_str());
 	//std::string s9 = "note start y: " + std::to_string(getNoteLocation(getMouseGlobalLine()).y);
 	//ImGui::Text(s9.c_str());
-	std::string s10 = "hoverWindow: " + std::to_string(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow));
+	std::string s10 = "laserPos: " + std::to_string(getMouseLaserPos(false));
 	ImGui::Text(s10.c_str());
 	std::string s11 = "bufferSize: " + std::to_string(player.track.buffSize);
 	ImGui::Text(s11.c_str());

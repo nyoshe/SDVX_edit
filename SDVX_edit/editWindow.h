@@ -42,7 +42,7 @@ private:
     void drawLineButtons(ChartLine* line);
     sf::RenderWindow* window = nullptr;
     int topPadding = 50;
-    int bottomPadding = 50;
+    int bottomPadding = 100;
     float width = 0;
     float height = 0;
     float laneWidth = 0;
@@ -52,6 +52,8 @@ private:
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
     unsigned int playbackPos = 0;
+    int mouseDownLine = 0;
+    int mouseDownLaserPos = 0;
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
 
@@ -92,24 +94,26 @@ public:
     void setWindow(sf::RenderWindow* _window);
     void update();
     void updateVars();
+
     //the line specifies where we want to start drawing the measure, it returns the end location
     int drawMeasure(unsigned int measure, unsigned int startLine);
 
     //hackey but this function essentially generates the laser vertices
     std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>* generateLaserQuads(int l);
     void drawChart();
+    std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, int start, int end, int laser, bool isWide);
+
     int getMouseLane();
     int getMouseMeasure();
-
     int getMouseLine();
-    int getMeasureFromGlobal(unsigned int loc);
+    int getMouseSnappedLine();
+    int getMouseLaserPos(bool isWide);
 
+    int getMeasureFromGlobal(unsigned int loc);
 
     void handleEvent(sf::Event event);
     std::vector <float> getLaserX(ChartLine* line);
     sf::Vector2f getMeasureStart(int measure);
-
-    sf::Vector2f getMeasureStartGlobal(int measure);
 
     sf::Vector2f getSnappedPos(ToolType type);
     //get the note location from measure, lane, and line positio
@@ -123,7 +127,9 @@ public:
     float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
     bool getMouseOverlap(const sf::VertexArray quad);
 
-    void loadFile(std::string fileName);
+    void loadFile(std::string mapFilePath, std::string mapFileName);
+    void saveFile(std::string fileName);
+    void saveFile();
 
     //vars
     boost::interprocess::managed_shared_memory memSegment;
@@ -138,14 +144,16 @@ public:
     int beatsPerColumn = 16;
     int snapGridSize = 16;
     int pulsesPerBeat = 48;
+    int laserMoveSize = 5;
     float playbackSpeed = 1.0;
     AudioManager player;
-    std::string mapFilePath;
 
     bool select = false;
 
     ToolType tool = ToolType::BT;
 
     gameControl* controlPtr;
+
+    std::unordered_map<int, ChartLine*> selectedLines;
     
 };

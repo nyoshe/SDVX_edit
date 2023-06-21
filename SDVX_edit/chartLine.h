@@ -17,6 +17,7 @@ public:
     std::vector <uint8_t> fxVal = { 0, 0 };
     std::vector <int8_t> laserPos = { -1, -1 };
     std::vector <bool>  isWide = { false, false };
+    uint8_t  selectedFlags = false;
     ChartLine* next = nullptr;
     ChartLine* prev = nullptr;
     //defines our position relative to 1/192 snapping

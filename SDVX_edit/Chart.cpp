@@ -12,9 +12,9 @@ Chart::~Chart() {
 float Chart::getMs(unsigned int lineNum) {
     float currentMs = 0;
     unsigned int lastChange = 0;
-    float currentBpm = bpm;
-    int topSig = std::stoi(beat.substr(0, beat.find('/')));
-    int bottomSig = std::stoi(beat.substr(beat.find('/') + 1));
+    float currentBpm = metadata.bpm;
+    int topSig = std::stoi(metadata.beat.substr(0, metadata.beat.find('/')));
+    int bottomSig = std::stoi(metadata.beat.substr(metadata.beat.find('/') + 1));
     for (auto cList : cmds) {
         if (cList.first > lineNum) break;
         for (auto cmd : cList.second) {
@@ -397,5 +397,9 @@ void Chart::pushRedoBuffer() {
 
 void Chart::addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList) {
 	redoBuffer.insert(redoBuffer.end(), actionList.begin(), actionList.end());
+}
+
+void moveChartLine(unsigned int line, int change) {
+
 }
 

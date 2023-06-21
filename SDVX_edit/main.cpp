@@ -15,10 +15,9 @@
 
 
 int main() {
-
+    
     sf::RenderWindow window(sf::VideoMode(1600, 900), "voltexEdit");
     ImGui::SFML::Init(window);
-
     sf::Clock deltaClock;
     sf::Clock deltaClock2;
     int counter = 0;
@@ -28,12 +27,13 @@ int main() {
     EditWindow::getInstance().setWindow(&window);
     std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
     std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
-    EditWindow::getInstance().mapFilePath = filePath;
-    EditWindow::getInstance().loadFile(filePathName);
+    EditWindow::getInstance().loadFile(filePath, filePathName);
 
 
     while (window.isOpen()) {
         sf::Event event;
+        window.clear();
+
         while (window.pollEvent(event)) {
             
             
@@ -45,17 +45,17 @@ int main() {
                 window.close();
             }
         }
-
+        
         ImGui::SFML::Update(window, deltaClock.restart());
-
         //ImGui::ShowDemoWindow();
 
        
-
-        window.clear();
+        
+        
         status_bar.update();
         EditWindow::getInstance().update();
         tool_window.update();
+        
         ImGui::SFML::Render(window);
         window.display();
         

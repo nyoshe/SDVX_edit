@@ -35,36 +35,36 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 		std::string opt;
 		//switch statement
 		const std::unordered_map<std::string, std::function<void()>> m{
-				{"title",   [&]() { chart.title = val; }},
-				{"title_img",   [&]() { chart.titleImg = val; }},
-				{"artist",   [&]() { chart.artist = val; }},
-				{"artist_img", [&]() { chart.artistImg = opt; }},
-				{ "effect",   [&]() { chart.effect = val; } },
-				{ "jacket",   [&]() { chart.jacket = val; } },
-				{ "illustrator",   [&]() { chart.illustrator = val; } },
-				{ "difficulty",   [&]() { chart.difficulty = val; } },
-				{ "level",   [&]() { chart.level = std::stoi(val); } },
-				{ "t",   [&]() { chart.bpm = std::stof(val); } },
-				{ "to",   [&]() { chart.bpmHi = std::stof(val); } },
-				{ "beat",   [&]() { chart.beat = val; } },
-				{ "m",   [&]() { chart.songFile = val; } },
-				{ "mvol",   [&]() { chart.volume = stoi(val); } },
-				{ "o",   [&]() { chart.offset = stoi(val); } },
-				{ "bg",   [&]() { chart.bg = val; } },
-				{ "layer",   [&]() { chart.layer = val; } },
-				{ "po",   [&]() { chart.previewOffset = stoi(val); } },
-				{ "plength",   [&]() { chart.previewLength = stoi(val); } },
-				{ "total",   [&]() { chart.total = stoi(val); } },
-				{ "chokkakuvol",   [&]() { chart.slamVol = stoi(val); } },
-				{ "chokkakuautovol",   [&]() { chart.slamToVol = stoi(val); } },
-				{ "filtertype",   [&]() { chart.filterType = val; } },
-				{ "pfiltergain",   [&]() { chart.pFilterGain = stoi(val); } },
-				{ "pfilterdelay",   [&]() { chart.pFilterDelay = stoi(val); } },
-				{ "v",   [&]() { chart.videoFile = val; } },
-				{ "vo",   [&]() { chart.videoOffset = stoi(val); } },
-				{ "ver",   [&]() { chart.version = val; } },
-				{ "info",   [&]() { chart.info = val; } },
-				{ "icon",   [&]() { chart.icon = val; } },
+				{"title",   [&]() { chart.metadata.title = val; }},
+				{"title_img",   [&]() { chart.metadata.titleImg = val; }},
+				{"artist",   [&]() { chart.metadata.artist = val; }},
+				{"artist_img", [&]() { chart.metadata.artistImg = opt; }},
+				{ "effect",   [&]() { chart.metadata.effect = val; } },
+				{ "jacket",   [&]() { chart.metadata.jacket = val; } },
+				{ "illustrator",   [&]() { chart.metadata.illustrator = val; } },
+				{ "difficulty",   [&]() { chart.metadata.difficulty = val; } },
+				{ "level",   [&]() { chart.metadata.level = std::stoi(val); } },
+				{ "t",   [&]() { chart.metadata.bpm = std::stof(val); } },
+				{ "to",   [&]() { chart.metadata.bpmHi = std::stof(val); } },
+				{ "beat",   [&]() { chart.metadata.beat = val; } },
+				{ "m",   [&]() { chart.metadata.songFile = val; } },
+				{ "mvol",   [&]() { chart.metadata.volume = stoi(val); } },
+				{ "o",   [&]() { chart.metadata.offset = stoi(val); } },
+				{ "bg",   [&]() { chart.metadata.bg = val; } },
+				{ "layer",   [&]() { chart.metadata.layer = val; } },
+				{ "po",   [&]() { chart.metadata.previewOffset = stoi(val); } },
+				{ "plength",   [&]() { chart.metadata.previewLength = stoi(val); } },
+				{ "total",   [&]() { chart.metadata.total = stoi(val); } },
+				{ "chokkakuvol",   [&]() { chart.metadata.slamVol = stoi(val); } },
+				{ "chokkakuautovol",   [&]() { chart.metadata.slamToVol = stoi(val); } },
+				{ "filtertype",   [&]() { chart.metadata.filterType = val; } },
+				{ "pfiltergain",   [&]() { chart.metadata.pFilterGain = stoi(val); } },
+				{ "pfilterdelay",   [&]() { chart.metadata.pFilterDelay = stoi(val); } },
+				{ "v",   [&]() { chart.metadata.videoFile = val; } },
+				{ "vo",   [&]() { chart.metadata.videoOffset = stoi(val); } },
+				{ "ver",   [&]() { chart.metadata.version = val; } },
+				{ "info",   [&]() { chart.metadata.info = val; } },
+				{ "icon",   [&]() { chart.metadata.icon = val; } },
 		};
 		//read header
 		while (getline(mapFile, s)) {
@@ -90,8 +90,8 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 		ChartLine* prev = nullptr;
 		unsigned int pos = 0;
 
-		int timeSigTop = std::stoi(chart.beat.substr(0, chart.beat.find('/')));
-		int timeSigBottom = std::stoi(chart.beat.substr(chart.beat.find('/') + 1));
+		int timeSigTop = std::stoi(chart.metadata.beat.substr(0, chart.metadata.beat.find('/')));
+		int timeSigBottom = std::stoi(chart.metadata.beat.substr(chart.metadata.beat.find('/') + 1));
 
 		unsigned int measurePos = 0;
 		//read chart body
@@ -237,36 +237,36 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 	for (auto i : cmdTable)
 		swappedCmdTable.emplace(i.second, i.first);
 
-	mapFile << "title=" << chart.title << std::endl;
-	mapFile << "title_img=" << chart.titleImg << std::endl;
-	mapFile << "artist=" << chart.artist << std::endl;
-	mapFile << "artist_img=" << chart.artistImg << std::endl;
-	mapFile << "effect=" << chart.effect << std::endl;
-	mapFile << "jacket=" << chart.jacket << std::endl;
-	mapFile << "illustrator=" << chart.illustrator << std::endl;
-	mapFile << "difficulty=" << chart.difficulty << std::endl;
-	mapFile << "level=" << chart.level << std::endl;
-	mapFile << "t=" << chart.bpm << std::endl;
-	mapFile << "to=" << chart.bpmHi << std::endl;
-	mapFile << "beat=" << chart.beat << std::endl;
-	mapFile << "m=" << chart.songFile << std::endl;
-	mapFile << "mvol=" << chart.volume << std::endl;
-	mapFile << "o=" << chart.offset << std::endl;
-	mapFile << "bg=" << chart.bg << std::endl;
-	mapFile << "layer=" << chart.layer << std::endl;
-	mapFile << "po=" << chart.previewOffset << std::endl;
-	mapFile << "plength=" << chart.previewLength << std::endl;
-	mapFile << "total=" << chart.total << std::endl;
-	mapFile << "chokkakuvol=" << chart.slamVol << std::endl;
-	mapFile << "chokkakuautovol=" << chart.slamToVol << std::endl;
-	mapFile << "filtertype=" << chart.filterType << std::endl;
-	mapFile << "pfiltergain=" << chart.pFilterGain << std::endl;
-	mapFile << "pfilterdelay=" << chart.pFilterDelay << std::endl;
-	mapFile << "v=" << chart.videoFile << std::endl;
-	mapFile << "vo=" << chart.videoOffset << std::endl;
-	mapFile << "ver=" << chart.version << std::endl;
-	mapFile << "info=" << chart.info << std::endl;
-	mapFile << "icon=" << chart.icon << std::endl;
+	mapFile << "title=" << chart.metadata.title << std::endl;
+	mapFile << "title_img=" << chart.metadata.titleImg << std::endl;
+	mapFile << "artist=" << chart.metadata.artist << std::endl;
+	mapFile << "artist_img=" << chart.metadata.artistImg << std::endl;
+	mapFile << "effect=" << chart.metadata.effect << std::endl;
+	mapFile << "jacket=" << chart.metadata.jacket << std::endl;
+	mapFile << "illustrator=" << chart.metadata.illustrator << std::endl;
+	mapFile << "difficulty=" << chart.metadata.difficulty << std::endl;
+	mapFile << "level=" << chart.metadata.level << std::endl;
+	mapFile << "t=" << chart.metadata.bpm << std::endl;
+	mapFile << "to=" << chart.metadata.bpmHi << std::endl;
+	mapFile << "beat=" << chart.metadata.beat << std::endl;
+	mapFile << "m=" << chart.metadata.songFile << std::endl;
+	mapFile << "mvol=" << chart.metadata.volume << std::endl;
+	mapFile << "o=" << chart.metadata.offset << std::endl;
+	mapFile << "bg=" << chart.metadata.bg << std::endl;
+	mapFile << "layer=" << chart.metadata.layer << std::endl;
+	mapFile << "po=" << chart.metadata.previewOffset << std::endl;
+	mapFile << "plength=" << chart.metadata.previewLength << std::endl;
+	mapFile << "total=" << chart.metadata.total << std::endl;
+	mapFile << "chokkakuvol=" << chart.metadata.slamVol << std::endl;
+	mapFile << "chokkakuautovol=" << chart.metadata.slamToVol << std::endl;
+	mapFile << "filtertype=" << chart.metadata.filterType << std::endl;
+	mapFile << "pfiltergain=" << chart.metadata.pFilterGain << std::endl;
+	mapFile << "pfilterdelay=" << chart.metadata.pFilterDelay << std::endl;
+	mapFile << "v=" << chart.metadata.videoFile << std::endl;
+	mapFile << "vo=" << chart.metadata.videoOffset << std::endl;
+	mapFile << "ver=" << chart.metadata.version << std::endl;
+	mapFile << "info=" << chart.metadata.info << std::endl;
+	mapFile << "icon=" << chart.metadata.icon << std::endl;
 
 	mapFile << "--" << std::endl;
 	

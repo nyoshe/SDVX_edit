@@ -8,11 +8,10 @@
 #include <iostream>
 
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
+struct ChartMetadata {
+    std::string mapFileName;
+    std::string mapFilePath;
 
-class Chart
-{
-public:
-    //metadata
     std::string title = "";
     std::string titleImg = "";
     std::string artist = "";
@@ -44,6 +43,11 @@ public:
     int videoOffset = 0;
     std::string version = "";
     std::string info = "";
+};
+class Chart
+{
+public:
+    ChartMetadata metadata;
 
     //collection of all measures
 
@@ -69,10 +73,22 @@ public:
     template <typename T> void connectLines(T l1, T l2);
     void connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3);
 
+    void undo();
+    void redo();
+    void clearRedoStack();
+    void clearUndoStack();
+    int appendNewMeasure();
+    void minimize();
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
     ChartLine* insertChartLine(unsigned int line, ChartLine* cLine);
+    void moveChartLine(unsigned int line, int change);
     void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
+    //void moveChartLine();
+
+    beginAction() {
+
+    }
 
     //this should be done before an action is performed
     void addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList);
@@ -83,11 +99,5 @@ public:
     void addRedoBuffer(ChartLine* line);
     void pushRedoBuffer();
 
-    void undo();
-    void redo();
-    void clearRedoStack();
-    void clearUndoStack();
-    int appendNewMeasure();
-    void minimize();
 };
 
