@@ -692,7 +692,7 @@ void EditWindow::drawLaserQuads(const QuadArray& arr) {
 					sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
 					sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
 				};
-				window->draw(l, 2, sf::Lines);
+				//window->draw(l, 2, sf::Lines);
 				window->draw(quad);
 
 			}

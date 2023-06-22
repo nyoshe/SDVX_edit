@@ -29,9 +29,9 @@ int main() {
     //toolWindow tool_window;
     ToolBar tool_bar(&window);
     EditWindow::getInstance().setWindow(&window);
-    std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
-    std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
-    EditWindow::getInstance().loadFile(filePath, filePathName);
+    //std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
+    //std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
+    //EditWindow::getInstance().loadFile(filePath, filePathName);
 
 
     while (window.isOpen()) {
