@@ -6,7 +6,10 @@
 #include "structs.h"
 #include "chartLine.h"
 #include <iostream>
+#include "debugapi.h"
 
+//typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
+typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
 struct ChartMetadata {
     std::string mapFileName;
@@ -65,6 +68,9 @@ public:
     //the redo stick contains the next value in the second field
     std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
 
+    int selectStart;
+    int selectEnd;
+
     ~Chart();
     Chart() = default;
 
@@ -97,5 +103,10 @@ public:
     void addRedoBuffer(ChartLine* line);
     void pushRedoBuffer();
 
+    lineIterator getLineBefore(int line);
+    lineIterator getLineAfter(int line);
+
+    //quick function to make sure we didn't mess anything up
+    void validateChart();
 };
 

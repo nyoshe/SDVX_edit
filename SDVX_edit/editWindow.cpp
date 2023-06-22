@@ -463,6 +463,7 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 	return vertexBuffer;
 }
 
+
 void EditWindow::drawChart() {
 
 	int drawLine = editorLineStart;
@@ -508,7 +509,7 @@ void EditWindow::drawChart() {
 
 	for (int l = 0; l < 2; l++) {
 		
-		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, getEditorStartLine(), getEditorEndLine());
+		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineAfter(editorLineStart + viewLines));
 		
 		//run over the buffer and then check for collision
 		for (auto& vBuffer : vertexBuffer) {
@@ -525,7 +526,6 @@ void EditWindow::drawChart() {
 					laserSelect = true;
 				}
 			}
-
 			
 			for (auto quad : vBuffer.second) {
 				window->draw(quad);
@@ -555,8 +555,6 @@ void EditWindow::drawChart() {
 		};
 		window->draw(l, 2, sf::Lines);
 	}
-	
-
 
 	sf::Vector2f pos1 = getNoteLocation(-1, selectStart);
 	sf::Vector2f pos2 = getNoteLocation(5, selectStart);
@@ -859,16 +857,6 @@ bool EditWindow::getMouseOverlap(const sf::VertexArray quad) {
 
 }
 
-LineIterator EditWindow::getEditorStartLine() {
-	return chart.lines.lower_bound(editorLineStart);
-}
-
-LineIterator EditWindow::getEditorEndLine() {
-	if (chart.lines.upper_bound(editorLineStart + viewLines) == chart.lines.end() && chart.lines.size() > 0) {
-		return std::prev(chart.lines.end(), 1);
-	}
-	return chart.lines.upper_bound(editorLineStart + viewLines);
-}
 
 void EditWindow::update() {
 	laserHover.second = nullptr;
@@ -884,7 +872,7 @@ void EditWindow::update() {
 	std::vector<sf::VertexArray> arr = generateSlamQuads(getMouseSnappedLine(), 25, (getMouseLaserPos(true) / laserMoveSize) * laserMoveSize, 1, true);
 
 	for (auto quad : arr) {
-		//window->draw(quad);
+		window->draw(quad);
 	}
 
 	ImGui::Begin("Debug");

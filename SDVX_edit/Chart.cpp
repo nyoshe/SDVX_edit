@@ -81,12 +81,12 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		calcTimings();
 	}
 	else {
-		if (lines.upper_bound(absPos) == lines.end()) {
+		if (lines.lower_bound(absPos) == lines.end()) {
 			measure = std::prev(lines.end(), 1)->second->measurePos;
 		}
 		else {
-			ChartLine* t = std::prev(lines.lower_bound(absPos), 1)->second;
-			measure = std::prev(lines.lower_bound(absPos), 1)->second->measurePos;
+			ChartLine* t = std::prev(lines.upper_bound(absPos), 1)->second;
+			measure = std::prev(lines.upper_bound(absPos), 1)->second->measurePos;
 		}
 	}
 
@@ -171,14 +171,14 @@ void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type)
 
 	if (type == ToolType::BT) {
 		//check to see if we have a hold before and after our note
-		if (lines.lower_bound(line)->second->btVal[lane] == 2 && lines.upper_bound(line)->second->btVal[lane] == 2) {
-			addUndoBuffer(lines.lower_bound(line)->second->clearBtHold(lane));
+		if (lines[getLineBefore(line)->first]->btVal[lane] == 2) {
+			addUndoBuffer(lines[getLineBefore(line)->first]->clearBtHold(lane));
 		}
 	}
 	if (type == ToolType::FX) {
 		//check to see if we have a hold before and after our note
-		if (lines.lower_bound(line)->second->fxVal[lane / 2] == 1 && lines.upper_bound(line)->second->fxVal[lane / 2] == 1) {
-			addUndoBuffer(lines.lower_bound(line)->second->clearFxHold(lane / 2));
+		if (lines[getLineBefore(line)->first]->fxVal[lane / 2] == 1) {
+			addUndoBuffer(lines[getLineBefore(line)->first]->clearFxHold(lane / 2));
 		}
 	}
 
@@ -417,15 +417,86 @@ ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
 
 	if (change > 0) {
 		for (int i = 0; i < 2; i++) {
+			//replace original position with a connection point
 			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
 				lines[line]->laserPos[i] = -2;
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < 2; i++) {
+			//if we move backwards we should set the old pos to nothing
+			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
+				if (lines[line]->next->laserPos[i] == -2) {
+					lines[line]->laserPos[i] = -2;
+				}
+				else {
+					lines[line]->laserPos[i] = -1;
+				}
 			}
 		}
 	}
 	
 	*(lines[line + change]) += moveMask;
 
+	validateChart
 	return lines[line + change];
 	
 }
 
+lineIterator Chart::getLineBefore(int line) {
+	if (lines.lower_bound(line) == lines.begin()) {
+		return lines.begin();
+	}
+	return std::prev(lines.lower_bound(line), 1);
+}
+
+
+lineIterator Chart::getLineAfter(int line) {
+	if (lines.lower_bound(line) == lines.end()) {
+		return lines.begin();
+	}
+	return lines.upper_bound(line);
+}
+
+void Chart::validateChart() {
+	ChartLine* line = lines.begin()->second;
+	ChartLine* prev;
+	int counter = 0;
+	while (line->next != nullptr) {
+		auto loc = lines.find(line->pos);
+
+		if (loc->second != line) {
+			std::cout << "line is in wrong position" << std::endl;
+			DebugBreak();
+		}
+
+		if (loc == lines.end()) {
+			std::cout << "line position not found" << std::endl;
+			DebugBreak();
+		}
+
+		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
+
+		if (measureLoc->second != line) {
+			std::cout << "line does not match the line found in measure" << std::endl;
+			DebugBreak();
+		}
+
+		if (measureLoc == measures[line->measurePos].lines.end()) {
+			std::cout << "line was not found in measure" << std::endl;
+			DebugBreak();
+		}
+
+
+		line = line->next;
+		counter++;
+	}
+
+	if (counter != lines.size()) {
+		std::cout << "mismatch in line size and the number of found lines" << std::endl;
+		DebugBreak();
+	}
+	
+	std::cout << "noe issues found :)" << std::endl;
+}

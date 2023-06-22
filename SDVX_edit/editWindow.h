@@ -134,9 +134,6 @@ public:
     void saveFile(std::string fileName);
     void saveFile();
 
-    LineIterator getEditorStartLine();
-    LineIterator getEditorEndLine();
-
     //vars
     boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;
