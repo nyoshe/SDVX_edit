@@ -120,6 +120,12 @@
     <ClCompile Include="chartLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="toolBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scrubBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="editWindow.h">
@@ -231,6 +237,12 @@
       <Filter>SoundTouch\include</Filter>
     </ClInclude>
     <ClInclude Include="chartLine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="toolBar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scrubBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,6 +9,60 @@ Chart::~Chart() {
 	clearRedoStack();
 }
 
+//from start position + 1 to end position - 1, fixes laser weirdness
+//also checks laser boundaries
+void Chart::fixLaserConnections(int pos1, int pos2) {
+	ChartLine* startLine = lines[std::min(pos1, pos2)];
+	ChartLine* endLine = lines[std::max(pos1, pos2)];
+
+	ChartLine* cLine = startLine->next;
+	//we don't want to mess with the start line
+	while (cLine != endLine) {
+		for (int i = 0; i < 2; i++) {
+			//check to see if we need to set connector
+			if (cLine->prev->laserPos[i] == -2 && cLine->laserPos[i] == -1) {
+				addUndoBuffer(cLine);
+				cLine->laserPos[i] = -2;
+			}
+			if (cLine->prev->laserPos[i] == -1 && cLine->laserPos[i] == -2) {
+				addUndoBuffer(cLine);
+				cLine->laserPos[i] = -1;
+			}
+			//if (cLine->prev->laserPos[i] == -1 && cLine->laserPos[i] == -2 && cline->next->laserPos[i] >= 0) {
+			//	addUndoBuffer(cLine);
+			//	cLine->laserPos[i] = -1;
+			//}
+		}
+		cLine = cLine->next;
+	}
+
+	//backwards pass
+	cLine = endLine->prev;
+	while (cLine != startLine) {
+		for (int i = 0; i < 2; i++) {
+			//check to see if we need to set connector
+			if (cLine->laserPos[i] == -1 && cLine->next->laserPos[i] == -2) {
+				addUndoBuffer(cLine);
+				cLine->laserPos[i] = -2;
+			}
+			if (cLine->laserPos[i] == -2 && cLine->next->laserPos[i] == -1) {
+				addUndoBuffer(cLine);
+				cLine->laserPos[i] = -1;
+			}
+		}
+		cLine = cLine->prev;
+	}
+	for (int i = 0; i < 2; i++) {
+		//now check if we have two lasers right next to eachother
+		if (startLine->prev != nullptr && startLine->prev->laserPos[i] >= 0 && startLine->laserPos[i] >= 0) {
+			int diff = startLine->pos - startLine->prev->pos;
+		}
+		if (startLine->next != nullptr && endLine->next->laserPos[i] >= 0 && endLine->laserPos[i] >= 0) {
+			int diff = endLine->next->pos - endLine->pos;
+		}
+	}
+}
+
 float Chart::getMs(unsigned int lineNum) {
     float currentMs = 0;
     unsigned int lastChange = 0;
@@ -86,11 +140,11 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		}
 		else {
 			ChartLine* t = std::prev(lines.upper_bound(absPos), 1)->second;
-			measure = std::prev(lines.upper_bound(absPos), 1)->second->measurePos;
+			measure = getLineBefore(absPos)->second->measurePos;
 		}
 	}
 
-	int localPos = measures[measure].pulses + line - measures[measure].pos;
+	int localPos = line - measures[measure].pos;
 
 
 	//if we don't exist
@@ -406,25 +460,25 @@ ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
 	if (line - change < 0) {
 		change += line- change;
 	}
+	//if we can't find the position, create one
 	if (lines.find(line + change) == lines.end()) {
 		ChartLine* newLine = new ChartLine;
-		insertChartLine(line+ change, newLine);
+		insertChartLine(line + change, newLine);
 	}
 	else {
 		addUndoBuffer(lines[line + change]);
 	}
 	addUndoBuffer(lines[line]);
 
-	if (change > 0) {
-		for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
+		if (change > 0) {
 			//replace original position with a connection point
 			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
 				lines[line]->laserPos[i] = -2;
+				fixLaserConnections(line, line + change);
 			}
 		}
-	}
-	else {
-		for (int i = 0; i < 2; i++) {
+		else {
 			//if we move backwards we should set the old pos to nothing
 			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
 				if (lines[line]->next->laserPos[i] == -2) {
@@ -433,13 +487,15 @@ ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
 				else {
 					lines[line]->laserPos[i] = -1;
 				}
+				fixLaserConnections(line, line + change);
 			}
 		}
 	}
 	
+	
 	*(lines[line + change]) += moveMask;
 
-	validateChart
+	validateChart();
 	return lines[line + change];
 	
 }
@@ -461,27 +517,22 @@ lineIterator Chart::getLineAfter(int line) {
 
 void Chart::validateChart() {
 	ChartLine* line = lines.begin()->second;
-	ChartLine* prev;
+	ChartLine* prev = nullptr;
 	int counter = 0;
-	while (line->next != nullptr) {
+	while (line != nullptr) {
 		auto loc = lines.find(line->pos);
-
-		if (loc->second != line) {
-			std::cout << "line is in wrong position" << std::endl;
-			DebugBreak();
-		}
 
 		if (loc == lines.end()) {
 			std::cout << "line position not found" << std::endl;
 			DebugBreak();
 		}
 
-		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
-
-		if (measureLoc->second != line) {
-			std::cout << "line does not match the line found in measure" << std::endl;
+		if (loc->second != line) {
+			std::cout << "line is in wrong position" << std::endl;
 			DebugBreak();
 		}
+
+		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
 
 		if (measureLoc == measures[line->measurePos].lines.end()) {
 			std::cout << "line was not found in measure" << std::endl;
@@ -489,12 +540,52 @@ void Chart::validateChart() {
 		}
 
 
+		if (measureLoc->second != line) {
+			std::cout << "line does not match the line found in measure" << std::endl;
+			DebugBreak();
+		}
+
+		if (counter != 0) {
+			if (prev != line->prev) {
+				std::cout << "lines not properly connected" << std::endl;
+				DebugBreak();
+			}
+
+			if (prev->next != line) {
+				std::cout << "lines not properly connected" << std::endl;
+				DebugBreak();
+			}
+
+			for (int i = 0; i < 2; i++) {
+				if (prev->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
+					std::cout << "two laser positions in a row" << std::endl;
+					DebugBreak();
+				}
+				if (prev->laserPos[i] == -1 && line->laserPos[i] == -2) {
+					std::cout << "missing laser position before connector" << std::endl;
+					DebugBreak();
+				}
+				if (prev->laserPos[i] == -2 && line->laserPos[i] == -1) {
+					std::cout << "missing laser position after connector" << std::endl;
+					DebugBreak();
+				}
+
+				if (line->next != nullptr) {
+					if (prev->laserPos[i] == -1 && line->next->laserPos[i] == -1 && line->laserPos[i] >= 0) {
+						std::cout << "laser pos with no connector" << std::endl;
+						DebugBreak();
+					}
+				}
+			}
+		}
+
+		prev = line;
 		line = line->next;
 		counter++;
 	}
 
 	if (counter != lines.size()) {
-		std::cout << "mismatch in line size and the number of found lines" << std::endl;
+		std::cout << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.size() << std::endl;
 		DebugBreak();
 	}
 	

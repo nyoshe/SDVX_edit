@@ -1,8 +1,11 @@
 #include "statusBar.h"
-
+StatusBar::StatusBar() {
+    ImGuiIO& io = ImGui::GetIO();
+    font = io.Fonts->AddFontFromFileTTF("Fonts/CONSOLA.TTF", 16);
+}
 void StatusBar::update()
 {
-
+    ImGui::PushFont(font);
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {
@@ -31,6 +34,18 @@ void StatusBar::update()
                 }
                 ImGui::EndMenu();
             }
+
+            if (ImGui::BeginMenu(("columns: " + std::to_string(EditWindow::getInstance().columns)).c_str())) {
+                for (int i = 1; i < 10; i++) {
+                    if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::getInstance().columns)) {
+                        EditWindow::getInstance().columns = i;
+                        EditWindow::getInstance().updateVars();
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Tool")) {
@@ -126,4 +141,5 @@ void StatusBar::update()
         // close
         ImGuiFileDialog::Instance()->Close();
     }
+    ImGui::PopFont();
 }

@@ -6,12 +6,13 @@
 #include "structs.h"
 #include "chartLine.h"
 #include <iostream>
-#include "debugapi.h"
+#include <windows.h>
 
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
 struct ChartMetadata {
+
     std::string mapFileName;
     std::string mapFilePath;
 
@@ -49,6 +50,10 @@ struct ChartMetadata {
 };
 class Chart
 {
+private:
+    //this connects to positions with laser connectors, it does expect to have valid lines
+    void fixLaserConnections(int start, int end);
+
 public:
     ChartMetadata metadata;
 

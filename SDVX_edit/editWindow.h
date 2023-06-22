@@ -41,20 +41,11 @@ private:
     ~EditWindow() = default;
     
     void drawLineButtons(ChartLine* line);
-    sf::RenderWindow* window = nullptr;
-    int topPadding = 50;
-    int bottomPadding = 100;
-    float width = 0;
-    float height = 0;
-    float laneWidth = 0;
-    float columnWidth = 0;
-    float columnHeight = 0;
-    float measureHeight = 0;
-    float viewLines = 0;
+
     
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
-    unsigned int playbackPos = 0;
+
 
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
@@ -82,6 +73,17 @@ private:
 
     sf::Font font;
 public:
+
+    float width = 0;
+    float height = 0;
+    float laneWidth = 0;
+    float columnWidth = 0;
+    float measureHeight = 0;
+    float topPadding = 50;
+    float bottomPadding = 50;
+    sf::RenderTarget* window = nullptr;
+    sf::RenderWindow* appWindow = nullptr;
+
     Chart chart;
     //functions
 
@@ -95,6 +97,7 @@ public:
         return instance;
     }
     void setWindow(sf::RenderWindow* _window);
+    void setWindow(sf::RenderTarget* _window);
     void update();
     void updateVars();
 
@@ -104,6 +107,9 @@ public:
     //hackey but this function essentially generates the laser vertices
     QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*> &objects, LineIterator startIter, LineIterator endIter);
     void drawChart();
+    void drawChart(sf::RenderTarget* target);
+    void checkLaserSelect(QuadArray &arr, int laser);
+    void drawLaserQuads(const QuadArray& arr);
     std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, int start, int end, int laser, bool isWide);
 
     int getMouseLane();
@@ -148,6 +154,7 @@ public:
     int snapGridSize = 16;
     int pulsesPerBeat = 48;
     int laserMoveSize = 5;
+    float viewLines = 0;
     float playbackSpeed = 1.0;
     AudioManager player;
 

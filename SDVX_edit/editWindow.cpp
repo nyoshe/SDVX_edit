@@ -34,6 +34,8 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	player.loadFile(mapFilePath + "\\" + chart.metadata.songFile);
 
 	chart.minimize();
+
+	chart.validateChart();
 	p.saveFile(chart, "test.ksh");
 }
 
@@ -49,34 +51,62 @@ void EditWindow::saveFile() {
 void EditWindow::updateVars() {
 	//calculate lane Width, there is 11 lanes allocate per column
 	laneWidth = width / (11 * columns);
-	columnWidth = width / columns;
+	columnWidth = width / float(columns);
 	measureHeight = float(height) / measuresPerColumn;
 	viewLines = beatsPerColumn * pulsesPerBeat * columns;
+
+	editorLineStart = editorMeasure * 192;
+	beatsPerColumn = measuresPerColumn * 4;
+
+
+	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
+	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
+	btSprite.setScale(laneWidth / btSprite.getTexture()->getSize().x, laneWidth / btSprite.getTexture()->getSize().x);
+	btSprite.setOrigin(0, btSprite.getTexture()->getSize().y);
+
+	//resize this when needed
+	btHoldSprite.setScale(laneWidth / btHoldSprite.getTexture()->getSize().x, 1);
+	btHoldSprite.setOrigin(0, 1);
+
+	fxSprite.setScale(2 * laneWidth / fxSprite.getTexture()->getSize().x, 2 * laneWidth / fxSprite.getTexture()->getSize().x);
+	fxSprite.setOrigin(0, fxSprite.getTexture()->getSize().y);
+
+	//resize this when needed
+	fxHoldSprite.setScale(2 * laneWidth / fxHoldSprite.getTexture()->getSize().x, 1);
+	fxHoldSprite.setOrigin(0, 1);
 }
 
+void EditWindow::setWindow(sf::RenderTarget* _window) {
+	window = _window;
+	width = window->getSize().x;
+	bottomPadding = 0;
+	topPadding = 0;
+
+	height = window->getSize().y - topPadding - bottomPadding;
+	updateVars();
+}
 void EditWindow::setWindow(sf::RenderWindow* _window) {
 	font.loadFromFile("Fonts/CONSOLA.TTF");
 	window = _window;
-	width = window->getSize().x;
-	height = window->getSize().y - topPadding - bottomPadding;
+	appWindow = _window;
 
-	updateVars();
+	width = window->getSize().x;
+	bottomPadding = window->getSize().x * 0.07;
+	topPadding = window->getSize().x * 0.05;
+	height = window->getSize().y - topPadding - bottomPadding;
 	
 	//bt button
 	if (!entryTex.loadFromFile("textures/entryTex.png"))
 		std::cout << "failed to load entry sprite!";
 	entrySprite.setTexture(entryTex);
 
-	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
-	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
 
 	//bt button
 	if (!btTex.loadFromFile("textures/button.png"))
 		std::cout << "failed to load bt sprite!";
 	btSprite.setTexture(btTex);
 
-	btSprite.setScale(laneWidth/btSprite.getTexture()->getSize().x, laneWidth / btSprite.getTexture()->getSize().x);
-	btSprite.setOrigin(0, btSprite.getTexture()->getSize().y);
+
 	
 	sf::Texture testTex;
 	//btHold
@@ -87,17 +117,12 @@ void EditWindow::setWindow(sf::RenderWindow* _window) {
 		std::cout << "failed to load fx sprite!";
 	btHoldSprite.setTexture(btHoldTex);
 	btHoldSprite.setTextureRect(sf::IntRect(0, btHoldTex.getSize().y - 1, btHoldTex.getSize().x, btHoldTex.getSize().y));
-	//resize this when needed
-	btHoldSprite.setScale(laneWidth / btHoldSprite.getTexture()->getSize().x, 1);
-	btHoldSprite.setOrigin(0, 1);
 
 	//fx button
 	if (!fxTex.loadFromFile("textures/fxbutton.png"))
 		std::cout << "failed to load fx sprite!";
 	fxSprite.setTexture(fxTex);
 
-	fxSprite.setScale(2 * laneWidth / fxSprite.getTexture()->getSize().x, 2 * laneWidth / fxSprite.getTexture()->getSize().x);
-	fxSprite.setOrigin(0, fxSprite.getTexture()->getSize().y);
 
 	
 	//fx hold
@@ -108,9 +133,9 @@ void EditWindow::setWindow(sf::RenderWindow* _window) {
 		std::cout << "failed to load fx sprite!";
 	fxHoldSprite.setTexture(fxHoldTex);
 	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x, fxHoldTex.getSize().y));
-	//resize this when needed
-	fxHoldSprite.setScale(2 * laneWidth / fxHoldSprite.getTexture()->getSize().x, 1);
-	fxHoldSprite.setOrigin(0, 1);
+
+
+	updateVars();
 }
 
 //returns the lane # the mouse is in, -1 if not found
@@ -463,6 +488,10 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 	return vertexBuffer;
 }
 
+void EditWindow::drawChart(sf::RenderTarget* target) {
+	window = target;
+	drawChart();
+}
 
 void EditWindow::drawChart() {
 
@@ -506,47 +535,13 @@ void EditWindow::drawChart() {
 
 
 
-
+	
 	for (int l = 0; l < 2; l++) {
-		
-		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineAfter(editorLineStart + viewLines));
-		
-		//run over the buffer and then check for collision
-		for (auto& vBuffer : vertexBuffer) {
-			if (vBuffer.first->laserPos[l] == -2 || vBuffer.first->next->laserPos[l] == -1) {
-				vBuffer.first = vBuffer.first->getPrevLaser(l);
-			}
-			bool laserSelect = false;
-			for (auto quad : vBuffer.second) {
-				if (getMouseOverlap(quad)) {
-					laserSelect = true;
-					laserHover = std::make_pair(l, vBuffer.first);
-				}
-				if (vBuffer.first == selectedLaser.second && selectedLaser.first == l) {
-					laserSelect = true;
-				}
-			}
-			
-			for (auto quad : vBuffer.second) {
-				window->draw(quad);
-
-				if (laserSelect) {
-					for (int i = 0; i < 4; i++) {
-						quad[i].color = sf::Color(255, 255, 255, 100);
-					}
-					sf::Vector2f v = getNoteLocation(-1, vBuffer.first->pos);
-					sf::Vertex l[] = {
-						sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
-						sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
-					};
-					window->draw(l, 2, sf::Lines);
-					window->draw(quad);
-
-				}
-			}
-		}
-
+		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineBefore(editorLineStart + viewLines + 1));
+		checkLaserSelect(vertexBuffer, l);
+		drawLaserQuads(vertexBuffer);
 	}
+	
 	if (selectedLaserEnd.second != nullptr){
 		sf::Vector2f v = getNoteLocation(-1, selectedLaserEnd.second->pos);
 		sf::Vertex l[] = {
@@ -661,6 +656,48 @@ std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, int star
 	drawVec.push_back(quad);
 
 	return drawVec;
+}
+
+void EditWindow::checkLaserSelect(QuadArray &arr, int laser) {
+	
+	//run over the buffer and then check for collision
+	for (auto& vBuffer : arr) {
+		if (vBuffer.first->laserPos[laser] == -2 || vBuffer.first->next->laserPos[laser] == -1) {
+			vBuffer.first = vBuffer.first->getPrevLaser(laser);
+		}
+		bool laserSelect = false;
+		for (auto quad : vBuffer.second) {
+			if (getMouseOverlap(quad)) {
+				laserSelect = true;
+				laserHover = std::make_pair(laser, vBuffer.first);
+			}
+			if (vBuffer.first == selectedLaser.second && selectedLaser.first == laser) {
+				laserSelect = true;
+			}
+		}
+	}
+}
+
+void EditWindow::drawLaserQuads(const QuadArray& arr) {
+	for (auto& vBuffer : arr) {
+		for (auto quad : vBuffer.second) {
+			window->draw(quad);
+
+			if (vBuffer.first == laserHover.second || vBuffer.first == selectedLaser.second) {
+				for (int i = 0; i < 4; i++) {
+					quad[i].color = sf::Color(255, 255, 255, 100);
+				}
+				sf::Vector2f v = getNoteLocation(-1, vBuffer.first->pos);
+				sf::Vertex l[] = {
+					sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
+					sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
+				};
+				window->draw(l, 2, sf::Lines);
+				window->draw(quad);
+
+			}
+		}
+	}
 }
 
 sf::Vector2f EditWindow::getMeasureStart(int measure) {
@@ -859,22 +896,21 @@ bool EditWindow::getMouseOverlap(const sf::VertexArray quad) {
 
 
 void EditWindow::update() {
+	updateVars();
 	laserHover.second = nullptr;
 
-	editorLineStart = editorMeasure * 192;
-	beatsPerColumn = measuresPerColumn * 4;
 	sf::Clock deltaClock;
 	//controlPtr->seekPos = 50;
-	sf::Vector2i position = sf::Mouse::getPosition(*window);
+	sf::Vector2i position = sf::Mouse::getPosition(*appWindow);
 	mouseX = position.x * (width / float(window->getSize().x));
 	mouseY = position.y * ((height + topPadding + bottomPadding) / float(window->getSize().y));
 
 	std::vector<sf::VertexArray> arr = generateSlamQuads(getMouseSnappedLine(), 25, (getMouseLaserPos(true) / laserMoveSize) * laserMoveSize, 1, true);
 
 	for (auto quad : arr) {
-		window->draw(quad);
+		//window->draw(quad);
 	}
-
+	/**/
 	ImGui::Begin("Debug");
 	
 	ImGui::Text(std::to_string(mouseX).c_str());

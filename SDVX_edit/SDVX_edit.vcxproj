@@ -157,6 +157,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menuItem.cpp" />
     <ClCompile Include="parser.cpp" />
+    <ClCompile Include="scrubBar.cpp" />
     <ClCompile Include="soundtouch\src\AAFilter.cpp" />
     <ClCompile Include="soundtouch\src\BPMDetect.cpp" />
     <ClCompile Include="soundtouch\src\cpu_detect_x86.cpp" />
@@ -172,6 +173,7 @@
     <ClCompile Include="soundtouch\src\sse_optimized.cpp" />
     <ClCompile Include="soundtouch\src\TDStretch.cpp" />
     <ClCompile Include="statusBar.cpp" />
+    <ClCompile Include="toolBar.cpp" />
     <ClCompile Include="toolWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -193,6 +195,7 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="scrubBar.h" />
     <ClInclude Include="soundtouch\include\BPMDetect.h" />
     <ClInclude Include="soundtouch\include\FIFOSampleBuffer.h" />
     <ClInclude Include="soundtouch\include\FIFOSamplePipe.h" />
@@ -211,6 +214,7 @@
     <ClInclude Include="structs.h" />
     <ClInclude Include="menuItem.h" />
     <ClInclude Include="statusBar.h" />
+    <ClInclude Include="toolBar.h" />
     <ClInclude Include="toolWindow.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -25,17 +25,9 @@ void toolWindow::update() {
 	if (ImGui::ImageButton(fxIcon, ImVec2(iconSize, iconSize))) {
 		EditWindow::getInstance().tool = ToolType::FX;
 	}
-	if (ImGui::ImageButton(fxHoldIcon, ImVec2(iconSize, iconSize))) {
-
-	}
-	
 	if (ImGui::ImageButton(btIcon, ImVec2(iconSize, iconSize))) {
 		EditWindow::getInstance().tool = ToolType::BT;
 	}
-	if (ImGui::ImageButton(btHoldIcon, ImVec2(iconSize, iconSize))) {
-
-	}
-
 	if (ImGui::ImageButton(knobRIcon, ImVec2(iconSize, iconSize))) {
 		EditWindow::getInstance().tool = ToolType::LASER_R;
 	}

@@ -15,10 +15,10 @@ static uint8_t playbackSpeed = 0x01;
 class StatusBar
 {
 private:
-    
+    ImFont* font;
 
 public:
-    StatusBar() = default;
+    StatusBar();
     ~StatusBar() = default;
     void update();
 };
