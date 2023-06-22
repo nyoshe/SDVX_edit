@@ -7,6 +7,7 @@
 #include "chartLine.h"
 #include <iostream>
 #include <windows.h>
+#include <plog/Log.h>
 
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
@@ -52,7 +53,8 @@ class Chart
 {
 private:
     //this connects to positions with laser connectors, it does expect to have valid lines
-    void fixLaserConnections(int start, int end);
+    void fixLaserConnections(int pos1, int pos2);
+    void addLaserConnections(ChartLine* line);
 
 public:
     ChartMetadata metadata;

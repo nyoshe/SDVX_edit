@@ -28,6 +28,12 @@
     <Filter Include="SoundTouch\include">
       <UniqueIdentifier>{2321e4d2-e6f3-40b1-b576-456ef7175861}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Logging">
+      <UniqueIdentifier>{bd802786-59ad-4457-898c-2fa648e24cc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logging\plog">
+      <UniqueIdentifier>{0e9e5360-54a6-40fc-9af5-3298ce6511cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -244,6 +250,84 @@
     </ClInclude>
     <ClInclude Include="scrubBar.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\AndroidAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Helpers\AscDump.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\ColorConsoleAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\ConsoleAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Initializers\ConsoleInitializer.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Formatters\CsvFormatter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\DebugOutputAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\DynamicAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\EventLogAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Formatters\FuncMessageFormatter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Helpers\HexDump.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\IAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Init.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Log.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Logger.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Formatters\MessageOnlyFormatter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Converters\NativeEOLConverter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Helpers\PrintVar.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Record.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Appenders\RollingFileAppender.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Initializers\RollingFileInitializer.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Severity.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Formatters\TxtFormatter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Converters\UTF8Converter.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\Util.h">
+      <Filter>Logging\plog</Filter>
+    </ClInclude>
+    <ClInclude Include="Logging\plog\WinApi.h">
+      <Filter>Logging\plog</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

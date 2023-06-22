@@ -52,13 +52,41 @@ void Chart::fixLaserConnections(int pos1, int pos2) {
 		}
 		cLine = cLine->prev;
 	}
+	/*
 	for (int i = 0; i < 2; i++) {
 		//now check if we have two lasers right next to eachother
 		if (startLine->prev != nullptr && startLine->prev->laserPos[i] >= 0 && startLine->laserPos[i] >= 0) {
 			int diff = startLine->pos - startLine->prev->pos;
+			if (diff >= 2) {
+				insertChartLine(startLine->pos - diff / 2, new ChartLine);
+			}
 		}
-		if (startLine->next != nullptr && endLine->next->laserPos[i] >= 0 && endLine->laserPos[i] >= 0) {
+		if (endLine->next != nullptr && endLine->next->laserPos[i] >= 0 && endLine->laserPos[i] >= 0) {
 			int diff = endLine->next->pos - endLine->pos;
+			if (diff >= 2) {
+				insertChartLine(endLine->pos + diff / 2, new ChartLine);
+			}
+		}
+	}
+	*/
+	addLaserConnections(startLine);
+	addLaserConnections(endLine);
+}
+
+void Chart::addLaserConnections(ChartLine* line) {
+	for (int i = 0; i < 2; i++) {
+		//now check if we have two lasers right next to eachother
+		if (line->prev != nullptr && line->prev->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
+			int diff = line->pos - line->prev->pos;
+			if (diff >= 2) {
+				insertChartLine(line->pos - diff / 2, new ChartLine);
+			}
+		}
+		if (line->next != nullptr && line->next->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
+			int diff = line->next->pos - line->pos;
+			if (diff >= 2) {
+				insertChartLine(line->pos + diff / 2, new ChartLine);
+			}
 		}
 	}
 }
@@ -175,6 +203,9 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine* cLine) {
 		if (std::next(it, 1) != lines.end() && it != lines.begin()) {
 			for (int i = 0; i < 2; i++) {
 				if ((cLine->prev->laserPos[i] == -2 || cLine->next->laserPos[i] == -2)) {
+					cLine->laserPos[i] = -2;
+				}
+				if ((cLine->prev->laserPos[i] >= 0 && cLine->next->laserPos[i] >= 0)) {
 					cLine->laserPos[i] = -2;
 				}
 				//extend hold fx
@@ -475,7 +506,6 @@ ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
 			//replace original position with a connection point
 			if (moveMask.laserPos[i] >= 0 && lines[line]->laserPos[i] >= 0) {
 				lines[line]->laserPos[i] = -2;
-				fixLaserConnections(line, line + change);
 			}
 		}
 		else {
@@ -487,13 +517,13 @@ ChartLine* Chart::moveChartLine(int line, ChartLine moveMask, int change) {
 				else {
 					lines[line]->laserPos[i] = -1;
 				}
-				fixLaserConnections(line, line + change);
 			}
 		}
 	}
-	
-	
+
 	*(lines[line + change]) += moveMask;
+
+	fixLaserConnections(line, line + change);
 
 	validateChart();
 	return lines[line + change];
@@ -523,56 +553,56 @@ void Chart::validateChart() {
 		auto loc = lines.find(line->pos);
 
 		if (loc == lines.end()) {
-			std::cout << "line position not found" << std::endl;
+			PLOG_DEBUG << "line position not found";
 			DebugBreak();
 		}
 
 		if (loc->second != line) {
-			std::cout << "line is in wrong position" << std::endl;
+			PLOG_DEBUG << "line is in wrong position";
 			DebugBreak();
 		}
 
 		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
 
 		if (measureLoc == measures[line->measurePos].lines.end()) {
-			std::cout << "line was not found in measure" << std::endl;
+			PLOG_DEBUG << "line was not found in measure";
 			DebugBreak();
 		}
 
 
 		if (measureLoc->second != line) {
-			std::cout << "line does not match the line found in measure" << std::endl;
+			PLOG_DEBUG << "line does not match the line found in measure";
 			DebugBreak();
 		}
 
 		if (counter != 0) {
 			if (prev != line->prev) {
-				std::cout << "lines not properly connected" << std::endl;
+				PLOG_DEBUG << "lines not properly connected";
 				DebugBreak();
 			}
 
 			if (prev->next != line) {
-				std::cout << "lines not properly connected" << std::endl;
+				PLOG_DEBUG << "lines not properly connected";
 				DebugBreak();
 			}
 
 			for (int i = 0; i < 2; i++) {
 				if (prev->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
-					std::cout << "two laser positions in a row" << std::endl;
+					PLOG_DEBUG << "two laser positions in a row";
 					DebugBreak();
 				}
 				if (prev->laserPos[i] == -1 && line->laserPos[i] == -2) {
-					std::cout << "missing laser position before connector" << std::endl;
+					PLOG_DEBUG << "missing laser position before connector";
 					DebugBreak();
 				}
 				if (prev->laserPos[i] == -2 && line->laserPos[i] == -1) {
-					std::cout << "missing laser position after connector" << std::endl;
+					PLOG_DEBUG << "missing laser position after connector";
 					DebugBreak();
 				}
 
 				if (line->next != nullptr) {
 					if (prev->laserPos[i] == -1 && line->next->laserPos[i] == -1 && line->laserPos[i] >= 0) {
-						std::cout << "laser pos with no connector" << std::endl;
+						PLOG_DEBUG << "laser pos with no connector";
 						DebugBreak();
 					}
 				}
@@ -585,7 +615,7 @@ void Chart::validateChart() {
 	}
 
 	if (counter != lines.size()) {
-		std::cout << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.size() << std::endl;
+		PLOG_DEBUG << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.size() << std::endl;
 		DebugBreak();
 	}
 	

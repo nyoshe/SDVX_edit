@@ -84,7 +84,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)soundtouch\include;C:\SDKs\boost_1_82_0;$(ProjectDir)imgui\;C:\SDKs\SFML-2.5.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)soundtouch\include;C:\SDKs\boost_1_82_0;$(ProjectDir)imgui\;C:\SDKs\SFML-2.5.1\include;$(ProjectDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)soundtouch\include;C:\SDKs\boost_1_82_0;$(ProjectDir)imgui\;C:\SDKs\SFML-2.5.1\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)soundtouch\include;C:\SDKs\boost_1_82_0;$(ProjectDir)imgui\;C:\SDKs\SFML-2.5.1\include;$(ProjectDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -194,6 +194,32 @@
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="Logging\plog\Appenders\AndroidAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\ColorConsoleAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\ConsoleAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\DebugOutputAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\DynamicAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\EventLogAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\IAppender.h" />
+    <ClInclude Include="Logging\plog\Appenders\RollingFileAppender.h" />
+    <ClInclude Include="Logging\plog\Converters\NativeEOLConverter.h" />
+    <ClInclude Include="Logging\plog\Converters\UTF8Converter.h" />
+    <ClInclude Include="Logging\plog\Formatters\CsvFormatter.h" />
+    <ClInclude Include="Logging\plog\Formatters\FuncMessageFormatter.h" />
+    <ClInclude Include="Logging\plog\Formatters\MessageOnlyFormatter.h" />
+    <ClInclude Include="Logging\plog\Formatters\TxtFormatter.h" />
+    <ClInclude Include="Logging\plog\Helpers\AscDump.h" />
+    <ClInclude Include="Logging\plog\Helpers\HexDump.h" />
+    <ClInclude Include="Logging\plog\Helpers\PrintVar.h" />
+    <ClInclude Include="Logging\plog\Init.h" />
+    <ClInclude Include="Logging\plog\Initializers\ConsoleInitializer.h" />
+    <ClInclude Include="Logging\plog\Initializers\RollingFileInitializer.h" />
+    <ClInclude Include="Logging\plog\Log.h" />
+    <ClInclude Include="Logging\plog\Logger.h" />
+    <ClInclude Include="Logging\plog\Record.h" />
+    <ClInclude Include="Logging\plog\Severity.h" />
+    <ClInclude Include="Logging\plog\Util.h" />
+    <ClInclude Include="Logging\plog\WinApi.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="scrubBar.h" />
     <ClInclude Include="soundtouch\include\BPMDetect.h" />

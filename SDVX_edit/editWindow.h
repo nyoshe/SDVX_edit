@@ -20,6 +20,8 @@
 #include <cstdlib> //std::system
 #include <sstream>
 
+
+
 struct gameControl
 {
     bool paused = true;

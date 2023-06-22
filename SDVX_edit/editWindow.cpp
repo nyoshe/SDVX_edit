@@ -33,9 +33,16 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 
 	player.loadFile(mapFilePath + "\\" + chart.metadata.songFile);
 
+	PLOG_INFO << "chart File \"" << chart.metadata.mapFileName << "\" successfully loaded";
+
+	int linesBefore = chart.lines.size();
+
 	chart.minimize();
 
 	chart.validateChart();
+
+	PLOG_INFO << "minimized lines (" << linesBefore << "->" << chart.lines.size() << ")";
+
 	p.saveFile(chart, "test.ksh");
 }
 
@@ -61,17 +68,16 @@ void EditWindow::updateVars() {
 
 	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
 	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
+
 	btSprite.setScale(laneWidth / btSprite.getTexture()->getSize().x, laneWidth / btSprite.getTexture()->getSize().x);
 	btSprite.setOrigin(0, btSprite.getTexture()->getSize().y);
 
-	//resize this when needed
 	btHoldSprite.setScale(laneWidth / btHoldSprite.getTexture()->getSize().x, 1);
 	btHoldSprite.setOrigin(0, 1);
 
 	fxSprite.setScale(2 * laneWidth / fxSprite.getTexture()->getSize().x, 2 * laneWidth / fxSprite.getTexture()->getSize().x);
 	fxSprite.setOrigin(0, fxSprite.getTexture()->getSize().y);
 
-	//resize this when needed
 	fxHoldSprite.setScale(2 * laneWidth / fxHoldSprite.getTexture()->getSize().x, 1);
 	fxHoldSprite.setOrigin(0, 1);
 }

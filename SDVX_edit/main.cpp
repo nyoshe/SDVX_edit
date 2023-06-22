@@ -12,13 +12,15 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <string>
-
+#include <plog/Log.h>
+#include "plog/Initializers/RollingFileInitializer.h"
 
 int main() {
-    
+    plog::init(plog::debug, "logs/log.txt", 1000000, 3);
     sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
     ImGui::SFML::Init(window);
-    IMGUI_IMPL_API
+    //IMGUI_IMPL_API
+
     sf::Clock deltaClock;
     sf::Clock deltaClock2;
     int counter = 0;

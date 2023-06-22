@@ -70,7 +70,7 @@ private:
         int buffSizeSamples = buffSize / getChannelCount();
 
         nSamples = processor.receiveSamples(output, buffSizeSamples);
-        delayMs = 1000.0 * static_cast<float>(buffSizeSamples - nSamples) / getSampleRate();
+        delayMs = 1000.f * static_cast<float>(buffSizeSamples - nSamples) / getSampleRate();
         
        
         // have we reached the end of the sound?
