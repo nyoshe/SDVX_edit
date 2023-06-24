@@ -17,6 +17,7 @@
 
 int main() {
     plog::init(plog::debug, "logs/log.txt", 1000000, 3);
+    PLOG_INFO << "initialized logging";
     sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
     ImGui::SFML::Init(window);
     //IMGUI_IMPL_API
@@ -24,16 +25,14 @@ int main() {
     sf::Clock deltaClock;
     sf::Clock deltaClock2;
     int counter = 0;
-
-    ScrubBar scrub_bar;
-    scrub_bar.setWindow(&window);
+    ScrubBar::getInstance().setWindow(&window);
     StatusBar status_bar;
     //toolWindow tool_window;
     ToolBar tool_bar(&window);
     EditWindow::getInstance().setWindow(&window);
-    //std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
-    //std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
-    //EditWindow::getInstance().loadFile(filePath, filePathName);
+    std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
+    std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
+    EditWindow::getInstance().loadFile(filePath, filePathName);
 
 
     while (window.isOpen()) {
@@ -41,15 +40,29 @@ int main() {
         window.clear();
 
         while (window.pollEvent(event)) {
-            
-            
-
             EditWindow::getInstance().handleEvent(event);
             ImGui::SFML::ProcessEvent(window, event);
 
             if (event.type == sf::Event::Closed) {
+                EditWindow::getInstance().saveFile("editor_backup.ksh");
                 window.close();
                 //ImGui::PopFont();
+            }
+            else if (event.type == sf::Event::Resized) {
+                sf::View view = window.getDefaultView();
+                // resize my view
+                view.setSize({
+                        static_cast<float>(event.size.width),
+                        static_cast<float>(event.size.height)
+                    });
+                view.setCenter({
+                        static_cast<float>(event.size.width/2),
+                        static_cast<float>(event.size.height/2)
+                    });
+
+                window.setView(view);
+                EditWindow::getInstance().setWindow(&window);
+                ScrubBar::getInstance().setWindow(&window);
             }
         }
         
@@ -61,13 +74,10 @@ int main() {
         EditWindow::getInstance().update();
         //tool_window.update();
         tool_bar.update();
-        
-
+        ScrubBar::getInstance().update();
         
         
         if (counter == 10) {
-            //scrub_bar.update();
-            
             float endTime = deltaClock2.restart().asSeconds();
             window.setTitle("voltexEdit | FPS: " + std::to_string(10.0 / endTime));
             counter = 0;
@@ -75,7 +85,7 @@ int main() {
         else {
             counter++;
         }
-        //scrub_bar.draw();
+        
         ImGui::SFML::Render(window);
         window.display();
         

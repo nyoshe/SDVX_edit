@@ -1,4 +1,45 @@
 #include "editWindow.h"
+EditWindow::EditWindow() {
+	//bt button
+	if (!entryTex.loadFromFile("textures/entryTex.png"))
+		std::cout << "failed to load entry sprite!";
+	entrySprite.setTexture(entryTex);
+
+
+	//bt button
+	if (!btTex.loadFromFile("textures/button.png"))
+		std::cout << "failed to load bt sprite!";
+	btSprite.setTexture(btTex);
+
+
+
+	sf::Texture testTex;
+	//btHold
+	if (!testTex.loadFromFile("textures/buttonhold.png"))
+		std::cout << "failed to load fx sprite!";
+
+	if (!btHoldTex.loadFromFile("textures/buttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
+		std::cout << "failed to load fx sprite!";
+	btHoldSprite.setTexture(btHoldTex);
+	btHoldSprite.setTextureRect(sf::IntRect(0, btHoldTex.getSize().y - 1, btHoldTex.getSize().x, btHoldTex.getSize().y));
+
+	//fx button
+	if (!fxTex.loadFromFile("textures/fxbutton.png"))
+		std::cout << "failed to load fx sprite!";
+	fxSprite.setTexture(fxTex);
+
+
+
+	//fx hold
+	if (!testTex.loadFromFile("textures/fxbuttonhold.png"))
+		std::cout << "failed to load fx sprite!";
+
+	if (!fxHoldTex.loadFromFile("textures/fxbuttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
+		std::cout << "failed to load fx sprite!";
+	fxHoldSprite.setTexture(fxHoldTex);
+	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x, fxHoldTex.getSize().y));
+}
+
 void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	
 	Parser p;
@@ -59,11 +100,11 @@ void EditWindow::updateVars() {
 	//calculate lane Width, there is 11 lanes allocate per column
 	laneWidth = width / (11 * columns);
 	columnWidth = width / float(columns);
-	measureHeight = float(height) / measuresPerColumn;
-	viewLines = beatsPerColumn * pulsesPerBeat * columns;
+	measureHeight = float(height) / float(measuresPerColumn);
+	viewLines = pulsesPerColumn * columns;
 
 	editorLineStart = editorMeasure * 192;
-	beatsPerColumn = measuresPerColumn * 4;
+	pulsesPerColumn = measuresPerColumn * 192;
 
 
 	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
@@ -88,59 +129,19 @@ void EditWindow::setWindow(sf::RenderTarget* _window) {
 	bottomPadding = 0;
 	topPadding = 0;
 
-	height = window->getSize().y - topPadding - bottomPadding;
+	height = window->getSize().y;
 	updateVars();
 }
+
 void EditWindow::setWindow(sf::RenderWindow* _window) {
 	font.loadFromFile("Fonts/CONSOLA.TTF");
 	window = _window;
 	appWindow = _window;
 
 	width = window->getSize().x;
-	bottomPadding = window->getSize().x * 0.07;
-	topPadding = window->getSize().x * 0.05;
+	bottomPadding = window->getSize().y * 0.1;
+	topPadding = window->getSize().y * 0.05;
 	height = window->getSize().y - topPadding - bottomPadding;
-	
-	//bt button
-	if (!entryTex.loadFromFile("textures/entryTex.png"))
-		std::cout << "failed to load entry sprite!";
-	entrySprite.setTexture(entryTex);
-
-
-	//bt button
-	if (!btTex.loadFromFile("textures/button.png"))
-		std::cout << "failed to load bt sprite!";
-	btSprite.setTexture(btTex);
-
-
-	
-	sf::Texture testTex;
-	//btHold
-	if (!testTex.loadFromFile("textures/buttonhold.png"))
-		std::cout << "failed to load fx sprite!";
-
-	if (!btHoldTex.loadFromFile("textures/buttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
-		std::cout << "failed to load fx sprite!";
-	btHoldSprite.setTexture(btHoldTex);
-	btHoldSprite.setTextureRect(sf::IntRect(0, btHoldTex.getSize().y - 1, btHoldTex.getSize().x, btHoldTex.getSize().y));
-
-	//fx button
-	if (!fxTex.loadFromFile("textures/fxbutton.png"))
-		std::cout << "failed to load fx sprite!";
-	fxSprite.setTexture(fxTex);
-
-
-	
-	//fx hold
-	if (!testTex.loadFromFile("textures/fxbuttonhold.png"))
-		std::cout << "failed to load fx sprite!";
-
-	if (!fxHoldTex.loadFromFile("textures/fxbuttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
-		std::cout << "failed to load fx sprite!";
-	fxHoldSprite.setTexture(fxHoldTex);
-	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x, fxHoldTex.getSize().y));
-
-
 	updateVars();
 }
 
@@ -184,7 +185,7 @@ int EditWindow::getMouseLine() {
 		for (int i = 0; i < columns; i++) {
 			if (mouseX >= (1 * laneWidth) + (columnWidth * i) &&
 				mouseX <= (11 * laneWidth) + (columnWidth * i)) {
-				return editorLineStart + (i + 1) * beatsPerColumn * pulsesPerBeat - ((mouseY - topPadding) / height) * beatsPerColumn * pulsesPerBeat;
+				return editorLineStart + (i + 1) * pulsesPerColumn  - ((mouseY - topPadding) / height) * pulsesPerColumn;
 			}
 		}
 		return editorLineStart;
@@ -258,7 +259,7 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 	}
 
 	//draw in beats
-	for (int i = startLine + pulsesPerBeat; i < startLine + mPulses; i += pulsesPerBeat) {
+	for (int i = startLine + 48; i < startLine + mPulses; i += 48) {
 		sf::Vector2f v = getNoteLocation(i);
 		sf::Vertex line[] = {
 			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(50, 50, 50)),
@@ -279,7 +280,7 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 
 
 	//draw the end line
-	if (editorLineStart + beatsPerColumn * pulsesPerBeat * columns >= startLine + mPulses) {
+	if (editorLineStart + viewLines >= startLine + mPulses) {
 		sf::Vector2f v = getNoteLocation(startLine + mPulses);
 		sf::Vertex line[] = {
 			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(255, 255, 0)),
@@ -469,7 +470,7 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 			nextLine = chart.measures[line->measurePos + 1].lines.begin()->second;
 			nextLineNum = nextLine->pos - 1;
 			x = getLaserX(nextLine)[l] + getNoteLocation(lineNum).x;
-			y = getNoteLocation(nextLineNum).y - height / (beatsPerColumn * pulsesPerBeat);
+			y = getNoteLocation(nextLineNum).y - height / pulsesPerColumn;
 		}
 
 		// build laser quad
@@ -538,10 +539,6 @@ void EditWindow::drawChart() {
 		}
 	}
 	
-
-
-
-	
 	for (int l = 0; l < 2; l++) {
 		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineBefore(editorLineStart + viewLines + 1));
 		checkLaserSelect(vertexBuffer, l);
@@ -549,12 +546,13 @@ void EditWindow::drawChart() {
 	}
 	
 	if (selectedLaserEnd.second != nullptr){
-		sf::Vector2f v = getNoteLocation(-1, selectedLaserEnd.second->pos);
-		sf::Vertex l[] = {
-			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
-			sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
-		};
-		window->draw(l, 2, sf::Lines);
+		sf::Vector2f v = getNoteLocation(0, selectedLaserEnd.second->pos);
+		sf::RectangleShape rect(sf::Vector2f(laneWidth + 8, 8));
+		rect.setPosition(sf::Vector2f(v.x + getLaserX(selectedLaserEnd.second)[selectedLaserEnd.first] - 4, v.y - 4));
+		rect.setOutlineColor(sf::Color::Red);
+		rect.setFillColor(sf::Color::Transparent);
+		rect.setOutlineThickness(2);
+		window->draw(rect);
 	}
 
 	sf::Vector2f pos1 = getNoteLocation(-1, selectStart);
@@ -695,8 +693,8 @@ void EditWindow::drawLaserQuads(const QuadArray& arr) {
 				}
 				sf::Vector2f v = getNoteLocation(-1, vBuffer.first->pos);
 				sf::Vertex l[] = {
-					sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
-					sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
+					sf::Vertex(sf::Vector2f(v.x + getLaserX(vBuffer.first)[laserHover.first], v.y), sf::Color(0, 255, 0)),
+					sf::Vertex(sf::Vector2f(v.x + getLaserX(vBuffer.first)[laserHover.first] - laneWidth, v.y), sf::Color(255, 0, 0))
 				};
 				//window->draw(l, 2, sf::Lines);
 				window->draw(quad);
@@ -746,13 +744,13 @@ void EditWindow::handleEvent(sf::Event event) {
 			}
 
 			else if (getMouseLane() != -1) {
-				ChartLine* newLine = new ChartLine;
+				ChartLine newLine;
 				switch (tool) {
 				case ToolType::BT:
-					newLine->btVal[getMouseLane()] = 1;
+					newLine.btVal[getMouseLane()] = 1;
 					break;
 				case ToolType::FX:
-					newLine->fxVal[getMouseLane() / 2] = 2;
+					newLine.fxVal[getMouseLane() / 2] = 2;
 					break;
 				};
 				
@@ -765,6 +763,7 @@ void EditWindow::handleEvent(sf::Event event) {
 			if (select && laserHover.second != nullptr) {
 				selectedLaser = laserHover;
 				selectedLaserEnd = std::make_pair(selectedLaser.first, selectedLaser.second->getNextLaser(selectedLaser.first));
+				chart.pushUndoBuffer();
 			}
 			else {
 				//deselect
@@ -821,14 +820,14 @@ void EditWindow::handleEvent(sf::Event event) {
 				laserToEdit->modifyLaserPos(selectedLaser.first, laserMoveSize);
 			}
 			if (event.key.code == sf::Keyboard::Up) {
-				ChartLine moveMask;
-				moveMask.laserPos[selectedLaser.first] = selectedLaserEnd.second->laserPos[selectedLaser.first];
+				LineMask moveMask;
+				moveMask.laser[selectedLaser.first] = 1;
 				chart.addUndoBuffer(selectedLaserEnd.second);
 				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, 192 / snapGridSize);
 			}
 			if (event.key.code == sf::Keyboard::Down) {
-				ChartLine moveMask;
-				moveMask.laserPos[selectedLaser.first] = selectedLaserEnd.second->laserPos[selectedLaser.first];
+				LineMask moveMask;
+				moveMask.laser[selectedLaser.first] = 1;
 				chart.addUndoBuffer(selectedLaserEnd.second);
 				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, -192 / snapGridSize);
 			}
@@ -867,7 +866,7 @@ void EditWindow::handleEvent(sf::Event event) {
 sf::Vector2f EditWindow::getNoteLocation(int lane, int line) {
 	line -= editorLineStart;
 	//48 is the number of lines per beat
-	int totalLines = beatsPerColumn * 48;
+	int totalLines = pulsesPerColumn;
 	int columnNum = line / totalLines;
 	float startX = (4 * laneWidth) + (columnWidth * columnNum);
 	float y = topPadding + height - height * (static_cast<float>(line % totalLines) / static_cast<float>(totalLines));

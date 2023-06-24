@@ -3,6 +3,7 @@
 #include "imgui/imgui-SFML.h"
 #include "editWindow.h"
 #include "fileDialog/ImGuiFileDialog.h"
+#include "scrubBar.h"
 #include <string>
 
 static uint8_t laserSelection = 0x01;

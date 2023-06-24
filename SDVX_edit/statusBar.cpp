@@ -45,6 +45,10 @@ void StatusBar::update()
                 ImGui::EndMenu();
             }
 
+            if (ImGui::MenuItem("Show Scrub Bar", NULL, ScrubBar::getInstance().enabled)) {
+                ScrubBar::getInstance().enabled = !ScrubBar::getInstance().enabled;
+            }
+
 
             ImGui::EndMenu();
         }

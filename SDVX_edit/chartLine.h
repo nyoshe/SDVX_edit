@@ -3,12 +3,26 @@
 #include <string>
 #include "enums.h"
 #include <iostream>
+#include <bitset>
 
 
 
 struct Command {
     CommandType type = CommandType::INVALID;
     std::string val = "";
+};
+
+struct LineMask {
+    std::bitset <4> bt = 0x00;
+    std::bitset <2> fx = 0x00;
+    std::bitset <2> laser = 0x00;
+    LineMask operator~() {
+        LineMask maskNot;
+        maskNot.bt = ~bt;
+        maskNot.fx = ~fx;
+        maskNot.laser = ~laser;
+        return maskNot;
+    }
 };
 
 class ChartLine {
@@ -19,7 +33,6 @@ public:
     std::vector <uint8_t> fxVal = { 0, 0 };
     std::vector <int8_t> laserPos = { -1, -1 };
     std::vector <bool>  isWide = { false, false };
-    uint8_t  selectedFlags = false;
     ChartLine* next = nullptr;
     ChartLine* prev = nullptr;
     //defines our position relative to 1/192 snapping
@@ -43,5 +56,7 @@ public:
     std::vector<std::pair<ChartLine*, ChartLine*>> clearFxHold(int lane);
 
     void modifyLaserPos(int laser, int val);
+
+    ChartLine extractMask(LineMask mask);
 };
 

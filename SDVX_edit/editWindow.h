@@ -30,7 +30,7 @@ struct gameControl
     float speed = 1.0;
 };
 
-#define DEBUG false
+#define DEBUG true
 
 typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
 typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
@@ -39,7 +39,7 @@ class EditWindow
 {
 private:
     static EditWindow* instance;
-    EditWindow() = default;
+    EditWindow();
     ~EditWindow() = default;
     
     void drawLineButtons(ChartLine* line);
@@ -75,20 +75,6 @@ private:
 
     sf::Font font;
 public:
-
-    float width = 0;
-    float height = 0;
-    float laneWidth = 0;
-    float columnWidth = 0;
-    float measureHeight = 0;
-    float topPadding = 50;
-    float bottomPadding = 50;
-    sf::RenderTarget* window = nullptr;
-    sf::RenderWindow* appWindow = nullptr;
-
-    Chart chart;
-    //functions
-
     EditWindow(const EditWindow&) = delete;
     EditWindow(EditWindow&&) = delete;
     EditWindow& operator=(const EditWindow&) = delete;
@@ -152,11 +138,10 @@ public:
     int measuresPerColumn = 4;
 
     //derived from 4/4 with 4 measures per column
-    int beatsPerColumn = 16;
+    int pulsesPerColumn = 192 * 4;
     int snapGridSize = 16;
-    int pulsesPerBeat = 48;
     int laserMoveSize = 5;
-    float viewLines = 0;
+    int viewLines = 0;
     float playbackSpeed = 1.0;
     AudioManager player;
 
@@ -167,5 +152,20 @@ public:
     gameControl* controlPtr;
 
     std::unordered_map<int, ChartLine*> selectedLines;
+
+    float width = 0;
+    float height = 0;
+    float laneWidth = 0;
+    float columnWidth = 0;
+    float measureHeight = 0;
+    float topPadding = 50;
+    float bottomPadding = 50;
+    sf::RenderTarget* window = nullptr;
+    sf::RenderWindow* appWindow = nullptr;
+
+
+    Chart chart;
+    //functions
+
     
 };

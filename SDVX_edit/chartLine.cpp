@@ -49,6 +49,7 @@ ChartLine& ChartLine::operator+=(const ChartLine& b) {
         if (b.fxVal[i] != 0) {
             this->fxVal[i] = b.fxVal[i];
         }
+        if (b.isWide[i] && !isWide[i]) isWide[i] = 1;
     }
     for (int i = 0; i < 4; i++) {
         //extend hold notes
@@ -157,4 +158,20 @@ void ChartLine::modifyLaserPos(int laser, int val) {
     else {
         laserPos[laser] += val;
     }
+}
+
+ChartLine ChartLine::extractMask(LineMask mask) {
+    ChartLine output;
+    for (int i = 0; i < 4; i++) {
+        if (mask.bt[i]) output.btVal[i] = btVal[i];
+    }
+    for (int i = 0; i < 2; i++) {
+        if (mask.fx[i]) output.fxVal[i] = fxVal[i];
+        if (mask.laser[i]) output.laserPos[i] = laserPos[i];
+    }
+    output.next = next;
+    output.prev = prev;
+    output.pos = pos;
+    output.measurePos = measurePos;
+    return output;
 }

@@ -180,6 +180,7 @@
     <ClInclude Include="audioManager.h" />
     <ClInclude Include="chart.h" />
     <ClInclude Include="chartLine.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="editWindow.h" />
     <ClInclude Include="enums.h" />
     <ClInclude Include="fileDialog\dirent\dirent.h" />

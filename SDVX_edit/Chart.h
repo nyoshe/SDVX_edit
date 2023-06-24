@@ -8,10 +8,14 @@
 #include <iostream>
 #include <windows.h>
 #include <plog/Log.h>
+#include "config.h"
 
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
+const int L_CONNECTOR = -2;
+const int L_NONE = -1;
+
 struct ChartMetadata {
 
     std::string mapFileName;
@@ -52,9 +56,10 @@ struct ChartMetadata {
 class Chart
 {
 private:
+    void fixLaserPoint(ChartLine* line, int laser, bool dir);
     //this connects to positions with laser connectors, it does expect to have valid lines
-    void fixLaserConnections(int pos1, int pos2);
-    void addLaserConnections(ChartLine* line);
+    void fixLaserConnections(int pos1, int pos2, int laser, bool dir);
+    void addLaserConnections(ChartLine* line, int laser);
 
 public:
     ChartMetadata metadata;
@@ -94,10 +99,10 @@ public:
     void minimize();
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
-    ChartLine* insertChartLine(unsigned int line, ChartLine* cLine);
+    ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
 
     //returns a pointer to the moved object
-    ChartLine* moveChartLine(int line, ChartLine moveMask, int change);
+    ChartLine* moveChartLine(int line, LineMask moveMask, int change);
     void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
     //void moveChartLine();
 
@@ -112,6 +117,8 @@ public:
 
     lineIterator getLineBefore(int line);
     lineIterator getLineAfter(int line);
+
+    int getMeasureFromPos(int pos);
 
     //quick function to make sure we didn't mess anything up
     void validateChart();

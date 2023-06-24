@@ -329,5 +329,8 @@
     <ClInclude Include="Logging\plog\WinApi.h">
       <Filter>Logging\plog</Filter>
     </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
