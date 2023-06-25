@@ -10,10 +10,16 @@
 #include "imgui/imgui-SFML.h"
 #include "structs.h"
 #include "audioManager.h"
+#include "Unique.h"
+#include "Input.h"
 #include <cmath>
 #include <algorithm>
 #include <iostream>
 #include <stack>
+#include <functional>
+#include <memory>
+#include <functional>
+#include <memory>
 
 
 #include <boost/interprocess/managed_shared_memory.hpp>
@@ -35,14 +41,13 @@ struct gameControl
 typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
 typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 
-class EditWindow
+class EditWindow final : public Unique <EditWindow>
 {
 private:
-    static EditWindow* instance;
-    EditWindow();
-    ~EditWindow() = default;
+
     
-    void drawLineButtons(ChartLine* line);
+    void drawLineButtons(ChartLine* line, bool Selected);
+    void drawSelected(ChartLine* line, const sf::Sprite& sprite);
 
     
     unsigned int selectStart = 0;
@@ -75,15 +80,9 @@ private:
 
     sf::Font font;
 public:
-    EditWindow(const EditWindow&) = delete;
-    EditWindow(EditWindow&&) = delete;
-    EditWindow& operator=(const EditWindow&) = delete;
-    EditWindow& operator=(EditWindow&&) = delete;
-    static EditWindow& getInstance()
-    {
-        static EditWindow instance;
-        return instance;
-    }
+    EditWindow();
+    ~EditWindow() = default;
+
     void setWindow(sf::RenderWindow* _window);
     void setWindow(sf::RenderTarget* _window);
     void update();
@@ -128,6 +127,9 @@ public:
     void saveFile(std::string fileName);
     void saveFile();
 
+    void undo();
+    void redo();
+    void play();
     //vars
     boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;
@@ -163,6 +165,7 @@ public:
     sf::RenderTarget* window = nullptr;
     sf::RenderWindow* appWindow = nullptr;
 
+    std::vector<std::pair<ChartLine*, ChartLine>>  clipboard;
 
     Chart chart;
     //functions

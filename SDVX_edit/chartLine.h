@@ -5,7 +5,8 @@
 #include <iostream>
 #include <bitset>
 
-
+const int L_CONNECTOR = -2;
+const int L_NONE = -1;
 
 struct Command {
     CommandType type = CommandType::INVALID;
@@ -16,6 +17,12 @@ struct LineMask {
     std::bitset <4> bt = 0x00;
     std::bitset <2> fx = 0x00;
     std::bitset <2> laser = 0x00;
+
+    LineMask() = default;
+
+
+    LineMask(std::bitset <4> _bt, std::bitset <2> _fx, std::bitset <2> _laser) : bt(_bt), fx(_fx), laser(_laser) {};
+
     LineMask operator~() {
         LineMask maskNot;
         maskNot.bt = ~bt;
@@ -23,7 +30,22 @@ struct LineMask {
         maskNot.laser = ~laser;
         return maskNot;
     }
+
+    explicit operator int() const { return bt.count() + fx.count() + laser.count(); }
+
 };
+
+namespace Mask {
+    static const LineMask BT(0x0F, 0x00, 0x00);
+    static const LineMask FX(0x00, 0x03, 0x00);
+    static const LineMask LASER_L(0x00, 0x00, 0x01);
+    static const LineMask LASER_R(0x00, 0x00, 0x02);
+    static const LineMask LASER_ALL(0x00, 0x00, 0x03);
+    static const LineMask LASER[2] = { LASER_L, LASER_R };
+    static const LineMask NONE(0x00, 0x00, 0x00);
+    static const LineMask ALL(0x0F, 0x03, 0x03);
+}
+
 
 class ChartLine {
 public:
@@ -43,6 +65,8 @@ public:
     //merging
     ChartLine& operator+=(const ChartLine& b);
 
+    LineMask operator&(const LineMask& line);
+
     ChartLine* getNextLaser(int laser);
     ChartLine* getPrevLaser(int laser);
 
@@ -58,5 +82,13 @@ public:
     void modifyLaserPos(int laser, int val);
 
     ChartLine extractMask(LineMask mask);
-};
 
+    void clearLaser(int laser);
+
+    static const uint8_t FX_HOLD = 1;
+    static const uint8_t BT_HOLD = 2;
+
+    static const uint8_t FX_CHIP = 2;
+    static const uint8_t BT_CHIP = 1;
+
+};

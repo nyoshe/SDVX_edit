@@ -1,5 +1,7 @@
 #include "chartLine.h"
 
+
+
 bool ChartLine::empty() {
     for (int i = 0; i < 4; i++) {
         if (btVal[i] == 1) {
@@ -173,5 +175,23 @@ ChartLine ChartLine::extractMask(LineMask mask) {
     output.prev = prev;
     output.pos = pos;
     output.measurePos = measurePos;
+    output.isWide = isWide;
     return output;
+}
+
+LineMask ChartLine::operator&(const LineMask& line) {
+    LineMask out = line;
+    for (int i = 0; i < 4; i++) {
+        if (line.bt[i] && (btVal[i] != BT_HOLD)) out.bt[i] = 0;
+    }
+    for (int i = 0; i < 2; i++) {
+        if (line.fx[i] && (fxVal[i] != FX_HOLD)) out.fx[i] = 0;
+        if (line.laser[i] && (laserPos[i] == L_NONE)) out.laser[i] = 0;
+    }
+    return out;
+}
+
+void ChartLine::clearLaser(int laser) {
+    laserPos[laser] = L_NONE;
+    isWide[laser] = false;
 }

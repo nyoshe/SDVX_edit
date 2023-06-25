@@ -1,0 +1,10 @@
+action:redo
+type:onKeyDown
+keys:Y,LControl
+endBinding
+
+action:undo
+type:onKeyDown
+keys:Z,LControl
+endBinding
+

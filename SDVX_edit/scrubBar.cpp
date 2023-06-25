@@ -1,7 +1,7 @@
 #include "scrubBar.h"
 void ScrubBar::update() {
 	if (!enabled) return;
-	EditWindow &editor = EditWindow::getInstance();
+	EditWindow &editor = EditWindow::instance();
 
 	sf::RenderWindow* beforeWin = editor.appWindow;
 

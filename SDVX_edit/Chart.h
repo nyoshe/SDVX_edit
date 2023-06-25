@@ -13,8 +13,7 @@
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
-const int L_CONNECTOR = -2;
-const int L_NONE = -1;
+
 
 struct ChartMetadata {
 
@@ -53,6 +52,7 @@ struct ChartMetadata {
     std::string version = "";
     std::string info = "";
 };
+
 class Chart
 {
 private:
@@ -115,6 +115,7 @@ public:
     void addRedoBuffer(ChartLine* line);
     void pushRedoBuffer();
 
+    //exclusive of the input line
     lineIterator getLineBefore(int line);
     lineIterator getLineAfter(int line);
 
@@ -122,5 +123,7 @@ public:
 
     //quick function to make sure we didn't mess anything up
     void validateChart();
+
+    std::vector<std::pair<ChartLine*, ChartLine>> getSelection(unsigned int pos1, unsigned int pos2, LineMask mask);
 };
 

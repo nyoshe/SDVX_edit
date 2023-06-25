@@ -75,14 +75,14 @@ void Chart::fixLaserConnections(int pos1, int pos2, int laser, bool dir) {
 
 	ChartLine* cLine = startLine;
 	if (dir) {
-		while (cLine != nullptr && cLine != endLine->next) {
+		while (cLine != nullptr && cLine != endLine) {
 			fixLaserPoint(cLine, laser, dir);
 			cLine = cLine->next;
 		}
 	}
 	else {
 		cLine = endLine;
-		while (cLine != nullptr && cLine != startLine->prev) {
+		while (cLine != nullptr && cLine != startLine) {
 			fixLaserPoint(cLine, laser, dir);
 			cLine = cLine->prev;
 		}
@@ -645,3 +645,91 @@ void Chart::validateChart() {
 	std::cout << "noe issues found :)" << std::endl;
 }
 
+std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask) {
+	unsigned int start = std::min(pos1, pos2);
+	unsigned int end = std::max(pos1, pos2);
+	std::vector<std::pair<ChartLine*, ChartLine>> out;
+
+	if (lines.find(start) == lines.end()) {
+		if (getLineAfter(start) == lines.end()) return out;
+		start = getLineAfter(start)->second->pos;
+	}
+	if (lines.find(end) == lines.end()) {
+		if (getLineBefore(end) == lines.end()) return out;
+		end = getLineBefore(end)->second->pos;
+	}
+
+	ChartLine* line = lines[start]->prev;
+	LineMask dropMask = mask;
+	//this basically just goes from front to bakc and using the chart line mask, drops out the hold values when we don't see them
+	while (line != nullptr && int(*line & dropMask) != 0) {
+		dropMask = *line & dropMask;
+		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
+		line = line->prev;
+	}
+
+	std::reverse(out.begin(), out.end());
+
+	line = lines[start];
+	while (line != nullptr && line->pos <= end) {
+		out.push_back(std::make_pair(line, line->extractMask(mask)));
+		line = line->next;
+	}
+
+	line = lines[end];
+	dropMask = mask;
+	//same as previous comment but not in reverse
+	while (line != nullptr && int(*line & dropMask) != 0) {
+		dropMask = *line & dropMask;
+		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
+		line = line->next;
+	}
+
+	if (out.size() == 0) return out;
+	//cleanup laser ends
+
+	for (int i = 0; i < 2; i++) {
+		LineMask laserMask = Mask::NONE;
+		if (out.back().first->laserPos[i] == L_CONNECTOR && out.back().first->next->laserPos[i] >= 0) {
+			laserMask.laser[i] = 1;
+		}
+		if (int(laserMask) != 0) {
+			out.push_back(std::make_pair(out.back().first->next, out.back().first->next->extractMask(laserMask)));
+		}
+			
+
+		laserMask = Mask::NONE;
+		if (out.front().first->laserPos[i] == L_CONNECTOR && out.front().first->next->laserPos[i] >= 0) {
+			laserMask.laser[i] = 1;
+		}
+		if (int(laserMask) != 0) {
+			out.insert(out.begin(), std::make_pair(out.back().first->next, out.back().first->next->extractMask(laserMask)));
+		}
+
+		//check for cutoff lasers
+		if (out.front().second.laserPos[i] == L_CONNECTOR) {
+			for (auto& line : out) {
+				if (line.second.laserPos[i] == L_CONNECTOR) {
+					line.second.clearLaser(i);
+				}
+				else if (line.second.laserPos[i] >= 0) {
+					break;
+				}
+			}
+		}
+		if (out.back().second.laserPos[i] == L_CONNECTOR) {
+			for (int line = out.size() - 1; line > 0; line--) {
+				if (out[line].second.laserPos[i] == L_CONNECTOR) {
+					out[line].second.clearLaser(i);
+				}
+				else if (out[line].second.laserPos[i] >= 0) {
+					break;
+				}
+			}
+		}
+	}
+
+	
+
+	return out;
+}

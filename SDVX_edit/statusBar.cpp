@@ -10,13 +10,13 @@ void StatusBar::update()
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New")) {
                 Chart newChart;
-                EditWindow::getInstance().chart = newChart;
+                EditWindow::instance().chart = newChart;
             }
             if (ImGui::MenuItem("Open")) {
                 ImGuiFileDialog::Instance()->OpenDialog("OpenFileDlgKey", "Open", ".ksh", ".");
             }
             if (ImGui::MenuItem("Save")) {
-                EditWindow::getInstance().saveFile();
+                EditWindow::instance().saveFile();
             }
             if (ImGui::MenuItem("Save As")) {
                 ImGuiFileDialog::Instance()->OpenDialog("SaveFileDlgKey", "Save As", ".ksh", ".");
@@ -25,28 +25,28 @@ void StatusBar::update()
         }
 
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu(("Measures per column: " + std::to_string(EditWindow::getInstance().measuresPerColumn)).c_str())) {
+            if (ImGui::BeginMenu(("Measures per column: " + std::to_string(EditWindow::instance().measuresPerColumn)).c_str())) {
                 for (int i = 1; i < 10; i++) {
-                    if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::getInstance().measuresPerColumn)) {
-                        EditWindow::getInstance().measuresPerColumn = i;
-                        EditWindow::getInstance().updateVars();
+                    if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::instance().measuresPerColumn)) {
+                        EditWindow::instance().measuresPerColumn = i;
+                        EditWindow::instance().updateVars();
                     }
                 }
                 ImGui::EndMenu();
             }
 
-            if (ImGui::BeginMenu(("columns: " + std::to_string(EditWindow::getInstance().columns)).c_str())) {
+            if (ImGui::BeginMenu(("columns: " + std::to_string(EditWindow::instance().columns)).c_str())) {
                 for (int i = 1; i < 10; i++) {
-                    if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::getInstance().columns)) {
-                        EditWindow::getInstance().columns = i;
-                        EditWindow::getInstance().updateVars();
+                    if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::instance().columns)) {
+                        EditWindow::instance().columns = i;
+                        EditWindow::instance().updateVars();
                     }
                 }
                 ImGui::EndMenu();
             }
 
-            if (ImGui::MenuItem("Show Scrub Bar", NULL, ScrubBar::getInstance().enabled)) {
-                ScrubBar::getInstance().enabled = !ScrubBar::getInstance().enabled;
+            if (ImGui::MenuItem("Show Scrub Bar", NULL, ScrubBar::instance().enabled)) {
+                ScrubBar::instance().enabled = !ScrubBar::instance().enabled;
             }
 
 
@@ -56,61 +56,64 @@ void StatusBar::update()
 
             if (ImGui::BeginMenu("Lane Snapping")) {
                 
-                if (ImGui::MenuItem("1/4", NULL, EditWindow::getInstance().snapGridSize == 4)) {
-                    EditWindow::getInstance().snapGridSize = 4;
+                if (ImGui::MenuItem("1/4", NULL, EditWindow::instance().snapGridSize == 4)) {
+                    EditWindow::instance().snapGridSize = 4;
                 }
-                if (ImGui::MenuItem("1/8", NULL, EditWindow::getInstance().snapGridSize == 8)) {
-                    EditWindow::getInstance().snapGridSize = 8;
+                if (ImGui::MenuItem("1/8", NULL, EditWindow::instance().snapGridSize == 8)) {
+                    EditWindow::instance().snapGridSize = 8;
                 }
-                if (ImGui::MenuItem("1/12", NULL, EditWindow::getInstance().snapGridSize == 12)) {
-                    EditWindow::getInstance().snapGridSize = 12;
+                if (ImGui::MenuItem("1/12", NULL, EditWindow::instance().snapGridSize == 12)) {
+                    EditWindow::instance().snapGridSize = 12;
                 }
-                if (ImGui::MenuItem("1/16", NULL, EditWindow::getInstance().snapGridSize == 16)) {
-                    EditWindow::getInstance().snapGridSize = 16;
+                if (ImGui::MenuItem("1/16", NULL, EditWindow::instance().snapGridSize == 16)) {
+                    EditWindow::instance().snapGridSize = 16;
                 }
-                if (ImGui::MenuItem("1/24", NULL, EditWindow::getInstance().snapGridSize == 24)) {
-                    EditWindow::getInstance().snapGridSize = 24;
+                if (ImGui::MenuItem("1/24", NULL, EditWindow::instance().snapGridSize == 24)) {
+                    EditWindow::instance().snapGridSize = 24;
                 }
-                if (ImGui::MenuItem("1/32", NULL, EditWindow::getInstance().snapGridSize == 32)) {
-                    EditWindow::getInstance().snapGridSize = 32;
+                if (ImGui::MenuItem("1/32", NULL, EditWindow::instance().snapGridSize == 32)) {
+                    EditWindow::instance().snapGridSize = 32;
                 }
-                if (ImGui::MenuItem("1/48", NULL, EditWindow::getInstance().snapGridSize == 48)) {
-                    EditWindow::getInstance().snapGridSize = 48;
+                if (ImGui::MenuItem("1/48", NULL, EditWindow::instance().snapGridSize == 48)) {
+                    EditWindow::instance().snapGridSize = 48;
                 }
-                if (ImGui::MenuItem("1/64", NULL, EditWindow::getInstance().snapGridSize == 64)) {
-                    EditWindow::getInstance().snapGridSize = 64;
+                if (ImGui::MenuItem("1/64", NULL, EditWindow::instance().snapGridSize == 64)) {
+                    EditWindow::instance().snapGridSize = 64;
                 }
-                if (ImGui::MenuItem("1/96", NULL, EditWindow::getInstance().snapGridSize == 96)) {
-                    EditWindow::getInstance().snapGridSize = 96;
+                if (ImGui::MenuItem("1/96", NULL, EditWindow::instance().snapGridSize == 96)) {
+                    EditWindow::instance().snapGridSize = 96;
                 }
-                if (ImGui::MenuItem("1/192", NULL, EditWindow::getInstance().snapGridSize == 192)) {
-                    EditWindow::getInstance().snapGridSize = 192;
+                if (ImGui::MenuItem("1/192", NULL, EditWindow::instance().snapGridSize == 192)) {
+                    EditWindow::instance().snapGridSize = 192;
                 }
                 //Do something
                 ImGui::EndMenu();
             }
             ImGui::Separator();
             
-            if (ImGui::MenuItem("Laser Placement: Normal", NULL, laserSelection & NORMAL)) {
-                laserSelection = NORMAL;
-                EditWindow::getInstance().laserMoveSize = 5;
+            if (ImGui::MenuItem("Laser Placement: Normal", NULL, laserSnap == LaserSnap::NORMAL)) {
+                laserSnap = NORMAL;
+                EditWindow::instance().laserMoveSize = 5;
             }
-            if (ImGui::MenuItem("Laser Placement: Fine", NULL, laserSelection & FINE)) {
-                laserSelection = FINE;
-                EditWindow::getInstance().laserMoveSize = 3;
+            if (ImGui::MenuItem("Laser Placement: Fine", NULL, laserSnap == LaserSnap::FINE)) {
+                laserSnap = FINE;
+                EditWindow::instance().laserMoveSize = 3;
             }
-            if (ImGui::MenuItem("Laser Placement: Very Fine", NULL, laserSelection & VERY_FINE)) {
-                laserSelection = VERY_FINE;
-                EditWindow::getInstance().laserMoveSize = 1;
+            if (ImGui::MenuItem("Laser Placement: Very Fine", NULL, laserSnap == LaserSnap::VERY_FINE)) {
+                laserSnap = VERY_FINE;
+                EditWindow::instance().laserMoveSize = 1;
             }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Play")) {
-            if (ImGui::MenuItem("half speed")) {
-                EditWindow::getInstance().player.setSpeed(0.5);
+            if (ImGui::MenuItem("Playback: 0.25x")) {
+                EditWindow::instance().player.setSpeed(0.25);
             }
-            if (ImGui::MenuItem("full speed")) {
-                EditWindow::getInstance().player.setSpeed(1.0);
+            if (ImGui::MenuItem("Playback: 0.5x")) {
+                EditWindow::instance().player.setSpeed(0.5);
+            }
+            if (ImGui::MenuItem("Playback: 1.0x")) {
+                EditWindow::instance().player.setSpeed(1.0);
             }
             ImGui::EndMenu();
         }
@@ -124,7 +127,7 @@ void StatusBar::update()
         {
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-            EditWindow::getInstance().loadFile(filePath, filePathName);
+            EditWindow::instance().loadFile(filePath, filePathName);
             // action
         }
 
@@ -138,7 +141,7 @@ void StatusBar::update()
         {
             std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
             std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-            EditWindow::getInstance().saveFile(filePathName);
+            EditWindow::instance().saveFile(filePathName);
             // action
         }
 

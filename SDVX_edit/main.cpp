@@ -7,6 +7,7 @@
 #include "toolWindow.h"
 #include "toolBar.h"
 #include "scrubBar.h"
+#include "Input.h"
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -25,14 +26,14 @@ int main() {
     sf::Clock deltaClock;
     sf::Clock deltaClock2;
     int counter = 0;
-    ScrubBar::getInstance().setWindow(&window);
+    ScrubBar::instance().setWindow(&window);
     StatusBar status_bar;
     //toolWindow tool_window;
     ToolBar tool_bar(&window);
-    EditWindow::getInstance().setWindow(&window);
+    EditWindow::instance().setWindow(&window);
     std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
     std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
-    EditWindow::getInstance().loadFile(filePath, filePathName);
+    EditWindow::instance().loadFile(filePath, filePathName);
 
 
     while (window.isOpen()) {
@@ -40,11 +41,12 @@ int main() {
         window.clear();
 
         while (window.pollEvent(event)) {
-            EditWindow::getInstance().handleEvent(event);
+            EditWindow::instance().handleEvent(event);
             ImGui::SFML::ProcessEvent(window, event);
+            Input::instance().handleEvent(event);
 
             if (event.type == sf::Event::Closed) {
-                EditWindow::getInstance().saveFile("editor_backup.ksh");
+                EditWindow::instance().saveFile("editor_backup.ksh");
                 window.close();
                 //ImGui::PopFont();
             }
@@ -61,20 +63,20 @@ int main() {
                     });
 
                 window.setView(view);
-                EditWindow::getInstance().setWindow(&window);
-                ScrubBar::getInstance().setWindow(&window);
+                EditWindow::instance().setWindow(&window);
+                ScrubBar::instance().setWindow(&window);
             }
         }
         
         ImGui::SFML::Update(window, deltaClock.restart());
         //ImGui::ShowDemoWindow();
 
-
+        
         status_bar.update();
-        EditWindow::getInstance().update();
+        EditWindow::instance().update();
         //tool_window.update();
         tool_bar.update();
-        ScrubBar::getInstance().update();
+        ScrubBar::instance().update();
         
         
         if (counter == 10) {

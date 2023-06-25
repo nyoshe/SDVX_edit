@@ -3,23 +3,12 @@
 #include "imgui/imgui-SFML.h"
 #include <SFML/Graphics.hpp>
 #include "editWindow.h"
-
-class ScrubBar
+#include "Unique.h"
+class ScrubBar final : public Unique <ScrubBar>
 {
-private:
+public:
 	ScrubBar() = default;
 	~ScrubBar() = default;
-	ScrubBar* instance;
-public:
-	ScrubBar(const ScrubBar&) = delete;
-	ScrubBar(ScrubBar&&) = delete;
-	ScrubBar& operator=(const ScrubBar&) = delete;
-	ScrubBar& operator=(ScrubBar&&) = delete;
-	static ScrubBar& getInstance()
-	{
-		static ScrubBar instance;
-		return instance;
-	}
 
 	bool enabled = false;
 	int displayMeasures = 100;

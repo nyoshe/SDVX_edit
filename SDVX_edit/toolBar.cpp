@@ -47,73 +47,73 @@ void ToolBar::update() {
 		
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconSize * 3);
-		std::string buttonText = std::to_string(EditWindow::getInstance().snapGridSize);
+		std::string buttonText = std::to_string(EditWindow::instance().snapGridSize);
 
 		ImGui::PushFont(font);
 		ImGui::Button(buttonText.c_str(), ImVec2(iconSize * 1.1, iconSize * 1.1));
 		if (ImGui::IsItemHovered()) {
 			if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Right]){
 				snapSelection = snapSelection == 0 ? 9 : snapSelection - 1;
-				EditWindow::getInstance().snapGridSize = snapSizes[snapSelection];
+				EditWindow::instance().snapGridSize = snapSizes[snapSelection];
 			}
 			else if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Left]){
 				snapSelection = (snapSelection + 1) % 10;
-				EditWindow::getInstance().snapGridSize = snapSizes[snapSelection];
+				EditWindow::instance().snapGridSize = snapSizes[snapSelection];
 			}
 		}
 		ImGui::PopFont();
 		
 		ImGui::SameLine();
-		if (EditWindow::getInstance().select) {
+		if (EditWindow::instance().select) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(selectIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::getInstance().select = !EditWindow::getInstance().select;
+			EditWindow::instance().select = !EditWindow::instance().select;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
 
 		ImGui::SameLine();
-		if (EditWindow::getInstance().tool == ToolType::FX) {
+		if (EditWindow::instance().tool == ToolType::FX) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(fxIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::getInstance().tool = ToolType::FX;
+			EditWindow::instance().tool = ToolType::FX;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
 
 		ImGui::SameLine();
-		if (EditWindow::getInstance().tool == ToolType::BT) {
+		if (EditWindow::instance().tool == ToolType::BT) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(btIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::getInstance().tool = ToolType::BT;
+			EditWindow::instance().tool = ToolType::BT;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
 
 		ImGui::SameLine();
-		if (EditWindow::getInstance().tool == ToolType::LASER_R) {
+		if (EditWindow::instance().tool == ToolType::LASER_R) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(knobRIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::getInstance().tool = ToolType::LASER_R;
+			EditWindow::instance().tool = ToolType::LASER_R;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
 
 		ImGui::SameLine();
-		if (EditWindow::getInstance().tool == ToolType::LASER_L) {
+		if (EditWindow::instance().tool == ToolType::LASER_L) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(knobLIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::getInstance().tool = ToolType::LASER_L;
+			EditWindow::instance().tool = ToolType::LASER_L;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 

@@ -1,14 +1,19 @@
 #include "editWindow.h"
+
 EditWindow::EditWindow() {
+
+	Input::instance().addKeyDownAction({ sf::Keyboard::Key::LControl, sf::Keyboard::Key::Z }, std::bind(&EditWindow::undo, this), "undo");
+	Input::instance().addKeyDownAction({ sf::Keyboard::Key::LControl, sf::Keyboard::Key::Y }, std::bind(&EditWindow::redo, this), "redo");
+	Input::instance().addKeyDownAction({ sf::Keyboard::Key::Space }, std::bind(&EditWindow::play, this), "play");
 	//bt button
 	if (!entryTex.loadFromFile("textures/entryTex.png"))
-		std::cout << "failed to load entry sprite!";
+		PLOG_WARNING << "failed to load entry sprite!";
 	entrySprite.setTexture(entryTex);
 
 
 	//bt button
 	if (!btTex.loadFromFile("textures/button.png"))
-		std::cout << "failed to load bt sprite!";
+		PLOG_WARNING << "failed to load bt sprite!";
 	btSprite.setTexture(btTex);
 
 
@@ -16,28 +21,30 @@ EditWindow::EditWindow() {
 	sf::Texture testTex;
 	//btHold
 	if (!testTex.loadFromFile("textures/buttonhold.png"))
-		std::cout << "failed to load fx sprite!";
+		PLOG_WARNING << "failed to load fx sprite!";
 
 	if (!btHoldTex.loadFromFile("textures/buttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
-		std::cout << "failed to load fx sprite!";
+		PLOG_WARNING << "failed to load fx sprite!";
 	btHoldSprite.setTexture(btHoldTex);
 	btHoldSprite.setTextureRect(sf::IntRect(0, btHoldTex.getSize().y - 1, btHoldTex.getSize().x, btHoldTex.getSize().y));
 
 	//fx button
 	if (!fxTex.loadFromFile("textures/fxbutton.png"))
-		std::cout << "failed to load fx sprite!";
+		PLOG_WARNING << "failed to load fx sprite!";
 	fxSprite.setTexture(fxTex);
 
 
 
 	//fx hold
 	if (!testTex.loadFromFile("textures/fxbuttonhold.png"))
-		std::cout << "failed to load fx sprite!";
+		PLOG_WARNING << "failed to load fx sprite!";
 
 	if (!fxHoldTex.loadFromFile("textures/fxbuttonhold.png", sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y)))
-		std::cout << "failed to load fx sprite!";
+		PLOG_WARNING << "failed to load fx sprite!";
 	fxHoldSprite.setTexture(fxHoldTex);
 	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x, fxHoldTex.getSize().y));
+
+	font.loadFromFile("Fonts/CONSOLA.TTF");
 }
 
 void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
@@ -293,48 +300,67 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 	return mPulses;
 }
 
-void EditWindow::drawLineButtons(ChartLine* line) {
+void EditWindow::drawSelected(ChartLine* line, const sf::Sprite& sprite) {
+
+	sf::RectangleShape rectangle(sf::Vector2f(sprite.getGlobalBounds().width, sprite.getGlobalBounds().height));
+	//rectangle.setOrigin(sprite.getOrigin());
+	rectangle.setPosition(sf::Vector2f(sprite.getPosition().x, sprite.getPosition().y - sprite.getGlobalBounds().height));
+	
+	//rectangle.setScale(sprite.getScale());
+	rectangle.setOutlineThickness(4.0);
+	rectangle.setFillColor(sf::Color::Transparent);
+	rectangle.setOutlineColor(sf::Color(255, 0, 0));
+	
+	window->draw(rectangle);
+
+}
+
+void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 	int pos = line->pos;
 	for (int lane = 0; lane < 2; lane ++) {
 		//fx chips
 		if (line->fxVal[lane] == 2) {
 			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
-			sf::RectangleShape rectangle(sf::Vector2f(fxSprite.getTexture()->getSize()));
-			rectangle.setPosition(fxSprite.getPosition());
-			rectangle.setScale(fxSprite.getScale());
-			rectangle.setOutlineThickness(2.0);
-			rectangle.setOutlineColor(sf::Color(0, 255, 0));
-			rectangle.setOrigin(fxSprite.getOrigin());
-			//window->draw(rectangle);
+			if (selected) drawSelected(line, fxSprite);
 			window->draw(fxSprite);
 		}
 		//fx hold
 		else if (line->fxVal[lane] == 1) {
 			fxHoldSprite.setPosition(getNoteLocation(lane * 2, pos));
 			fxHoldSprite.setScale(fxHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
+			if (selected) drawSelected(line, fxHoldSprite);
 			window->draw(fxHoldSprite);
 		}
-		if (DEBUG) {
-			sf::Vector2f v = getNoteLocation(-1, pos);
-			sf::Vertex l[] = {
-				sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
-				sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
-			};
-			window->draw(l, 2, sf::Lines);
-		}
+		
 	}
 
+	if (DEBUG) {
+		sf::Vector2f v = getNoteLocation(-1, pos);
+		sf::Vertex l[] = {
+			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
+			sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
+		};
+		//sf::Text text;
+		//text.setFont(font);
+		//text.setString("Hello world");
+		//text.setCharacterSize(24); 
+		//text.setFillColor(sf::Color::Green);
+
+		if (!line->empty()) window->draw(l, 2, sf::Lines);
+	}
 
 	for (int lane = 0; lane < 4; lane++) {
 		//bt chips
 		if (line->btVal[lane] == 1) {
 			btSprite.setPosition(getNoteLocation(lane, pos));
+			if (selected) drawSelected(line, btSprite);
 			window->draw(btSprite);
 		}
 		//bt hold
 		else if (line->btVal[lane] == 2) {
 			btHoldSprite.setPosition(getNoteLocation(lane, pos));
 			btHoldSprite.setScale(btHoldSprite.getScale().x, (measureHeight / 192) * (line->next->pos - line->pos));
+			if (selected) drawSelected(line, btHoldSprite);
 			window->draw(btHoldSprite);
 		}
 	}
@@ -518,6 +544,12 @@ void EditWindow::drawChart() {
 			window->draw(line, 2, sf::Lines);
 		}
 	}
+	auto clipIt = clipboard.begin();
+	while (clipIt != clipboard.end()) {
+		ChartLine line = clipIt->second;
+		drawLineButtons(&line, true);
+		clipIt++;
+	}
 
 	//draw note lines
 
@@ -525,19 +557,14 @@ void EditWindow::drawChart() {
 	if (lineIt != chart.lines.end()) {
 		ChartLine* line = lineIt->second;
 		while (line != nullptr && line->pos <= editorLineStart + viewLines) {
-			if (line->pos >= std::min(selectStart, selectEnd) &&
-				line->pos <= std::max(selectStart, selectEnd))
-			{
-				fxSprite.setColor(sf::Color(255, 0, 0));
-				btSprite.setColor(sf::Color(255, 0, 0));
-			}
-			drawLineButtons(line);
-
-			fxSprite.setColor(sf::Color(255, 255, 255));
-			btSprite.setColor(sf::Color(255, 255, 255));
+			drawLineButtons(line, false);
 			line = line->next;
 		}
 	}
+
+
+
+
 	
 	for (int l = 0; l < 2; l++) {
 		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineBefore(editorLineStart + viewLines + 1));
@@ -783,30 +810,10 @@ void EditWindow::handleEvent(sf::Event event) {
 	}
 
 	if (event.type == sf::Event::KeyPressed) {
-		if (event.key.code == sf::Keyboard::Space) {
-			if (player.isPlaying()) {
-				player.stop();
-			}
-			else {
-				player.playFrom(chart.getMs(selectStart));
-			}
-			controlPtr->paused = true;
-		}
 
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl)){ 
-			if (event.key.code == sf::Keyboard::Z) {
-				chart.pushUndoBuffer();
-				selectedLaser = std::make_pair(0, nullptr);
-				selectedLaserEnd = std::make_pair(0, nullptr);
-				chart.undo();
-			}
-			if (event.key.code == sf::Keyboard::Y) {
-				chart.pushRedoBuffer();
-				selectedLaser = std::make_pair(0, nullptr);
-				selectedLaserEnd = std::make_pair(0, nullptr);
-				chart.redo();
-			}
-		}
+		
+
+		
 		if (selectedLaser.second != nullptr) {
 			if (event.key.code == sf::Keyboard::Left) {
 				ChartLine* laserToEdit = selectedLaserEnd.second;
@@ -843,12 +850,12 @@ void EditWindow::handleEvent(sf::Event event) {
 		}
 	}
 
-
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) &&
 		sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) &&
 		getMouseLine() != -1) {
 		if (event.type == sf::Event::MouseButtonReleased) {
 			selectEnd = getMouseLine();
+			clipboard = chart.getSelection(selectStart, selectEnd, Mask::ALL);
 		}
 	}
 	
@@ -963,3 +970,25 @@ void EditWindow::update() {
 
 }
 
+void EditWindow::undo() {
+	chart.pushUndoBuffer();
+	selectedLaser = std::make_pair(0, nullptr);
+	selectedLaserEnd = std::make_pair(0, nullptr);
+	chart.undo();
+}
+
+void EditWindow::redo() {
+	chart.pushRedoBuffer();
+	selectedLaser = std::make_pair(0, nullptr);
+	selectedLaserEnd = std::make_pair(0, nullptr);
+	chart.redo();
+}
+
+void EditWindow::play() {
+	if (player.isPlaying()) {
+		player.stop();
+	}
+	else {
+		player.playFrom(chart.getMs(selectStart));
+	}
+}
