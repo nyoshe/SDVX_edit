@@ -172,11 +172,10 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 
 	int measure = 0;
 
-	if (absPos > measures.back().pos + measures.back().pulses) {
+	if (absPos >= measures.back().pos + measures.back().pulses) {
 		int loc = measures.back().pos + measures.back().pulses;
-		while (loc < absPos) {
+		while (loc <= absPos) {
 			loc += appendNewMeasure();
-			measure += 1;
 		}
 		calcTimings();
 	}
@@ -184,13 +183,15 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 		measure = getMeasureFromPos(absPos);
 	}
 
+	measure = getMeasureFromPos(absPos);
+
 	int localPos = line - measures[measure].pos;
 
 
 	//if we don't exist
 	if (it == lines.end()) {
 
-		ChartLine* newLine = new ChartLine(cLine);
+		ChartLine* newLine = new ChartLine();
 		measures[measure].lines[localPos] = newLine;
 		lines[absPos] = newLine;
 
@@ -204,12 +205,18 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 			connectLines(std::prev(it, 1), it);
 			//we must push the change in the next line
 		}
+		else {
+			newLine->prev = nullptr;
+		}
 
-		//check if we are not the first object
+		//check if we are not the last object
 		if (std::next(it, 1) != lines.end()) {
 			addUndoBuffer(std::next(it, 1)->second);
 			connectLines(it, std::next(it, 1));
 			//we must push the change in the next line
+		}
+		else {
+			newLine->next = nullptr;
 		}
 
 		//here we extend  the buttons and holds if needed
@@ -234,11 +241,9 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 			}
 		}
 
+		*newLine += cLine;
 
-
-		//should fix this and not access directly
 		undoBuffer.push_back(std::make_pair(nullptr, newLine));
-
 	}
 	//if the object already exists, merge them
 	else {
@@ -249,7 +254,6 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 
 		*existingLine += cLine;
 	}
-
 	return lines[absPos];
 }
 
@@ -260,6 +264,7 @@ void Chart::removeChartLine(unsigned int line, unsigned int lane, ToolType type)
 		return;
 	}
 	unsigned int absPos = line;
+	if (lines.lower_bound(absPos) == lines.end()) return;
 	int measure = lines.lower_bound(absPos)->second->measurePos;
 	auto it = lines.find(absPos);
 
@@ -304,7 +309,7 @@ void Chart::undo() {
 	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
 	for (auto it : undoStack.top()) {
 		if (it.first == nullptr) {
-			//buffer.push_back(it);
+			//make sure we don't delete the first line
 			redoBuffer.push_back(it);
 			lines.erase(it.second->pos);
 			measures[it.second->measurePos].lines.erase(it.second->pos - measures[it.second->measurePos].pos);
@@ -314,6 +319,12 @@ void Chart::undo() {
 			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
 			*(it.first) = *(it.second);
 			delete it.second;
+			if (measures[it.first->measurePos].lines.size() == 1 && it.first->measurePos + 1 != measures.size()) {
+				addRedoBuffer(measures[it.first->measurePos + 1].lines[0]);
+				addRedoBuffer(it.first);
+				it.first->next = measures[it.first->measurePos + 1].lines[0];
+				measures[it.first->measurePos + 1].lines[0]->prev = it.first;
+			}
 		}
 	}
 	validateChart();
@@ -324,19 +335,21 @@ void Chart::undo() {
 
 void Chart::redo() {
 	if (redoStack.empty()) return;
-	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
+
 	for (auto it : redoStack.top()) {
 		if (it.first == nullptr) {
 			//buffer.push_back(it);
 			undoBuffer.push_back(it);
 			lines[it.second->pos] = it.second;
 			measures[it.second->measurePos].lines[it.second->pos - measures[it.second->measurePos].pos] = it.second;
+
 		}
 		else {
 			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
 			addUndoBuffer(it.first);
 			*(it.first) = *(it.second);
 			delete it.second;
+
 		}
 	}
 	validateChart();
@@ -370,6 +383,7 @@ void Chart::clearUndoStack() {
 }
 
 //insert new measure with a dummy line, and also returns the pulses of the appended measure
+//TODO FOR TOMORROW: undo stack pulls the NULL pointer version 
 int Chart::appendNewMeasure() {
 	
 	int measureStart = 0;
@@ -378,6 +392,7 @@ int Chart::appendNewMeasure() {
 		ChartLine* newLine = new ChartLine;
 		measures.push_back(m);
 		measures[0].lines[0] = newLine;
+		lines[0] = newLine;
 	}
 	else {
 		Measure prevMeasure = measures.back();
@@ -393,9 +408,13 @@ int Chart::appendNewMeasure() {
 		newLine->prev = std::prev(prevMeasure.lines.end(), 1)->second;
 		newLine->measurePos = measures.size() - 1;
 		newLine->pos = measureStart;
+
 		std::prev(prevMeasure.lines.end(), 1)->second->next = newLine;
 		measures.back().lines[0] = newLine;
+		lines[measureStart] = newLine;
+		validateChart();
 	}
+	
 	return measures.back().pulses;
 }
 
@@ -540,9 +559,6 @@ lineIterator Chart::getLineBefore(int line) {
 
 
 lineIterator Chart::getLineAfter(int line) {
-	if (lines.lower_bound(line) == lines.end()) {
-		return lines.begin();
-	}
 	return lines.upper_bound(line);
 }
 
@@ -628,12 +644,15 @@ void Chart::validateChart() {
 		counter++;
 	}
 	int i = 0;
+	int measureCount = 0;
 	for (auto measure : measures) {
 		
 		if (measure.lines.find(0) == measure.lines.end()) {
 			PLOG_DEBUG << "did not find zero'th line in measure in " << metadata.mapFileName << " measure: " <<  i;
 			if (BREAK_ON_CHART_ERRORS) DebugBreak();
 		}
+
+		measureCount += measure.lines.size();
 		i++;
 	}
 
@@ -641,8 +660,13 @@ void Chart::validateChart() {
 		PLOG_DEBUG << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.size() << std::endl;
 		if (BREAK_ON_CHART_ERRORS) DebugBreak();
 	}
+
+	if (measureCount != lines.size()) {
+		PLOG_DEBUG << "mismatch in line size and the number of found measure lines, counter: " << measureCount << " size: " << lines.size() << std::endl;
+		if (BREAK_ON_CHART_ERRORS) DebugBreak();
+	}
 	
-	std::cout << "noe issues found :)" << std::endl;
+	std::cout << "no issues found :)" << std::endl;
 }
 
 std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask) {

@@ -56,6 +56,8 @@ private:
     unsigned int selectStart = 0;
     unsigned int selectEnd = 0;
 
+    unsigned int mouseDownLine = 0;
+    unsigned int mouseDownLane = 0;
 
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
@@ -105,7 +107,7 @@ public:
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
-    int getSnappedLine(unsigned int line);
+    int getSnappedLine(int line);
     int getMouseLaserPos(bool isWide);
 
     int getMeasureFromGlobal(unsigned int loc);
