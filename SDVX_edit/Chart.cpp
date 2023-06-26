@@ -660,7 +660,7 @@ std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int p
 	}
 
 	ChartLine* line = lines[start]->prev;
-	LineMask dropMask = mask;
+	LineMask dropMask = *lines[start] & mask;
 	//this basically just goes from front to bakc and using the chart line mask, drops out the hold values when we don't see them
 	while (line != nullptr && int(*line & dropMask) != 0) {
 		dropMask = *line & dropMask;
@@ -676,8 +676,8 @@ std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int p
 		line = line->next;
 	}
 
-	line = lines[end];
-	dropMask = mask;
+	line = lines[end]->next;
+	dropMask = *lines[end] & mask;
 	//same as previous comment but not in reverse
 	while (line != nullptr && int(*line & dropMask) != 0) {
 		dropMask = *line & dropMask;

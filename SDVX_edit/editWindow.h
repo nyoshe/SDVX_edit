@@ -26,7 +26,10 @@
 #include <cstdlib> //std::system
 #include <sstream>
 
-
+enum EditorState {
+    WAIT_FOR_INPUT,
+    SELECTING
+};
 
 struct gameControl
 {
@@ -102,7 +105,7 @@ public:
     int getMouseLane();
     int getMouseMeasure();
     int getMouseLine();
-    int getMouseSnappedLine();
+    int getSnappedLine(unsigned int line);
     int getMouseLaserPos(bool isWide);
 
     int getMeasureFromGlobal(unsigned int loc);
@@ -120,6 +123,8 @@ public:
     //get the note location from line (global) 
     sf::Vector2f getNoteLocation(int line);
 
+    void conenctLines(std::map<unsigned int, ChartLine*> input);
+
     float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
     bool getMouseOverlap(const sf::VertexArray quad);
 
@@ -128,15 +133,26 @@ public:
     void saveFile();
 
     //actions
-    void undo();
-    void redo();
-    void play();
+    void undo(sf::Event event);
+    void redo(sf::Event event);
+    void copy(sf::Event event);
+    void paste(sf::Event event);
 
-    void moveLaserLeft();
-    void moveLaserRight();
-    void moveLaserDown();
-    void moveLaserUp();
+    void updateSelect(sf::Event event);
+    void startSelect(sf::Event event);
+    void endSelect(sf::Event event);
 
+    void play(sf::Event event);
+
+    void moveLaserLeft(sf::Event event);
+    void moveLaserRight(sf::Event event);
+    void moveLaserDown(sf::Event event);
+    void moveLaserUp(sf::Event event);
+
+    void mouseScroll(sf::Event event);
+
+    void mousePressedLeft(sf::Event event);
+    void mouseReleasedLeft(sf::Event event);
     //vars
     boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;
@@ -160,7 +176,7 @@ public:
 
     gameControl* controlPtr;
 
-    std::unordered_map<int, ChartLine*> selectedLines;
+    std::map<unsigned int, ChartLine*> selectedLines;
 
     float width = 0;
     float height = 0;

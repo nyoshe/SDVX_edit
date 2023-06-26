@@ -273,7 +273,7 @@ void Input::handleEvent(sf::Event event) {
 		for (auto mapping : functionMap[std::make_pair(keyVec, mouseVec)]) {
 			if (mapping.eventType == event.type) {
 				try {
-					mapping.function();
+					mapping.function(event);
 				}
 				catch (std::bad_function_call& e)
 				{
@@ -284,15 +284,20 @@ void Input::handleEvent(sf::Event event) {
 	}
 }
 
-void Input::addActionMouse(sf::Event::EventType event,  std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name) {
+void Input::addEventAction(sf::Event::EventType event, std::function<void(sf::Event)> func, std::string name) {
+	addAction(event, {}, {}, func, name);
+}
+
+
+void Input::addActionMouse(sf::Event::EventType event,  std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
 	addAction(event, {}, buttonList, func, name);
 }
 
-void Input::addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::function<void(void)> func, std::string name) {
+void Input::addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::function<void(sf::Event)> func, std::string name) {
 	addAction(event, keyList, {}, func, name);
 }
 
-void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name) {
+void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
 	std::sort(keyList.begin(), keyList.end());
 	std::sort(buttonList.begin(), buttonList.end());
 	//check if we already have a binding

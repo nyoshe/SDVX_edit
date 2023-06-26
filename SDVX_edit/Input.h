@@ -17,8 +17,8 @@
 struct FunctionInfo {
 	sf::Event::EventType eventType;
 	std::string name;
-	std::function<void(void)> function;
-	FunctionInfo(sf::Event::EventType _eventType, std::string _name, std::function<void(void)> _function) : function(_function), name(_name), eventType(_eventType) {};
+	std::function<void(sf::Event)> function;
+	FunctionInfo(sf::Event::EventType _eventType, std::string _name, std::function<void(sf::Event)> _function) : function(_function), name(_name), eventType(_eventType) {};
 };
 
 //might be nice to just turn this into a struct
@@ -63,8 +63,9 @@ public:
 	std::vector<std::string> splitCommas(std::string str);
 
 
-	void addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::function<void(void)>, std::string name);
+	void addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(sf::Event)>, std::string name);
+	void addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button>, std::function<void(sf::Event)>, std::string name);
+	void addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::function<void(sf::Event)>, std::string name);
+	void addEventAction(sf::Event::EventType event, std::function<void(sf::Event)>, std::string name);
 };
 
