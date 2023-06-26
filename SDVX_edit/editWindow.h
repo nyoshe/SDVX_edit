@@ -127,9 +127,16 @@ public:
     void saveFile(std::string fileName);
     void saveFile();
 
+    //actions
     void undo();
     void redo();
     void play();
+
+    void moveLaserLeft();
+    void moveLaserRight();
+    void moveLaserDown();
+    void moveLaserUp();
+
     //vars
     boost::interprocess::managed_shared_memory memSegment;
     int editorMeasure = 0;

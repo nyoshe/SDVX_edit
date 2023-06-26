@@ -1,10 +1,10 @@
 action:redo
-type:onKeyDown
+type:KeyPressed
 keys:Y,LControl
 endBinding
 
 action:undo
-type:onKeyDown
+type:KeyPressed
 keys:Z,LControl
 endBinding
 

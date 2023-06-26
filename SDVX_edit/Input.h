@@ -14,26 +14,37 @@
 #include <functional>
 #include <memory>
 
+struct FunctionInfo {
+	sf::Event::EventType eventType;
+	std::string name;
+	std::function<void(void)> function;
+	FunctionInfo(sf::Event::EventType _eventType, std::string _name, std::function<void(void)> _function) : function(_function), name(_name), eventType(_eventType) {};
+};
+
 //might be nice to just turn this into a struct
-typedef std::map < std::pair<std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>>, std::vector<std::pair<std::string, std::function<void(void)>>>> InputMap;
+typedef std::map < std::pair<std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>>, std::vector<FunctionInfo>> InputMap;
 
 class Input final : public Unique <Input>
 {
 private:
-	InputMap keyDownFunctions;
-	InputMap keyUpFunctions;
-	InputMap mouseDownFunctions;
-	InputMap mouseUpFunctions;
+	//InputMap keyDownFunctions;
+	//InputMap keyUpFunctions;
+	//InputMap mouseDownFunctions;
+	//InputMap mouseUpFunctions;
+
+	InputMap functionMap;
 	std::string fileName = "bindings.txt";
 
 	std::map<std::string, std::pair<std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>>> nameMap;
-	std::map<std::string, std::string> actionTypeMap;
+	std::map<std::string, sf::Event::EventType> eventTypeMap;
 
 	std::map<sf::Mouse::Button, std::string> buttonStrings;
 	std::map<sf::Keyboard::Key, std::string> keyStrings;
+	std::map<sf::Event::EventType, std::string> eventStrings;
 
 	std::map<std::string, sf::Mouse::Button> buttonEnums;
 	std::map<std::string, sf::Keyboard::Key> keyEnums;
+	std::map<std::string, sf::Event::EventType> eventEnums;
 
 	std::string onButtonDown = "onButtonDown";
 	std::string onButtonUp = "onButtonUp";
@@ -45,32 +56,15 @@ public:
 	Input();
 	~Input();
 
-	void writeBinding(std::ofstream& out, const InputMap& map, std::string type);
+	void writeBinding(std::ofstream& out);
 
 	void handleEvent(sf::Event event);
-
-	void execute(std::vector<std::pair<std::string, std::function<void(void)>>>& functionObjects);
-
-	//this checks to see if we already have a loaded binding
-	void addAction(InputMap& map, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name);
 
 	std::vector<std::string> splitCommas(std::string str);
 
 
-	//keyboard actions will trigger on a key down event
-	void addKeyDownAction(std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addKeyDownAction(std::vector<sf::Keyboard::Key>, std::function<void(void)>, std::string name);
-
-	//keyboard actions will trigger on a key up event
-	void addKeyUpAction(std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addKeyUpAction(std::vector<sf::Keyboard::Key>, std::function<void(void)>, std::string name);
-	
-	//mouse actions will trigger on a mouse down event
-	void addMouseDownAction(std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addMouseDownAction(std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-
-	//mouse actions will trigger on a mouse up event
-	void addMouseUpAction(std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
-	void addMouseUpAction(std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
+	void addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
+	void addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button>, std::function<void(void)>, std::string name);
+	void addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::function<void(void)>, std::string name);
 };
 

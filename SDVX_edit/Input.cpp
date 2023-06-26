@@ -10,6 +10,34 @@ static std::map<V, K> swap_map(const std::map<K, V>& m) {
 }
 
 Input::Input() {
+	if (eventStrings.size() == 0) {
+#define INSERT_ELEMENT(p) eventStrings[sf::Event::EventType::p] = #p
+		INSERT_ELEMENT(Resized);
+		INSERT_ELEMENT(LostFocus);
+		INSERT_ELEMENT(GainedFocus);
+		INSERT_ELEMENT(TextEntered);
+		INSERT_ELEMENT(KeyPressed);
+		INSERT_ELEMENT(KeyReleased);
+		INSERT_ELEMENT(MouseWheelMoved);
+		INSERT_ELEMENT(MouseWheelScrolled);
+		INSERT_ELEMENT(MouseButtonPressed);
+		INSERT_ELEMENT(MouseButtonReleased);
+		INSERT_ELEMENT(MouseMoved);
+		INSERT_ELEMENT(MouseEntered);
+		INSERT_ELEMENT(MouseLeft);
+		INSERT_ELEMENT(JoystickButtonPressed);
+		INSERT_ELEMENT(JoystickButtonReleased);
+		INSERT_ELEMENT(JoystickMoved);
+		INSERT_ELEMENT(JoystickConnected);
+		INSERT_ELEMENT(JoystickDisconnected);
+		INSERT_ELEMENT(TouchBegan);
+		INSERT_ELEMENT(TouchMoved);
+		INSERT_ELEMENT(TouchEnded);
+		INSERT_ELEMENT(SensorChanged);
+
+#undef INSERT_ELEMENT
+	}
+
 	if (buttonStrings.size() == 0) {
 #define INSERT_ELEMENT(p) buttonStrings[sf::Mouse::p] = #p
 		INSERT_ELEMENT(Left);
@@ -130,16 +158,15 @@ Input::Input() {
 	}
 	keyEnums = swap_map(keyStrings);
 	buttonEnums = swap_map(buttonStrings);
+	eventEnums = swap_map(eventStrings);
 
 	std::ifstream input(fileName);
-
-	//TODO: loading from file
 
 	//check if bindings file exists
 	if (input.good()) {
 		
 		std::string s;
-		std::string actionType;
+		sf::Event::EventType eventType = sf::Event::EventType::Count;
 		std::vector<std::string> actionList = {};
 		std::vector<sf::Keyboard::Key> keyList = {};
 		std::vector<sf::Mouse::Button> buttonList = {};
@@ -148,7 +175,7 @@ Input::Input() {
 				actionList = splitCommas(s.substr(s.find(":") + 1));
 			}
 			if (s.find("type:") != std::string::npos) {
-				actionType = s.substr(s.find(":") + 1);
+				eventType = eventEnums[s.substr(s.find(":") + 1)];
 			}
 			if (s.find("keys:") != std::string::npos) {
 				std::vector<std::string> keyStr = splitCommas(s.substr(s.find(":") + 1));
@@ -165,7 +192,7 @@ Input::Input() {
 			if (s.find("endBinding") != std::string::npos) {
 				for (auto action : actionList) {
 					nameMap[action] = std::make_pair(keyList, buttonList);
-					actionTypeMap[action] = actionType;
+					eventTypeMap[action] = eventType;
 					actionList.clear();
 					keyList.clear();
 					buttonList.clear();
@@ -180,10 +207,7 @@ Input::Input() {
 
 Input::~Input() {
 	std::ofstream output(fileName);
-	writeBinding(output, keyDownFunctions, onKeyDown);
-	writeBinding(output, keyUpFunctions, onKeyUp);
-	writeBinding(output, mouseDownFunctions, onButtonDown);
-	writeBinding(output, mouseUpFunctions, onButtonUp);
+	writeBinding(output);
 }
 
 std::vector<std::string>  Input::splitCommas(std::string str) {
@@ -200,33 +224,33 @@ std::vector<std::string>  Input::splitCommas(std::string str) {
 	return out;
 }
 
-void Input::writeBinding(std::ofstream& out, const InputMap& map, std::string type) {
-	for (auto mapping : map) {
-		out << "action:";
-		for (auto name : mapping.second) {
-			out << name.first << ((name.first != mapping.second.back().first) ? "," : "");
-		}
-		out << std::endl;
-		out << "type:" << type << std::endl;
+void Input::writeBinding(std::ofstream& out) {
+	for (auto mapping : functionMap) {
+		for (auto item : mapping.second) {
+			out << "action:";
+			out << item.name << ((item.name != mapping.second.back().name) ? "," : "");
+			out << std::endl;
+			out << "type:" << eventStrings[item.eventType] << std::endl;
 
-		if (mapping.first.first.size() > 0) {
-			out << "keys:";
-			for (auto key : mapping.first.first) {
-				out << keyStrings[key] << ((key != mapping.first.first.back()) ? "," : "");
+			if (mapping.first.first.size() > 0) {
+				out << "keys:";
+				for (auto key : mapping.first.first) {
+					out << keyStrings[key] << ((key != mapping.first.first.back()) ? "," : "");
+				}
+				out << std::endl;
 			}
+
+			if (mapping.first.second.size() > 0) {
+				out << "buttons:";
+				for (auto button : mapping.first.second) {
+					out << buttonStrings[button] << ((button != mapping.first.second.back()) ? "," : "");
+				}
+				out << std::endl;
+			}
+
+			out << "endBinding" << std::endl;
 			out << std::endl;
 		}
-		
-		if (mapping.first.second.size() > 0) {
-			out << "buttons:";
-			for (auto button : mapping.first.second) {
-				out << buttonStrings[button] << ((button != mapping.first.second.back()) ? "," : "");
-			}
-			out << std::endl;
-		}
-		
-		out << "endBinding" << std::endl;
-		out << std::endl;
 	}
 }
 
@@ -243,104 +267,41 @@ void Input::handleEvent(sf::Event event) {
 			mouseVec.push_back(static_cast<sf::Mouse::Button>(i));
 		}
 	}
+	
 
-
-	switch (event.type) {
-		case sf::Event::KeyPressed:
-			if (keyDownFunctions.find(std::make_pair(keyVec, mouseVec)) != keyDownFunctions.end()) {
-				execute(keyDownFunctions[std::make_pair(keyVec, mouseVec)]);
+	if (functionMap.find(std::make_pair(keyVec, mouseVec)) != functionMap.end()) {
+		for (auto mapping : functionMap[std::make_pair(keyVec, mouseVec)]) {
+			if (mapping.eventType == event.type) {
+				try {
+					mapping.function();
+				}
+				catch (std::bad_function_call& e)
+				{
+					PLOG_WARNING << "Bad function call for function: " << mapping.name;
+				}
 			}
-			break;
-		case event.KeyReleased:
-			if (keyUpFunctions.find(std::make_pair(keyVec, mouseVec)) != keyUpFunctions.end()) {
-				execute(keyUpFunctions[std::make_pair(keyVec, mouseVec)]);
-			}
-			break;
-		case event.MouseButtonPressed:
-			if (mouseDownFunctions.find(std::make_pair(keyVec, mouseVec)) != mouseDownFunctions.end()) {
-				execute(mouseDownFunctions[std::make_pair(keyVec, mouseVec)]);
-			}
-			break;
-		case event.MouseButtonReleased:
-			if (mouseUpFunctions.find(std::make_pair(keyVec, mouseVec)) != mouseUpFunctions.end()) {
-				execute(mouseUpFunctions[std::make_pair(keyVec, mouseVec)]);
-			}
-			break;
-	}
-}
-
-void Input::execute(std::vector<std::pair<std::string, std::function<void(void)>>>& functionObjects) {
-
-	for (auto function : functionObjects) {
-		try {
-			function.second();
-		}
-		catch (std::bad_function_call& e)
-		{
-			PLOG_WARNING << "Bad function call for function: "<< function.first;
 		}
 	}
 }
 
-void Input::addAction(InputMap& map, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name) {
+void Input::addActionMouse(sf::Event::EventType event,  std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name) {
+	addAction(event, {}, buttonList, func, name);
+}
+
+void Input::addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::function<void(void)> func, std::string name) {
+	addAction(event, keyList, {}, func, name);
+}
+
+void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(void)> func, std::string name) {
+	std::sort(keyList.begin(), keyList.end());
+	std::sort(buttonList.begin(), buttonList.end());
 	//check if we already have a binding
 	if (nameMap.find(name) != nameMap.end()) {
-		if (actionTypeMap[name] == onKeyDown) {
-			keyDownFunctions[nameMap[name]].push_back(std::make_pair(name, func));
-		}
-		if (actionTypeMap[name] == onKeyUp) {
-			keyUpFunctions[nameMap[name]].push_back(std::make_pair(name, func));
-		}
-		if (actionTypeMap[name] == onButtonDown) {
-			mouseDownFunctions[nameMap[name]].push_back(std::make_pair(name, func));
-		}
-		if (actionTypeMap[name] == onButtonUp) {
-			mouseUpFunctions[nameMap[name]].push_back(std::make_pair(name, func));
+		if (eventTypeMap[name] == event) {
+			functionMap[nameMap[name]].push_back(FunctionInfo(eventTypeMap[name], name, func));
 		}
 	}
 	else {
-		map[std::make_pair(keyList, buttonList)].push_back(std::make_pair(name, func));
+		functionMap[std::make_pair(keyList, buttonList)].push_back(FunctionInfo(event, name, func));
 	}
-}
-
-void Input::addKeyDownAction(std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {
-	std::sort(keyList.begin(), keyList.end());
-	std::sort(mouseList.begin(), mouseList.end());
-	addAction(keyDownFunctions, keyList, mouseList, func, name);
-	//keyDownFunctions[std::make_pair(keyList, mouseList)].push_back(std::make_pair(name, func));
-}
-
-void Input::addKeyDownAction(std::vector<sf::Keyboard::Key> keyList, std::function<void(void)> func, std::string name) {
-	addKeyDownAction(keyList, {}, func, name);
-}
-
-void Input::addKeyUpAction(std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {
-	std::sort(keyList.begin(), keyList.end());
-	std::sort(mouseList.begin(), mouseList.end());
-	addAction(keyDownFunctions, keyList, mouseList, func, name);
-}
-
-void Input::addKeyUpAction(std::vector<sf::Keyboard::Key> keyList, std::function<void(void)> func, std::string name) {
-	addKeyUpAction(keyList, {}, func, name);
-}
-
-
-void Input::addMouseDownAction(std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {\
-	std::sort(keyList.begin(), keyList.end());
-	std::sort(mouseList.begin(), mouseList.end());
-	addAction(keyDownFunctions, keyList, mouseList, func, name);
-}
-
-void Input::addMouseDownAction(std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {
-	addMouseDownAction({}, mouseList, func, name);
-}
-
-void Input::addMouseUpAction(std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {\
-	std::sort(keyList.begin(), keyList.end());
-	std::sort(mouseList.begin(), mouseList.end());
-	addAction(keyDownFunctions, keyList, mouseList, func, name);
-}
-
-void Input::addMouseUpAction(std::vector<sf::Mouse::Button> mouseList, std::function<void(void)> func, std::string name) {
-	addMouseUpAction({}, mouseList, func, name);
 }

@@ -2,9 +2,13 @@
 
 EditWindow::EditWindow() {
 
-	Input::instance().addKeyDownAction({ sf::Keyboard::Key::LControl, sf::Keyboard::Key::Z }, std::bind(&EditWindow::undo, this), "undo");
-	Input::instance().addKeyDownAction({ sf::Keyboard::Key::LControl, sf::Keyboard::Key::Y }, std::bind(&EditWindow::redo, this), "redo");
-	Input::instance().addKeyDownAction({ sf::Keyboard::Key::Space }, std::bind(&EditWindow::play, this), "play");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::LControl, sf::Keyboard::Z }, std::bind(&EditWindow::undo, this), "undo");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::LControl, sf::Keyboard::Y }, std::bind(&EditWindow::redo, this), "redo");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::Space, }, std::bind(&EditWindow::play, this), "play");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::Key::Left }, std::bind(&EditWindow::moveLaserLeft, this), "moveLaserLeft");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::Key::Right }, std::bind(&EditWindow::moveLaserRight, this), "moveLaserRight");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::Key::Down }, std::bind(&EditWindow::moveLaserDown, this), "moveLaserDown");
+	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::Key::Up }, std::bind(&EditWindow::moveLaserUp, this), "moveLaserUp");
 	//bt button
 	if (!entryTex.loadFromFile("textures/entryTex.png"))
 		PLOG_WARNING << "failed to load entry sprite!";
@@ -809,38 +813,6 @@ void EditWindow::handleEvent(sf::Event event) {
 		}
 	}
 
-	if (event.type == sf::Event::KeyPressed) {
-
-		
-
-		
-		if (selectedLaser.second != nullptr) {
-			if (event.key.code == sf::Keyboard::Left) {
-				ChartLine* laserToEdit = selectedLaserEnd.second;
-				chart.addUndoBuffer(laserToEdit);
-				//should probably change modifyLaserPos to chart
-				laserToEdit->modifyLaserPos(selectedLaser.first, -laserMoveSize);
-			}
-			if (event.key.code == sf::Keyboard::Right) {
-				ChartLine* laserToEdit = selectedLaserEnd.second;
-				chart.addUndoBuffer(laserToEdit);
-				laserToEdit->modifyLaserPos(selectedLaser.first, laserMoveSize);
-			}
-			if (event.key.code == sf::Keyboard::Up) {
-				LineMask moveMask;
-				moveMask.laser[selectedLaser.first] = 1;
-				chart.addUndoBuffer(selectedLaserEnd.second);
-				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, 192 / snapGridSize);
-			}
-			if (event.key.code == sf::Keyboard::Down) {
-				LineMask moveMask;
-				moveMask.laser[selectedLaser.first] = 1;
-				chart.addUndoBuffer(selectedLaserEnd.second);
-				selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, -192 / snapGridSize);
-			}
-		}
-	}
-
 	if (event.type == sf::Event::MouseWheelScrolled)
 	{
 		if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
@@ -992,3 +964,43 @@ void EditWindow::play() {
 		player.playFrom(chart.getMs(selectStart));
 	}
 }
+
+void EditWindow::moveLaserLeft()
+{
+	if (selectedLaser.second != nullptr) {
+		ChartLine* laserToEdit = selectedLaserEnd.second;
+		chart.addUndoBuffer(laserToEdit);
+		//should probably change modifyLaserPos to chart
+		laserToEdit->modifyLaserPos(selectedLaser.first, -laserMoveSize);
+	}
+}
+
+void EditWindow::moveLaserRight()
+{
+	if (selectedLaser.second != nullptr) {
+		ChartLine* laserToEdit = selectedLaserEnd.second;
+		chart.addUndoBuffer(laserToEdit);
+		laserToEdit->modifyLaserPos(selectedLaser.first, laserMoveSize);
+	}
+}
+
+void EditWindow::moveLaserDown()
+{
+	if (selectedLaser.second != nullptr) {
+		LineMask moveMask;
+		moveMask.laser[selectedLaser.first] = 1;
+		chart.addUndoBuffer(selectedLaserEnd.second);
+		selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, -192 / snapGridSize);
+	}
+}
+
+void EditWindow::moveLaserUp()
+{
+	if (selectedLaser.second != nullptr) {
+		LineMask moveMask;
+		moveMask.laser[selectedLaser.first] = 1;
+		chart.addUndoBuffer(selectedLaserEnd.second);
+		selectedLaserEnd.second = chart.moveChartLine(selectedLaserEnd.second->pos, moveMask, 192 / snapGridSize);
+	}
+}
+
