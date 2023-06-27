@@ -100,8 +100,8 @@ public:
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
 
-    void insertChartLine(unsigned int line, std::map<int, ChartLine> lineMap);
-    ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
+    void insertChartLine(int line, std::map<unsigned int, ChartLine> lineMap);
+    ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask maask);
 
     //returns a pointer to the moved object
     ChartLine* moveChartLine(int line, LineMask moveMask, int change);
@@ -126,6 +126,6 @@ public:
     //quick function to make sure we didn't mess anything up
     void validateChart();
 
-    std::vector<std::pair<ChartLine*, ChartLine>> getSelection(unsigned int pos1, unsigned int pos2, LineMask mask);
+    std::map<unsigned int, ChartLine> getSelection(unsigned int pos1, unsigned int pos2, LineMask mask);
 };
 

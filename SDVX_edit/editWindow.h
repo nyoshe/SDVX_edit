@@ -42,10 +42,12 @@ struct gameControl
 #define DEBUG true
 
 struct MouseInfo {
-    unsigned int mouseStartLine = 0;
-    unsigned int mouseEndLine = 0;
-    unsigned int mouseDownLane = 0;
-    unsigned int mouseUpLane = 0;
+    int mouseStartLine = 0;
+    int mouseEndLine = 0;
+    int mouseDownLane = 0;
+    int mouseUpLane = 0;
+    int mouseDownLaserPos = 0;
+
     bool isValid = false;
     void update() {
         isValid = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
@@ -68,6 +70,7 @@ private:
     unsigned int selectEnd = 0;
 
     unsigned int mouseDownLine = 0;
+
     unsigned int mouseDownLane = 0;
 
     std::pair<int, ChartLine*> laserHover;
@@ -96,6 +99,7 @@ private:
 
     sf::Font font;
 public:
+
     EditWindow();
     ~EditWindow() = default;
 
@@ -198,10 +202,11 @@ public:
     float measureHeight = 0;
     float topPadding = 50;
     float bottomPadding = 50;
+
     sf::RenderTarget* window = nullptr;
     sf::RenderWindow* appWindow = nullptr;
 
-    std::vector<std::pair<ChartLine*, ChartLine>>  clipboard;
+    std::map<unsigned int, ChartLine>  clipboard;
 
     Chart chart;
     //functions

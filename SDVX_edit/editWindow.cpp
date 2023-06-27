@@ -869,8 +869,9 @@ void EditWindow::update() {
 	ImGui::Text(s12.c_str());
 	
 	ImGui::End();
-	
+	//appWindow
 	//drawMap();
+
 	drawChart();
 
 
@@ -930,11 +931,14 @@ void EditWindow::copy(sf::Event event) {
 void EditWindow::paste(sf::Event event){
 	chart.clearRedoStack();
 	unsigned int snapPos = getSnappedLine(selectStart);
+	chart.insertChartLine(snapPos, clipboard);
+	/*
 	unsigned int lineBegin = 0;
 	if (clipboard.begin() != clipboard.end()) lineBegin = clipboard.begin()->second.pos;
 	for (auto line : clipboard) {
 		chart.insertChartLine(snapPos + (line.second.pos - lineBegin), line.second);
 	}
+	*/
 	chart.validateChart();
 	chart.pushUndoBuffer();
 }
@@ -972,7 +976,7 @@ void EditWindow::endSelect(sf::Event event) {
 		selectedLines.clear();
 
 		//just testing stuff
-		std::vector<std::pair<ChartLine*, ChartLine>> out = chart.getSelection(selectStart, selectEnd, Mask::ALL);
+		std::map<unsigned int, ChartLine> out = chart.getSelection(selectStart, selectEnd, Mask::ALL);
 		for (auto line : out) {
 			selectedLines[line.second.pos] = new ChartLine(line.second);
 		}
@@ -1060,19 +1064,24 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 		int mouseLine = getSnappedLine(getMouseLine());
 		if (mouseLine != mouseDownLine && mouseLine != -1) {
 			chart.clearRedoStack();
+			LineMask mask;
+
 			for (int i = mouseDownLine; i < mouseLine; i += (192 / snapGridSize)) {
 				ChartLine newLine;
 				switch (tool) {
 				case ToolType::BT:
 					newLine.btVal[mouseDownLane] = 2;
+					mask.bt[mouseDownLane] = 1;
 					break;
 				case ToolType::FX:
 					newLine.fxVal[mouseDownLane / 2] = 1;
+					mask.fx[mouseDownLane /2] = 1;
 					break;
 				};
-				chart.insertChartLine(i, newLine);
+				chart.insertChartLine(i, newLine, newLine.makeMask());
 			}	
-			chart.insertChartLine(mouseLine, ChartLine());
+			
+			chart.insertChartLine(mouseLine, ChartLine(), mask);
 			chart.pushUndoBuffer();
 		}
 		else {
@@ -1088,7 +1097,7 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 
 			if (getMouseMeasure() != -1 && !select) {
 				chart.clearRedoStack();
-				chart.insertChartLine(getSnappedLine(getMouseLine()), newLine);
+				chart.insertChartLine(getSnappedLine(getMouseLine()), newLine, newLine.makeMask());
 				chart.pushUndoBuffer();
 			}
 		}

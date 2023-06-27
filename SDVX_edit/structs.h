@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 
 
+
  struct Measure {
     //division of the measure (eg. 32, 16, 12, etc)
     //the standard measure division is 192, it can go higher if the time signature is different

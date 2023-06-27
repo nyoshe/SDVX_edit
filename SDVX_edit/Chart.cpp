@@ -98,13 +98,13 @@ void Chart::addLaserConnections(ChartLine* line, int laser) {
 	if (line->prev != nullptr && line->prev->laserPos[laser] >= 0 && line->laserPos[laser] >= 0) {
 		int diff = line->pos - line->prev->pos;
 		if (diff >= 2) {
-			insertChartLine(line->pos - diff / 2, newLaser);
+			insertChartLine(line->pos - diff / 2, newLaser, Mask::LASER_ALL);
 		}
 	}
 	if (line->next != nullptr && line->next->laserPos[laser] >= 0 && line->laserPos[laser] >= 0) {
 		int diff = line->next->pos - line->pos;
 		if (diff >= 2) {
-			insertChartLine(line->pos + diff / 2, newLaser);
+			insertChartLine(line->pos + diff / 2, newLaser, Mask::LASER_ALL);
 		}
 	}
 }
@@ -162,10 +162,67 @@ void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
 	connectLines(l2, l3);
 }
 
-void Chart::insertChartLine(unsigned int line, std::map<int, ChartLine> lineMap) {
+void Chart::insertChartLine(int line, std::map<unsigned int, ChartLine> lineMap) {
+	
+	int startLine = line;
+	int endLine = line + (std::prev(lineMap.end(), 1)->second.pos - lineMap.begin()->second.pos);
+	int offset = line - lineMap.begin()->second.pos;
+	//insert and update or locations
+	for (auto it = lineMap.begin(); it != lineMap.end(); it++) {
+		insertChartLine(it->second.pos + offset, it->second, it->second.makeMask());
+		
+	}
+
+	
+	
+	
+	for (auto it = lines.find(startLine); it->first <= endLine; it++) {
+		addUndoBuffer(it->second);
+	}
+
+	for (auto it = lines.find(startLine); it->first <= endLine; it++) {
+		if (lineMap.find(it->first - offset) == lineMap.end()) {
+			ChartLine beforeLine = ChartLine(std::prev(lineMap.lower_bound(it->first - offset), 1)->second);
+			ChartLine afterLine = ChartLine(lineMap.lower_bound(it->first - offset)->second);
+			for (int i = 0; i < 2; i++) {
+				if ((beforeLine.laserPos[i] == -2 && afterLine.laserPos[i] == -2) ||
+					(beforeLine.laserPos[i] >=  0 && afterLine.laserPos[i] == -2) ||
+					(beforeLine.laserPos[i] == -2 && afterLine.laserPos[i] >=  0)) {
+					it->second->laserPos[i] = -2;
+				}
+				if (beforeLine.fxVal[i] == 1) {
+					it->second->fxVal[i] = 1;
+				}
+				if (beforeLine.isWide[i] == 1) {
+					it->second->isWide[i] = 1;
+				}
+			}
+			for (int i = 0; i < 4; i++) {
+				if (beforeLine.btVal[i] == 2) {
+					it->second->btVal[i] = 2;
+				}
+			}
+		}
+	}
+	
+	if (lineMap.size() >= 2) {
+		LineMask mask;
+		for (int i = 0; i < 2; i++) {
+			if (std::prev(lineMap.end(), 2)->second.fxVal[i] == 1 && std::prev(lineMap.end(), 1)->second.fxVal[i] == 0) {
+				mask.fx[i] = 1;
+			}
+		}
+		for (int i = 0; i < 4; i++) {
+			if (std::prev(lineMap.end(), 2)->second.btVal[i] == 2 && std::prev(lineMap.end(), 1)->second.btVal[i] == 0) {
+				mask.bt[i] = 1;
+			}
+		}
+		insertChartLine(endLine, std::prev(lineMap.end(), 1)->second, mask);
+	}
+	
 }
 
-ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
+ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask) {
 	unsigned int absPos = line;
 	//check to see if we are on a new measure
 	if (measures.size() == 0) {
@@ -222,20 +279,20 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 					newLine->laserPos[i] = -2;
 				}
 				//extend hold fx
-				if (newLine->prev->fxVal[i] == 1) {
+				if (newLine->prev->fxVal[i] == 1 && newLine->fxVal[i] != 2) {
 					newLine->fxVal[i] = 1;
 				}
 			}
 			for (int i = 0; i < 4; i++) {
 				//extend hold bt
-				if (newLine->prev->btVal[i] == 2) {
+				if (newLine->prev->btVal[i] == 2 && newLine->btVal[i] != 1) {
 					newLine->btVal[i] = 2;
 				}
 			}
 		}
 		//addUndoBuffer(newLine);
 
-		*newLine += cLine;
+		*newLine = newLine->replaceMask(mask, cLine);
 
 		undoBuffer.push_back(std::make_pair(nullptr, newLine));
 	}
@@ -246,7 +303,8 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 		addUndoBuffer(existingLine);
 		//actionList.push_back(std::make_pair(existingLine, new ChartLine(*lines[absPos])));
 
-		*existingLine += cLine;
+		*existingLine = existingLine->replaceMask(mask, cLine);
+
 	}
 	return lines[absPos];
 }
@@ -520,7 +578,7 @@ ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change) {
 	//if we can't find the position, create one
 	if (lines.find(line + change) == lines.end()) {
 		ChartLine newLine;
-		insertChartLine(line + change, newLine);
+		insertChartLine(line + change, newLine, moveMask);
 	}
 	else {
 		addUndoBuffer(lines[line + change]);
@@ -668,17 +726,19 @@ void Chart::validateChart() {
 	std::cout << "no issues found :)" << std::endl;
 }
 
-std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask) {
+std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask) {
 	unsigned int start = std::min(pos1, pos2);
 	unsigned int end = std::max(pos1, pos2);
 	std::vector<std::pair<ChartLine*, ChartLine>> out;
+	//fix this lmao
+	std::map<unsigned int, ChartLine> finalOut;
 
 	if (lines.find(start) == lines.end()) {
-		if (getLineAfter(start) == lines.end()) return out;
+		if (getLineAfter(start) == lines.end()) return finalOut;
 		start = getLineAfter(start)->second->pos;
 	}
 	if (lines.find(end) == lines.end()) {
-		if (getLineBefore(end) == lines.end()) return out;
+		if (getLineBefore(end) == lines.end()) return finalOut;
 		end = getLineBefore(end)->second->pos;
 	}
 
@@ -708,7 +768,7 @@ std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int p
 		line = line->next;
 	}
 
-	if (out.size() == 0) return out;
+	if (out.size() == 0) return finalOut;
 	//cleanup laser ends
 
 	for (int i = 0; i < 2; i++) {
@@ -751,8 +811,30 @@ std::vector<std::pair<ChartLine*, ChartLine>> Chart::getSelection(unsigned int p
 			}
 		}
 	}
+	LineMask endExtract;
+	for (int i = 0; i < 2; i++) {
+		if (out.back().second.fxVal[i] == 1) {
+			endExtract.fx[i] = 1;
+		}
+	}
 
+	for (int i = 0; i < 4; i++) {
+		if (out.back().second.btVal[i] == 2) {
+			endExtract.bt[i] = 1;
+		}
+	}
+	
+	if (out.back().first->next != nullptr) {
+		out.push_back(std::make_pair(out.back().first->next, out.back().first->next->extractMask(endExtract)));
+	}
+	else {
+		out.push_back(std::make_pair(nullptr, ChartLine()));
+	}
 	
 
-	return out;
+	for (auto line : out) {
+		finalOut[line.second.pos] = line.second;
+	}
+
+	return finalOut;
 }

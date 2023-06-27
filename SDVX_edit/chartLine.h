@@ -13,6 +13,8 @@ struct Command {
     std::string val = "";
 };
 
+
+
 struct LineMask {
     std::bitset <4> bt = 0x00;
     std::bitset <2> fx = 0x00;
@@ -21,7 +23,12 @@ struct LineMask {
     LineMask() = default;
 
 
+    //LineMask(const ChartLine& line);
+
+
     LineMask(std::bitset <4> _bt, std::bitset <2> _fx, std::bitset <2> _laser) : bt(_bt), fx(_fx), laser(_laser) {};
+
+
 
     LineMask operator~() {
         LineMask maskNot;
@@ -46,7 +53,6 @@ namespace Mask {
     static const LineMask ALL(0x0F, 0x03, 0x03);
 }
 
-
 class ChartLine {
 public:
     //2 for long note, 1 for chip
@@ -67,6 +73,8 @@ public:
 
     LineMask operator&(const LineMask& line);
 
+    ChartLine replaceMask(LineMask mask, const ChartLine& b);
+
     ChartLine* getNextLaser(int laser);
     ChartLine* getPrevLaser(int laser);
 
@@ -82,6 +90,8 @@ public:
     void modifyLaserPos(int laser, int val);
 
     ChartLine extractMask(LineMask mask);
+
+    LineMask makeMask();
 
     void clearLaser(int laser);
 

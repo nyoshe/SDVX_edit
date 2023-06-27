@@ -1,6 +1,39 @@
 #include "chartLine.h"
 
-
+/*
+LineMask::LineMask(const ChartLine& line) {
+    for (int i = 0; i < 2; i++) {
+        if (line.fxVal[i] > 0) {
+            this->fx[i] = 1;
+        }
+        if (line.laserPos[i] != -1) {
+            this->laser[i] = 1;
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        if (line.btVal[i] > 0) {
+            this->bt[i] = 1;
+        }
+    }
+}
+*/
+LineMask ChartLine::makeMask(){
+    LineMask out;
+    for (int i = 0; i < 2; i++) {
+        if (this->fxVal[i] > 0) {
+            out.fx[i] = 1;
+        }
+        if (this->laserPos[i] != -1) {
+            out.laser[i] = 1;
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        if (this->btVal[i] > 0) {
+            out.bt[i] = 1;
+        }
+    }
+    return out;
+ }
 
 bool ChartLine::empty() {
     for (int i = 0; i < 4; i++) {
@@ -161,6 +194,28 @@ void ChartLine::modifyLaserPos(int laser, int val) {
         laserPos[laser] += val;
     }
 }
+
+//essentially overwrites if mask bits are set
+ChartLine ChartLine::replaceMask(LineMask mask, const ChartLine& b) {
+    ChartLine out = *this;
+    for (int i = 0; i < 2; i++) {
+        if (mask.laser[i]) {
+            out.laserPos[i] = b.laserPos[i];
+        }
+        //a merge overwrites the laser position
+        if (mask.fx[i]) {
+            out.fxVal[i] = b.fxVal[i];
+        }
+        if (b.isWide[i] && !this->isWide[i]) out.isWide[i] = 1;
+    }
+    for (int i = 0; i < 4; i++) {
+        if (mask.bt[i]) {
+            out.btVal[i] = b.btVal[i];
+        }
+    }
+    return out;
+}
+
 
 ChartLine ChartLine::extractMask(LineMask mask) {
     ChartLine output;

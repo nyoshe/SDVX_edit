@@ -219,7 +219,7 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 			lineBuffer.push_back(line);
 		}
 	}
-
+	chart.appendNewMeasure();
 }
 
 void Parser::saveFile(Chart& chart, std::string fileName)
