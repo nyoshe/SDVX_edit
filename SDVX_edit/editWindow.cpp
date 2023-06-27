@@ -787,6 +787,9 @@ void EditWindow::handleEvent(sf::Event event) {
 			chart.clearRedoStack();
 		}
 	}
+	if (!sf::Mouse::isButtonPressed(sf::Mouse::Left) && event.type != sf::Event::MouseButtonReleased) {
+		mouseDownLine = getSnappedLine(getMouseLine());
+	}
 }
 
 sf::Vector2f EditWindow::getNoteLocation(int lane, int line) {
@@ -856,8 +859,8 @@ void EditWindow::update() {
 	ImGui::Text(s7.c_str());
 	std::string s8 = "mouse diff: " + std::to_string((getSnappedLine(getMouseLine()) - mouseDownLine));
 	ImGui::Text(s8.c_str());
-	//std::string s9 = "note start y: " + std::to_string(getNoteLocation(getMouseGlobalLine()).y);
-	//ImGui::Text(s9.c_str());
+	std::string s9 = "imgui hover: " + std::to_string(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow));
+	ImGui::Text(s9.c_str());
 	std::string s10 = "laserPos: " + std::to_string(getMouseLaserPos(false));
 	ImGui::Text(s10.c_str());
 	std::string s11 = "bufferSize: " + std::to_string(player.track.buffSize);
@@ -932,6 +935,7 @@ void EditWindow::paste(sf::Event event){
 	for (auto line : clipboard) {
 		chart.insertChartLine(snapPos + (line.second.pos - lineBegin), line.second);
 	}
+	chart.validateChart();
 	chart.pushUndoBuffer();
 }
 
@@ -1029,7 +1033,7 @@ void EditWindow::mouseScroll(sf::Event event) {
 }
 
 void EditWindow::mousePressedLeft(sf::Event event){
-	if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
+	if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) {
 
 		mouseDownLine = getSnappedLine(getMouseLine());
 		mouseDownLane = getMouseLane();
@@ -1049,12 +1053,13 @@ void EditWindow::mousePressedLeft(sf::Event event){
 }
 
 void EditWindow::mouseReleasedLeft(sf::Event event) {
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) return;
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) return;
 	if (event.mouseButton.button != sf::Mouse::Left) return;
 
 	if (mouseDownLane != -1) {
 		int mouseLine = getSnappedLine(getMouseLine());
 		if (mouseLine != mouseDownLine && mouseLine != -1) {
+			chart.clearRedoStack();
 			for (int i = mouseDownLine; i < mouseLine; i += (192 / snapGridSize)) {
 				ChartLine newLine;
 				switch (tool) {
@@ -1067,6 +1072,7 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 				};
 				chart.insertChartLine(i, newLine);
 			}	
+			chart.insertChartLine(mouseLine, ChartLine());
 			chart.pushUndoBuffer();
 		}
 		else {

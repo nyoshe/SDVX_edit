@@ -41,6 +41,17 @@ struct gameControl
 
 #define DEBUG true
 
+struct MouseInfo {
+    unsigned int mouseStartLine = 0;
+    unsigned int mouseEndLine = 0;
+    unsigned int mouseDownLane = 0;
+    unsigned int mouseUpLane = 0;
+    bool isValid = false;
+    void update() {
+        isValid = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
+    }
+};
+
 typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
 typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 

@@ -99,6 +99,8 @@ public:
     void minimize();
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
+
+    void insertChartLine(unsigned int line, std::map<int, ChartLine> lineMap);
     ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
 
     //returns a pointer to the moved object

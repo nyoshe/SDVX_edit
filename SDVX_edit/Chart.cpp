@@ -162,9 +162,11 @@ void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
 	connectLines(l2, l3);
 }
 
+void Chart::insertChartLine(unsigned int line, std::map<int, ChartLine> lineMap) {
+}
+
 ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 	unsigned int absPos = line;
-	auto it = lines.find(absPos);
 	//check to see if we are on a new measure
 	if (measures.size() == 0) {
 		appendNewMeasure();
@@ -172,8 +174,8 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 
 	int measure = 0;
 
-	if (absPos >= measures.back().pos + measures.back().pulses) {
-		int loc = measures.back().pos + measures.back().pulses;
+	if (absPos >= measures.back().pos) {
+		int loc = measures.back().pos;
 		while (loc <= absPos) {
 			loc += appendNewMeasure();
 		}
@@ -187,7 +189,7 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 
 	int localPos = line - measures[measure].pos;
 
-
+	auto it = lines.find(absPos);
 	//if we don't exist
 	if (it == lines.end()) {
 
@@ -201,23 +203,14 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 
 		//check if we are not the first object
 		if (it != lines.begin()) {
-			addUndoBuffer(std::prev(it, 1)->second);
 			connectLines(std::prev(it, 1), it);
-			//we must push the change in the next line
-		}
-		else {
-			newLine->prev = nullptr;
 		}
 
 		//check if we are not the last object
 		if (std::next(it, 1) != lines.end()) {
-			addUndoBuffer(std::next(it, 1)->second);
 			connectLines(it, std::next(it, 1));
-			//we must push the change in the next line
 		}
-		else {
-			newLine->next = nullptr;
-		}
+
 
 		//here we extend  the buttons and holds if needed
 		if (std::next(it, 1) != lines.end() && it != lines.begin()) {
@@ -240,6 +233,7 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
 				}
 			}
 		}
+		//addUndoBuffer(newLine);
 
 		*newLine += cLine;
 
@@ -313,18 +307,14 @@ void Chart::undo() {
 			redoBuffer.push_back(it);
 			lines.erase(it.second->pos);
 			measures[it.second->measurePos].lines.erase(it.second->pos - measures[it.second->measurePos].pos);
+			it.second->next->prev = it.second->prev;
+			it.second->prev->next = it.second->next;
 		}
 		else {
 			addRedoBuffer(it.first);
 			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
 			*(it.first) = *(it.second);
 			delete it.second;
-			if (measures[it.first->measurePos].lines.size() == 1 && it.first->measurePos + 1 != measures.size()) {
-				addRedoBuffer(measures[it.first->measurePos + 1].lines[0]);
-				addRedoBuffer(it.first);
-				it.first->next = measures[it.first->measurePos + 1].lines[0];
-				measures[it.first->measurePos + 1].lines[0]->prev = it.first;
-			}
 		}
 	}
 	validateChart();
@@ -342,14 +332,14 @@ void Chart::redo() {
 			undoBuffer.push_back(it);
 			lines[it.second->pos] = it.second;
 			measures[it.second->measurePos].lines[it.second->pos - measures[it.second->measurePos].pos] = it.second;
-
+			it.second->prev->next = it.second;
+			it.second->next->prev = it.second;
 		}
 		else {
 			//buffer.push_back(std::make_pair(it.first, new ChartLine(*it.first)));
 			addUndoBuffer(it.first);
 			*(it.first) = *(it.second);
 			delete it.second;
-
 		}
 	}
 	validateChart();
@@ -404,15 +394,20 @@ int Chart::appendNewMeasure() {
 		m.pulses = prevMeasure.pulses;
 
 		measures.push_back(m);
+		
 		ChartLine* newLine = new ChartLine;
 		newLine->prev = std::prev(prevMeasure.lines.end(), 1)->second;
 		newLine->measurePos = measures.size() - 1;
 		newLine->pos = measureStart;
-
+		
+		
 		std::prev(prevMeasure.lines.end(), 1)->second->next = newLine;
+		//addUndoBuffer(std::prev(prevMeasure.lines.end(), 1)->second);
+		
 		measures.back().lines[0] = newLine;
 		lines[measureStart] = newLine;
-		validateChart();
+		
+		//insertChartLine(measureStart, ChartLine());
 	}
 	
 	return measures.back().pulses;
@@ -564,6 +559,9 @@ lineIterator Chart::getLineAfter(int line) {
 
 //slow quick fix
 int Chart::getMeasureFromPos(int pos) {
+	if (lines.find(pos) != lines.end()) return lines[pos]->measurePos;
+	return getLineBefore(pos)->second->measurePos;
+	/*
 	int i = 0;
 	for (auto measure : measures) {
 		if (measure.pos > pos) {
@@ -572,6 +570,7 @@ int Chart::getMeasureFromPos(int pos) {
 		i++;
 	}
 	return i - 1;
+	*/
 }
 
 void Chart::validateChart() {
