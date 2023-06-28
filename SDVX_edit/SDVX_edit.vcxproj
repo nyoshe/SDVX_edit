@@ -157,6 +157,7 @@
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menuItem.cpp" />
+    <ClCompile Include="mouseInfo.cpp" />
     <ClCompile Include="parser.cpp" />
     <ClCompile Include="scrubBar.cpp" />
     <ClCompile Include="soundtouch\src\AAFilter.cpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="Logging\plog\Severity.h" />
     <ClInclude Include="Logging\plog\Util.h" />
     <ClInclude Include="Logging\plog\WinApi.h" />
+    <ClInclude Include="mouseInfo.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="scrubBar.h" />
     <ClInclude Include="soundtouch\include\BPMDetect.h" />

@@ -1,6 +1,5 @@
 #include "toolBar.h"
 
-
 ToolBar::ToolBar(sf::RenderWindow* _window) {
 	selectIcon.loadFromFile("textures/selectIcon.png");
 	fxIcon.loadFromFile("textures/fxIcon.png");
@@ -15,7 +14,6 @@ ToolBar::ToolBar(sf::RenderWindow* _window) {
 	//ImGui::SFML::UpdateFontTexture();
 	ImGui::SFML::UpdateFontTexture();
 }
-
 
 void ToolBar::update() {
 	int styleChanges = 0;
@@ -41,10 +39,9 @@ void ToolBar::update() {
 
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 	ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(iconSize * 0.1 , iconSize * 0.1));
-	
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(iconSize * 0.1, iconSize * 0.1));
+
 	if (ImGui::Begin("tools", NULL, window_flags)) {
-		
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + iconSize * 3);
 		std::string buttonText = std::to_string(EditWindow::instance().snapGridSize);
@@ -52,17 +49,17 @@ void ToolBar::update() {
 		ImGui::PushFont(font);
 		ImGui::Button(buttonText.c_str(), ImVec2(iconSize * 1.1, iconSize * 1.1));
 		if (ImGui::IsItemHovered()) {
-			if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Right]){
+			if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Right]) {
 				snapSelection = snapSelection == 0 ? 9 : snapSelection - 1;
 				EditWindow::instance().snapGridSize = snapSizes[snapSelection];
 			}
-			else if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Left]){
+			else if (ImGui::GetIO().MouseClicked[ImGuiMouseButton_Left]) {
 				snapSelection = (snapSelection + 1) % 10;
 				EditWindow::instance().snapGridSize = snapSizes[snapSelection];
 			}
 		}
 		ImGui::PopFont();
-		
+
 		ImGui::SameLine();
 		if (EditWindow::instance().select) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
@@ -72,7 +69,6 @@ void ToolBar::update() {
 			EditWindow::instance().select = !EditWindow::instance().select;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
-
 
 		ImGui::SameLine();
 		if (EditWindow::instance().tool == ToolType::FX) {
@@ -84,7 +80,6 @@ void ToolBar::update() {
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
-
 		ImGui::SameLine();
 		if (EditWindow::instance().tool == ToolType::BT) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
@@ -94,7 +89,6 @@ void ToolBar::update() {
 			EditWindow::instance().tool = ToolType::BT;
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
-
 
 		ImGui::SameLine();
 		if (EditWindow::instance().tool == ToolType::LASER_R) {
@@ -106,7 +100,6 @@ void ToolBar::update() {
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
-
 		ImGui::SameLine();
 		if (EditWindow::instance().tool == ToolType::LASER_L) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.200f, 0.410f, 0.680f, 1.000f));
@@ -117,12 +110,9 @@ void ToolBar::update() {
 		}
 		if (styleChanges) ImGui::PopStyleColor(styleChanges--);
 
-
 		ImGui::End();
 	}
 
 	ImGui::PopStyleColor(2);
 	ImGui::PopStyleVar(1);
-
-	
 }

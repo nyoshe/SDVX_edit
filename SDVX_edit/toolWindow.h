@@ -8,21 +8,20 @@
 #include "enums.h"
 #include <SFML/Graphics.hpp>
 
-
 class toolWindow
 {
 private:
-    sf::Texture selectIcon;
-    sf::Texture fxIcon;
-    sf::Texture btIcon;
-    sf::Texture fxHoldIcon;
-    sf::Texture btHoldIcon;
-    sf::Texture knobRIcon;
-    sf::Texture knobLIcon;
+	sf::Texture selectIcon;
+	sf::Texture fxIcon;
+	sf::Texture btIcon;
+	sf::Texture fxHoldIcon;
+	sf::Texture btHoldIcon;
+	sf::Texture knobRIcon;
+	sf::Texture knobLIcon;
 
 public:
-    float iconSize = 50;
-    toolWindow();
-    ~toolWindow() = default;
-    void update();
+	float iconSize = 50;
+	toolWindow();
+	~toolWindow() = default;
+	void update();
 };

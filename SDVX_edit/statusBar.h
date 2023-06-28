@@ -7,20 +7,19 @@
 #include <string>
 
 enum LaserSnap {
-    NORMAL, 
-    FINE, 
-    VERY_FINE
+	NORMAL,
+	FINE,
+	VERY_FINE
 };
-
 
 class StatusBar
 {
 private:
-    ImFont* font;
+	ImFont* font;
 
 public:
-    StatusBar();
-    ~StatusBar() = default;
-    void update();
-    LaserSnap laserSnap = LaserSnap::NORMAL;
+	StatusBar();
+	~StatusBar() = default;
+	void update();
+	LaserSnap laserSnap = LaserSnap::NORMAL;
 };

@@ -2,7 +2,6 @@
 using namespace std::placeholders;
 
 EditWindow::EditWindow() {
-
 	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::LControl, sf::Keyboard::Z }, std::bind(&EditWindow::undo, this, _1), "undo");
 	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::LControl, sf::Keyboard::Y }, std::bind(&EditWindow::redo, this, _1), "redo");
 	Input::instance().addActionKey(sf::Event::KeyPressed, { sf::Keyboard::LControl, sf::Keyboard::C }, std::bind(&EditWindow::copy, this, _1), "copy");
@@ -25,13 +24,10 @@ EditWindow::EditWindow() {
 		PLOG_WARNING << "failed to load entry sprite!";
 	entrySprite.setTexture(entryTex);
 
-
 	//bt button
 	if (!btTex.loadFromFile("textures/button.png"))
 		PLOG_WARNING << "failed to load bt sprite!";
 	btSprite.setTexture(btTex);
-
-
 
 	sf::Texture testTex;
 	//btHold
@@ -48,8 +44,6 @@ EditWindow::EditWindow() {
 		PLOG_WARNING << "failed to load fx sprite!";
 	fxSprite.setTexture(fxTex);
 
-
-
 	//fx hold
 	if (!testTex.loadFromFile("textures/fxbuttonhold.png"))
 		PLOG_WARNING << "failed to load fx sprite!";
@@ -63,7 +57,6 @@ EditWindow::EditWindow() {
 }
 
 void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
-	
 	Parser p;
 	Chart newChart;
 	chart = newChart;
@@ -83,7 +76,6 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	controlPtr = static_cast<gameControl*>(memSegment.allocate(sizeof(gameControl)));
 	controlPtr->speed = 20.0;
 	controlPtr->seekPos = 50;
-
 
 	//An handle from the base address can identify any byte of the shared
 	//memory segment even if it is mapped in different base addresses
@@ -127,7 +119,6 @@ void EditWindow::updateVars() {
 
 	editorLineStart = editorMeasure * 192;
 	pulsesPerColumn = measuresPerColumn * 192;
-
 
 	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x, laneWidth / entrySprite.getTexture()->getSize().x);
 	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
@@ -207,7 +198,7 @@ int EditWindow::getMouseLine() {
 		for (int i = 0; i < columns; i++) {
 			if (mouseX >= (1 * laneWidth) + (columnWidth * i) &&
 				mouseX <= (11 * laneWidth) + (columnWidth * i)) {
-				return editorLineStart + (i + 1) * pulsesPerColumn  - ((mouseY - topPadding) / height) * pulsesPerColumn;
+				return editorLineStart + (i + 1) * pulsesPerColumn - ((mouseY - topPadding) / height) * pulsesPerColumn;
 			}
 		}
 		return editorLineStart;
@@ -233,7 +224,6 @@ int EditWindow::getMouseLaserPos(bool isWide) {
 	return -1;
 }
 
-
 int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 	int n = 0;
 	if (chart.measures.empty()) return -1;
@@ -248,7 +238,6 @@ int EditWindow::getMeasureFromGlobal(unsigned int loc) {
 std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 	std::vector <float> xVec = { 0, 0 };
 
-	
 	for (int i = 0; i < 2; i++) {
 		float ourPos = 0;
 		if (line->laserPos[i] == -2) {
@@ -262,7 +251,7 @@ std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 		else {
 			ourPos = line->laserPos[i];
 		}
-		
+
 		if (line->isWide[i]) {
 			xVec[i] = ourPos * (9 * laneWidth) / 50.0 - 3 * laneWidth;
 		}
@@ -271,7 +260,6 @@ std::vector <float> EditWindow::getLaserX(ChartLine* line) {
 		}
 	}
 	return xVec;
-	
 }
 
 int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
@@ -301,7 +289,6 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 		window->draw(line, 2, sf::Lines);
 	}
 
-
 	//draw the end line
 	if (editorLineStart + viewLines >= startLine + mPulses) {
 		sf::Vector2f v = getNoteLocation(startLine + mPulses);
@@ -312,28 +299,25 @@ int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine) {
 		window->draw(line, 2, sf::Lines);
 	}
 
-
 	return mPulses;
 }
 
 void EditWindow::drawSelected(ChartLine* line, const sf::Sprite& sprite) {
-
 	sf::RectangleShape rectangle(sf::Vector2f(sprite.getGlobalBounds().width, sprite.getGlobalBounds().height));
 	//rectangle.setOrigin(sprite.getOrigin());
 	rectangle.setPosition(sf::Vector2f(sprite.getPosition().x, sprite.getPosition().y - sprite.getGlobalBounds().height));
-	
+
 	//rectangle.setScale(sprite.getScale());
 	rectangle.setOutlineThickness(3.0);
 	rectangle.setFillColor(sf::Color::Transparent);
 	rectangle.setOutlineColor(sf::Color(255, 0, 0));
-	
-	window->draw(rectangle);
 
+	window->draw(rectangle);
 }
 
 void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 	int pos = line->pos;
-	for (int lane = 0; lane < 2; lane ++) {
+	for (int lane = 0; lane < 2; lane++) {
 		//fx chips
 		if (line->fxVal[lane] == 2) {
 			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
@@ -347,7 +331,6 @@ void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 			if (selected) drawSelected(line, fxHoldSprite);
 			window->draw(fxHoldSprite);
 		}
-		
 	}
 
 	if (DEBUG) {
@@ -359,7 +342,7 @@ void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 		//sf::Text text;
 		//text.setFont(font);
 		//text.setString("Hello world");
-		//text.setCharacterSize(24); 
+		//text.setCharacterSize(24);
 		//text.setFillColor(sf::Color::Green);
 
 		window->draw(l, 2, sf::Lines);
@@ -382,7 +365,7 @@ void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 	}
 }
 
-QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, ChartLine*> &objects, LineIterator startIter, LineIterator endIter){
+QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter, LineIterator endIter) {
 	std::vector<sf::VertexArray> laserBuffer;
 	QuadArray vertexBuffer;
 	if (editorMeasure >= chart.measures.size())
@@ -395,10 +378,9 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 	}
 	ChartLine* line = startIter->second;
 	ChartLine* start = line;
-	
+
 	bool isSelected = false;
 	while (line && line->pos <= (endIter->second->pos)) {
-
 		//int measureNum = line->measurePos - editorMeasure;
 		sf::Color c;
 		if (l == 1) {
@@ -414,7 +396,6 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 			!line->next ||
 			line->next->laserPos[l] == -1 ||
 			!line->getNextLaser(l)) {
-
 			if (laserBuffer.size() > 0) {
 				vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			}
@@ -457,7 +438,6 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 		if ((nextLaser->pos - line->pos) <= (192 / 32) &&
 			line->laserPos[l] != -2 &&
 			line->laserPos[l] != nextLaser->laserPos[l]) {
-
 			//vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			//laserBuffer.clear();
 
@@ -485,7 +465,6 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 				quad[3] = sf::Vertex(sf::Vector2f(x, y - laneWidth * 1.0), c);
 				//window->draw(quad);
 				laserBuffer.push_back(quad);
-
 			}
 
 			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
@@ -496,7 +475,6 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 			continue;
 		}
 
-
 		x = getLaserX(line)[l] + getNoteLocation(lineNum).x;
 		y = getNoteLocation(lineNum).y;
 		quad[0] = sf::Vertex(sf::Vector2f(x, y), c);
@@ -504,7 +482,6 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 
 		int nextLineNum = line->getNextLaser(l)->pos;
 		ChartLine* nextLine = line->getNextLaser(l);
-
 
 		x = getLaserX(nextLine)[l] + getNoteLocation(lineNum).x;
 		y = getNoteLocation(nextLineNum).y;
@@ -527,13 +504,11 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 		if (nextLine->laserPos[l] >= 0 ||
 			line->measurePos == nextLine->measurePos ||
 			nextLine->measurePos > (editorMeasure + columns * measuresPerColumn)) {
-
 			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
 			laserBuffer.clear();
 		}
 
 		line = nextLine;
-
 	}
 
 	return vertexBuffer;
@@ -545,7 +520,6 @@ void EditWindow::drawChart(sf::RenderTarget* target) {
 }
 
 void EditWindow::drawChart() {
-
 	int drawLine = editorLineStart;
 	while (drawLine <= editorLineStart + viewLines) {
 		int m = getMeasureFromGlobal(drawLine);
@@ -585,19 +559,18 @@ void EditWindow::drawChart() {
 		}
 	}
 
-
 	for (int l = 0; l < 2; l++) {
 		QuadArray vertexBuffer = generateLaserQuads(l, chart.lines, chart.lines.lower_bound(editorLineStart), chart.getLineBefore(editorLineStart + viewLines + 1));
 		checkLaserSelect(vertexBuffer, l);
 		drawLaserQuads(vertexBuffer);
 	}
-	
-	if (selectedLaser.second){
+
+	if (selectedLaser.second) {
 		sf::Vector2f v = getNoteLocation(0, selectedLaser.second->pos);
 		sf::RectangleShape rect(sf::Vector2f(laneWidth + 8, 8));
 		rect.setPosition(sf::Vector2f(v.x + getLaserX(selectedLaser.second)[selectedLaser.first] - 4, v.y - 4));
 		rect.setOutlineColor(sf::Color::Green);
-		rect.setFillColor(sf::Color(0,255,0,125));
+		rect.setFillColor(sf::Color(0, 255, 0, 125));
 		rect.setOutlineThickness(2);
 		window->draw(rect);
 	}
@@ -611,8 +584,6 @@ void EditWindow::drawChart() {
 	};
 	window->draw(line, 2, sf::Lines);
 
-
-
 	pos1 = getNoteLocation(-1, selectEnd);
 	pos2 = getNoteLocation(5, selectEnd);
 
@@ -622,18 +593,16 @@ void EditWindow::drawChart() {
 	};
 	window->draw(line2, 2, sf::Lines);
 
-	
 	//draw the play bar
 	if (player.isPlaying()) {
 		for (int i = 1; i < editorMeasure + measuresPerColumn * columns; i++) {
 			if (i >= chart.measures.size()) break;
 			if (chart.measures[i].msStart > player.getMs()) {
-
 				float startMs = chart.measures[i - 1].msStart;
 				float endMs = chart.measures[i].msStart;
 
-				sf::Vector2f pos1 = getNoteLocation(-1, chart.measures[i-1].pos);
-				sf::Vector2f pos2 = getNoteLocation(5, chart.measures[i-1].pos);
+				sf::Vector2f pos1 = getNoteLocation(-1, chart.measures[i - 1].pos);
+				sf::Vector2f pos2 = getNoteLocation(5, chart.measures[i - 1].pos);
 
 				pos1 = getNoteLocation(-1, chart.measures[i - 1].pos + chart.measures[i - 1].pulses * (player.getMs() - startMs) / (endMs - startMs));
 				pos2 = getNoteLocation(5, chart.measures[i - 1].pos + chart.measures[i - 1].pulses * (player.getMs() - startMs) / (endMs - startMs));
@@ -709,8 +678,7 @@ std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, int star
 	return drawVec;
 }
 
-void EditWindow::checkLaserSelect(QuadArray &arr, int laser) {
-	
+void EditWindow::checkLaserSelect(QuadArray& arr, int laser) {
 	//run over the buffer and then check for collision
 	for (auto& vBuffer : arr) {
 		if (vBuffer.first->laserPos[laser] == -2 || vBuffer.first->next->laserPos[laser] == -1) {
@@ -744,7 +712,6 @@ void EditWindow::drawLaserQuads(const QuadArray& arr) {
 				};
 				//window->draw(l, 2, sf::Lines);
 				window->draw(quad);
-
 			}
 		}
 	}
@@ -762,20 +729,19 @@ sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 	sf::Vector2f start = getMeasureStart(measure);
 	float snapSize = measureHeight / snapGridSize;
 	if (measure != -1) {
-		switch (type){
+		switch (type) {
 		case ToolType::BT:
 			return sf::Vector2f(getNoteLocation(getMouseLane(), snappedLine));
 		case ToolType::FX:
 			return sf::Vector2f(getNoteLocation((getMouseLane() / 2) * 2, snappedLine));
 		case ToolType::LASER_L:
-			return sf::Vector2f(-1,-1);
+			return sf::Vector2f(-1, -1);
 			//placeholder
 			//TODO
 		}
 	}
 	return sf::Vector2f(-1, -1);
 }
-
 
 void EditWindow::handleEvent(sf::Event event) {
 	if (event.mouseButton.button == sf::Mouse::Right && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && event.type == sf::Event::MouseButtonReleased) {
@@ -829,9 +795,7 @@ bool EditWindow::getMouseOverlap(const sf::VertexArray quad) {
 	else {
 		return false;
 	}
-
 }
-
 
 void EditWindow::update() {
 	updateVars();
@@ -852,10 +816,8 @@ void EditWindow::update() {
 	if (DEBUG) {
 		drawDebug();
 	}
-	
 
 	drawChart();
-
 
 	if (!select && !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))) {
 		switch (tool) {
@@ -888,11 +850,8 @@ void EditWindow::update() {
 				toolSprite = fxSprite;
 				break;
 			}
-		
 		}
-		
 	}
-
 }
 
 void EditWindow::drawDebug()
@@ -951,7 +910,7 @@ void EditWindow::cut(sf::Event event)
 	}
 }
 
-void EditWindow::paste(sf::Event event){
+void EditWindow::paste(sf::Event event) {
 	chart.clearRedoStack();
 	unsigned int snapPos = getSnappedLine(selectStart);
 	chart.insertChartLine(snapPos, clipboard);
@@ -1058,11 +1017,8 @@ void EditWindow::mouseScroll(sf::Event event) {
 	}
 }
 
-void EditWindow::mousePressedLeft(sf::Event event){
-	
-
+void EditWindow::mousePressedLeft(sf::Event event) {
 	if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
-
 		mouseDownLine = getSnappedLine(getMouseLine());
 		mouseDownLane = getMouseLane();
 		if (select && laserHover.second != nullptr) {
@@ -1105,13 +1061,13 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 					break;
 				case ToolType::FX:
 					newLine.fxVal[mouseDownLane / 2] = 1;
-					mask.fx[mouseDownLane /2] = 1;
+					mask.fx[mouseDownLane / 2] = 1;
 					break;
 				};
 				newLine.pos = i;
 				holdMap[i] = newLine;
-			}	
-			//ChartLine newLine.pos = 
+			}
+			//ChartLine newLine.pos =
 			holdMap[mouseLine] = ChartLine();
 			holdMap[mouseLine].pos = mouseLine;
 			chart.insertChartLine(mouseDownLine, holdMap);
@@ -1136,4 +1092,3 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 		}
 	}
 }
-

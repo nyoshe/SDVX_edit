@@ -50,7 +50,7 @@ Input::Input() {
 #undef INSERT_ELEMENT
 	}
 
-		//thank god for sublime text multiline selection
+	//thank god for sublime text multiline selection
 
 	if (keyStrings.size() == 0) {
 #define INSERT_ELEMENT(p) keyStrings[sf::Keyboard::p] = #p
@@ -164,7 +164,6 @@ Input::Input() {
 
 	//check if bindings file exists
 	if (input.good()) {
-		
 		std::string s;
 		sf::Event::EventType eventType = sf::Event::EventType::Count;
 		std::vector<std::string> actionList = {};
@@ -199,7 +198,6 @@ Input::Input() {
 				}
 			}
 		}
-		
 	}
 	std::cout << "test";
 	//else just return nothing
@@ -267,7 +265,6 @@ void Input::handleEvent(sf::Event event) {
 			mouseVec.push_back(static_cast<sf::Mouse::Button>(i));
 		}
 	}
-	
 
 	if (functionMap.find(std::make_pair(keyVec, mouseVec)) != functionMap.end()) {
 		for (auto mapping : functionMap[std::make_pair(keyVec, mouseVec)]) {
@@ -288,8 +285,7 @@ void Input::addEventAction(sf::Event::EventType event, std::function<void(sf::Ev
 	addAction(event, {}, {}, func, name);
 }
 
-
-void Input::addActionMouse(sf::Event::EventType event,  std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
+void Input::addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
 	addAction(event, {}, buttonList, func, name);
 }
 

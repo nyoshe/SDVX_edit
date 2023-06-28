@@ -43,9 +43,8 @@ class Parser
 {
 private:
 	Command parseCommand(std::string s);
-	
+
 public:
-    void loadFile(std::string fileName, Chart& chart);
+	void loadFile(std::string fileName, Chart& chart);
 	void saveFile(Chart& chart, std::string fileName);
 };
-

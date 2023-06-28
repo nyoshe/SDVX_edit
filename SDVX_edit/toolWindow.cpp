@@ -1,6 +1,5 @@
 #include "toolWindow.h"
 
-
 toolWindow::toolWindow() {
 	selectIcon.loadFromFile("textures/selectIcon.png");
 	fxIcon.loadFromFile("textures/fxIcon.png");
@@ -11,14 +10,13 @@ toolWindow::toolWindow() {
 	knobLIcon.loadFromFile("textures/knobRIcon.png");
 }
 
-
 void toolWindow::update() {
 	ImGui::Begin("tools");
 
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 	ImGui::SameLine();
 	ImGui::BeginGroup();
-	
+
 	if (ImGui::ImageButton(selectIcon, ImVec2(iconSize, iconSize))) {
 		EditWindow::instance().select = !EditWindow::instance().select;
 	}

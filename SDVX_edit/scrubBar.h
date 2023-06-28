@@ -21,4 +21,3 @@ public:
 	void update();
 	void setWindow(sf::RenderWindow* _window);
 };
-

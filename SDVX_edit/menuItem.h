@@ -5,10 +5,8 @@
 class menuItem
 {
 private:
-    menuItem() = default;
-    ~menuItem() = default;
+	menuItem() = default;
+	~menuItem() = default;
 
 public:
-
 };
-
