@@ -173,6 +173,7 @@
     <ClCompile Include="soundtouch\src\SoundTouch.cpp" />
     <ClCompile Include="soundtouch\src\sse_optimized.cpp" />
     <ClCompile Include="soundtouch\src\TDStretch.cpp" />
+    <ClCompile Include="spline.cpp" />
     <ClCompile Include="statusBar.cpp" />
     <ClCompile Include="toolBar.cpp" />
     <ClCompile Include="toolWindow.cpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="soundtouch\src\PeakFinder.h" />
     <ClInclude Include="soundtouch\src\RateTransposer.h" />
     <ClInclude Include="soundtouch\src\TDStretch.h" />
+    <ClInclude Include="spline.h" />
     <ClInclude Include="structs.h" />
     <ClInclude Include="menuItem.h" />
     <ClInclude Include="statusBar.h" />

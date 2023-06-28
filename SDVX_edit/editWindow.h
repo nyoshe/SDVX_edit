@@ -27,8 +27,11 @@
 #include <sstream>
 
 enum EditorState {
-    WAIT_FOR_INPUT,
-    SELECTING
+    IDLE,
+    PLACING,
+    SELECTING,
+    MODIFYING_LASER,
+    CREATING_LASER,
 };
 
 struct gameControl
@@ -39,8 +42,8 @@ struct gameControl
     float speed = 1.0;
 };
 
-#define DEBUG true
-
+#define DEBUG false
+/*
 struct MouseInfo {
     int mouseStartLine = 0;
     int mouseEndLine = 0;
@@ -53,7 +56,7 @@ struct MouseInfo {
         isValid = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
     }
 };
-
+*/
 typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
 typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 
@@ -75,7 +78,7 @@ private:
 
     std::pair<int, ChartLine*> laserHover;
     std::pair<int, ChartLine*> selectedLaser;
-    std::pair<int, ChartLine*> selectedLaserEnd;
+    //std::pair<int, ChartLine*> selectedLaserEnd;
 
     std::vector<Measure> measures;
     float mouseX = 0;
@@ -106,6 +109,7 @@ public:
     void setWindow(sf::RenderWindow* _window);
     void setWindow(sf::RenderTarget* _window);
     void update();
+    void drawDebug();
     void updateVars();
 
     //the line specifies where we want to start drawing the measure, it returns the end location
@@ -153,6 +157,7 @@ public:
     void undo(sf::Event event);
     void redo(sf::Event event);
     void copy(sf::Event event);
+    void cut(sf::Event event);
     void paste(sf::Event event);
 
     void updateSelect(sf::Event event);
@@ -187,13 +192,9 @@ public:
     float playbackSpeed = 1.0;
     AudioManager player;
 
-    bool select = false;
-
     ToolType tool = ToolType::BT;
 
     gameControl* controlPtr;
-
-    std::map<unsigned int, ChartLine*> selectedLines;
 
     float width = 0;
     float height = 0;
@@ -203,8 +204,13 @@ public:
     float topPadding = 50;
     float bottomPadding = 50;
 
+    EditorState state = IDLE;
+    bool select;
+
     sf::RenderTarget* window = nullptr;
     sf::RenderWindow* appWindow = nullptr;
+
+    std::map<unsigned int, ChartLine*> selectedLines;
 
     std::map<unsigned int, ChartLine>  clipboard;
 

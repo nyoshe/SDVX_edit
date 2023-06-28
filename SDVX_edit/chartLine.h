@@ -91,7 +91,7 @@ public:
 
     ChartLine extractMask(LineMask mask);
 
-    LineMask makeMask();
+    LineMask makeMask() const;
 
     void clearLaser(int laser);
 

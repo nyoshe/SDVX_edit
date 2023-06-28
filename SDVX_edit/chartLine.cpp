@@ -17,7 +17,7 @@ LineMask::LineMask(const ChartLine& line) {
     }
 }
 */
-LineMask ChartLine::makeMask(){
+LineMask ChartLine::makeMask() const{
     LineMask out;
     for (int i = 0; i < 2; i++) {
         if (this->fxVal[i] > 0) {
@@ -41,7 +41,7 @@ bool ChartLine::empty() {
             return false;
         }
         //we are considered non empty if we are the start of a hold note
-        if (prev != nullptr) {
+        if (prev) {
             if ((prev->btVal[i] == 0 || prev->btVal[i] == 1) && btVal[i] == 2) {
                 return false;
             }
@@ -51,7 +51,7 @@ bool ChartLine::empty() {
         if (fxVal[i] == 2) {
             return false;
         }
-        if (prev != nullptr) {
+        if (prev) {
             if ((prev->fxVal[i] == 0 || prev->fxVal[i] == 2) && fxVal[i] == 1) {
                 return false;
             }
@@ -60,7 +60,7 @@ bool ChartLine::empty() {
             return false;
         }
         //we are considered empty only if we are the connector to a following laser point
-        if (next != nullptr && prev != nullptr && laserPos[i] == -2) {
+        if (next && prev && laserPos[i] == -2) {
             if (next->laserPos[i] >= 0 && prev->laserPos[i] >= 0) {
                 return false;
             }
@@ -97,7 +97,7 @@ ChartLine& ChartLine::operator+=(const ChartLine& b) {
 
 ChartLine* ChartLine::getNextLaser(int laser) {
     ChartLine* line = this->next;
-    while (line != nullptr && line->laserPos[laser] != -1) {
+    while (line && line->laserPos[laser] != -1) {
         if (line->laserPos[laser] == -1) {
             return nullptr;
         }
@@ -111,7 +111,7 @@ ChartLine* ChartLine::getNextLaser(int laser) {
 
 ChartLine* ChartLine::getPrevLaser(int laser) {
     ChartLine* line = this->prev;
-    while (line != nullptr && line->laserPos[laser] != -1) {
+    while (line && line->laserPos[laser] != -1) {
         if (line->laserPos[laser] == -1) {
             return nullptr;
         }
@@ -125,7 +125,8 @@ ChartLine* ChartLine::getPrevLaser(int laser) {
 
 ChartLine* ChartLine::getBtStart(int lane) {
     ChartLine* line = this;
-    while (line->prev != nullptr && line->btVal[lane] == 2) {
+    if (line->btVal[lane] != 2) return this;
+    while (line->prev && line->prev->btVal[lane] == 2) {
         line = line->prev;
     }
     return line;
@@ -133,7 +134,8 @@ ChartLine* ChartLine::getBtStart(int lane) {
 
 ChartLine* ChartLine::getBtEnd(int lane) {
     ChartLine* line = this;
-    while (line->next != nullptr && line->btVal[lane] == 2) {
+    if (line->btVal[lane] != 2) return this;
+    while (line->next && line->next->btVal[lane] == 2) {
         line = line->next;
     }
     return line;
@@ -141,7 +143,8 @@ ChartLine* ChartLine::getBtEnd(int lane) {
 
 ChartLine* ChartLine::getFxStart(int lane) {
     ChartLine* line = this;
-    while (line->prev != nullptr && line->fxVal[lane] == 1) {
+    if (line->fxVal[lane] != 1) return this;
+    while (line->prev && line->prev->fxVal[lane] == 1) {
         line = line->prev;
     }
     return line;
@@ -149,7 +152,8 @@ ChartLine* ChartLine::getFxStart(int lane) {
 
 ChartLine* ChartLine::getFxEnd(int lane) {
     ChartLine* line = this;
-    while (line->next != nullptr && line->fxVal[lane] == 1) {
+    if (line->fxVal[lane] != 1) return this;
+    while (line->next && line->next->fxVal[lane] == 1) {
         line = line->next;
     }
     return line;
@@ -242,6 +246,7 @@ LineMask ChartLine::operator&(const LineMask& line) {
     for (int i = 0; i < 2; i++) {
         if (line.fx[i] && (fxVal[i] != FX_HOLD)) out.fx[i] = 0;
         if (line.laser[i] && (laserPos[i] == L_NONE)) out.laser[i] = 0;
+        if (line.laser[i] && (laserPos[i] >= 0)) out.laser[i] = 0;
     }
     return out;
 }

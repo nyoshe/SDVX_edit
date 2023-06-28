@@ -40,10 +40,13 @@ int main() {
         sf::Event event;
         window.clear();
 
+        ImGui::SFML::Update(window, deltaClock.restart());
+
         while (window.pollEvent(event)) {
-            EditWindow::instance().handleEvent(event);
+            
             ImGui::SFML::ProcessEvent(window, event);
             Input::instance().handleEvent(event);
+            EditWindow::instance().handleEvent(event);
 
             if (event.type == sf::Event::Closed) {
                 EditWindow::instance().saveFile("editor_backup.ksh");
@@ -68,7 +71,7 @@ int main() {
             }
         }
         
-        ImGui::SFML::Update(window, deltaClock.restart());
+        
         //ImGui::ShowDemoWindow();
 
         

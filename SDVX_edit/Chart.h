@@ -56,9 +56,8 @@ struct ChartMetadata {
 class Chart
 {
 private:
-    void fixLaserPoint(ChartLine* line, int laser, bool dir);
     //this connects to positions with laser connectors, it does expect to have valid lines
-    void fixLaserConnections(int pos1, int pos2, int laser, bool dir);
+    void fixLaserConnections(int pos1, int pos2, int laser);
     void addLaserConnections(ChartLine* line, int laser);
 
 public:
@@ -100,12 +99,12 @@ public:
     //this must be done whenever we change the bpm or update the time signature
     void calcTimings();
 
-    void insertChartLine(int line, std::map<unsigned int, ChartLine> lineMap);
+    void insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap);
     ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask maask);
 
     //returns a pointer to the moved object
     ChartLine* moveChartLine(int line, LineMask moveMask, int change);
-    void removeChartLine(unsigned int line, unsigned int lane, ToolType type);
+    void removeChartLine(unsigned int line, LineMask mask);
     //void moveChartLine();
 
     //this should be done before an action is performed

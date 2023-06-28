@@ -1,22 +1,2 @@
-INSERT_ELEMENT(Resized               );
-INSERT_ELEMENT(LostFocus             );
-INSERT_ELEMENT(GainedFocus           );
-INSERT_ELEMENT(TextEntered           );
-INSERT_ELEMENT(KeyPressed            );
-INSERT_ELEMENT(KeyReleased           );
-INSERT_ELEMENT(MouseWheelMoved       );
-INSERT_ELEMENT(MouseWheelScrolled    );
-INSERT_ELEMENT(MouseButtonPressed    );
-INSERT_ELEMENT(MouseButtonReleased   );
-INSERT_ELEMENT(MouseMoved            );
-INSERT_ELEMENT(MouseEntered          );
-INSERT_ELEMENT(MouseLeft             );
-INSERT_ELEMENT(JoystickButtonPressed );
-INSERT_ELEMENT(JoystickButtonReleased);
-INSERT_ELEMENT(JoystickMoved         );
-INSERT_ELEMENT(JoystickConnected     );
-INSERT_ELEMENT(JoystickDisconnected  );
-INSERT_ELEMENT(TouchBegan            );
-INSERT_ELEMENT(TouchMoved            );
-INSERT_ELEMENT(TouchEnded            );
-INSERT_ELEMENT(SensorChanged         );
+C:/Users/niayo/source/repos/unnamed-sdvx-clone/bin/usc-game_Debug.exe
+50
