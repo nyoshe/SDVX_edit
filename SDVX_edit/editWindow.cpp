@@ -224,7 +224,7 @@ int EditWindow::getMouseLaserPos(bool isWide) {
 	return -1;
 }
 
-int EditWindow::getMeasureFromGlobal(unsigned int loc) {
+int EditWindow::getMeasureFromLine(unsigned int loc) {
 	int n = 0;
 	if (chart.measures.empty()) return -1;
 	auto nearest = chart.lines.lower_bound(loc);
@@ -412,7 +412,7 @@ QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, Cha
 		if (line->getPrevLaser(l) == nullptr && line->laserPos[l] >= 0) {
 			//check wrapping
 			x = getNoteLocation(lineNum).x + getLaserX(line)[l];
-			//TODO update this for weird time signatures
+
 			y = getNoteLocation(lineNum).y;
 
 			quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
@@ -522,7 +522,7 @@ void EditWindow::drawChart(sf::RenderTarget* target) {
 void EditWindow::drawChart() {
 	int drawLine = editorLineStart;
 	while (drawLine <= editorLineStart + viewLines) {
-		int m = getMeasureFromGlobal(drawLine);
+		int m = getMeasureFromLine(drawLine);
 		int add = drawMeasure(m, drawLine);
 		drawLine += add;
 	}
@@ -593,6 +593,11 @@ void EditWindow::drawChart() {
 	};
 	window->draw(line2, 2, sf::Lines);
 
+	drawPlayBar();
+}
+
+void EditWindow::drawPlayBar()
+{
 	//draw the play bar
 	if (player.isPlaying()) {
 		for (int i = 1; i < editorMeasure + measuresPerColumn * columns; i++) {
@@ -717,7 +722,7 @@ void EditWindow::drawLaserQuads(const QuadArray& arr) {
 	}
 }
 
-sf::Vector2f EditWindow::getMeasureStart(int measure) {
+sf::Vector2f EditWindow::getMeasurePos(int measure) {
 	int columnNum = measure / measuresPerColumn;
 	return sf::Vector2f((4 * laneWidth) + (columnWidth * columnNum), topPadding + measureHeight * (measuresPerColumn - (measure % measuresPerColumn) - 1));
 }
@@ -726,7 +731,7 @@ sf::Vector2f EditWindow::getSnappedPos(ToolType type) {
 	//first check if we have a valid position
 	int measure = getMouseMeasure() - editorMeasure;
 	int snappedLine = (getMouseLine() / (192 / snapGridSize)) * (192 / snapGridSize);
-	sf::Vector2f start = getMeasureStart(measure);
+	sf::Vector2f start = getMeasurePos(measure);
 	float snapSize = measureHeight / snapGridSize;
 	if (measure != -1) {
 		switch (type) {
@@ -926,7 +931,7 @@ void EditWindow::paste(sf::Event event) {
 }
 
 void EditWindow::updateSelect(sf::Event event) {
-	if (getMouseLine() != -1) {
+	if (getMouseLine() != -1 && state == EditorState::SELECTING) {
 		selectEnd = getSnappedLine(getMouseLine());
 	}
 }
@@ -935,6 +940,7 @@ void EditWindow::startSelect(sf::Event event) {
 	if (getMouseLine() != -1) {
 		selectStart = getSnappedLine(getMouseLine());
 		selectEnd = getSnappedLine(getMouseLine());
+		state = EditorState::SELECTING;
 	}
 }
 
@@ -953,7 +959,7 @@ void EditWindow::conenctLines(std::map<unsigned int, ChartLine*> input) {
 }
 
 void EditWindow::endSelect(sf::Event event) {
-	if (getMouseLine() != -1) {
+	if (getMouseLine() != -1 && state == EditorState::SELECTING) {
 		selectEnd = getSnappedLine(getMouseLine());
 		selectedLines.clear();
 
@@ -963,14 +969,17 @@ void EditWindow::endSelect(sf::Event event) {
 		}
 		conenctLines(selectedLines);
 	}
+	state = IDLE;
 }
 
 void EditWindow::play(sf::Event event) {
 	if (player.isPlaying()) {
 		player.stop();
+		state = EditorState::IDLE;
 	}
 	else {
 		player.playFrom(chart.getMs(selectStart));
+		state = EditorState::PLAYING;
 	}
 }
 
@@ -995,8 +1004,9 @@ void EditWindow::moveLaserDown(sf::Event event) {
 	if (selectedLaser.second != nullptr) {
 		LineMask moveMask;
 		moveMask.laser[selectedLaser.first] = 1;
-		chart.addUndoBuffer(selectedLaser.second);
-		selectedLaser.second = chart.moveChartLine(selectedLaser.second->pos, moveMask, -192 / snapGridSize);
+		//chart.addUndoBuffer(selectedLaser.second);
+		int moveDiff = getSnappedLine(selectedLaser.second->pos) - selectedLaser.second->pos;
+		selectedLaser.second = chart.moveChartLine(selectedLaser.second->pos, moveMask, -192 / snapGridSize - moveDiff);
 	}
 }
 
@@ -1004,8 +1014,9 @@ void EditWindow::moveLaserUp(sf::Event event) {
 	if (selectedLaser.second != nullptr) {
 		LineMask moveMask;
 		moveMask.laser[selectedLaser.first] = 1;
-		chart.addUndoBuffer(selectedLaser.second);
-		selectedLaser.second = chart.moveChartLine(selectedLaser.second->pos, moveMask, 192 / snapGridSize);
+		//chart.addUndoBuffer(selectedLaser.second);
+		int moveDiff = getSnappedLine(selectedLaser.second->pos) - selectedLaser.second->pos;
+		selectedLaser.second = chart.moveChartLine(selectedLaser.second->pos, moveMask, 192 / snapGridSize + moveDiff);
 	}
 }
 
@@ -1024,7 +1035,7 @@ void EditWindow::mousePressedLeft(sf::Event event) {
 		if (select && laserHover.second != nullptr) {
 			int laserBeginPos = laserHover.second->pos;
 			int laserEndPos = laserHover.second->getNextLaser(laserHover.first)->pos;
-			int mousePos = getSnappedLine(getMouseLine());
+			int mousePos = getMouseLine();
 			if (mousePos - laserBeginPos < laserEndPos - mousePos) {
 				selectedLaser = laserHover;
 			}

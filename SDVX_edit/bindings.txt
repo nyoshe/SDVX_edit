@@ -21,6 +21,11 @@ type:KeyPressed
 keys:V,LControl
 endBinding
 
+action:cat
+type:KeyPressed
+keys:X,LControl
+endBinding
+
 action:redo
 type:KeyPressed
 keys:Y,LControl

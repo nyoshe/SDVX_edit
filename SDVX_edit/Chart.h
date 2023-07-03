@@ -9,7 +9,7 @@
 #include <windows.h>
 #include <plog/Log.h>
 #include "config.h"
-
+#include <deque>
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
 const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
@@ -57,6 +57,8 @@ private:
 	//this connects to positions with laser connectors, it does expect to have valid lines
 	void fixLaserConnections(int pos1, int pos2, int laser);
 	void addLaserConnections(ChartLine* line, int laser);
+	//checks the first laser pos connection, -1 if none
+	int checkLaserOverlap(int pos1, int pos2);
 
 public:
 	ChartMetadata metadata;
@@ -72,13 +74,12 @@ public:
 
 	//this is our undo stack, the first pair value is the pointer value, and the second is the previous value
 	//the vector is to group multiple movements into one group
-	std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
+	std::deque<std::vector<std::pair<ChartLine*, ChartLine*>>> undoStack;
 
 	//the redo stick contains the next value in the second field
-	std::stack<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
+	std::deque<std::vector<std::pair<ChartLine*, ChartLine*>>> redoStack;
 
-	int selectStart;
-	int selectEnd;
+	int maxUndoSize = 1000;
 
 	~Chart();
 	Chart() = default;

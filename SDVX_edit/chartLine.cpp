@@ -71,29 +71,6 @@ bool ChartLine::empty() {
 	}
 	return true;
 }
-//merging
-ChartLine& ChartLine::operator+=(const ChartLine& b) {
-	for (int i = 0; i < 2; i++) {
-		if (b.laserPos[i] != -1) {
-			this->laserPos[i] = b.laserPos[i];
-		}
-		//a merge overwrites the laser position
-		if (b.laserPos[i] >= 0) {
-			this->laserPos[i] = b.laserPos[i];
-		}
-		if (b.fxVal[i] != 0) {
-			this->fxVal[i] = b.fxVal[i];
-		}
-		if (b.isWide[i] && !isWide[i]) isWide[i] = 1;
-	}
-	for (int i = 0; i < 4; i++) {
-		//extend hold notes
-		if (b.btVal[i] != 0) {
-			this->btVal[i] = b.btVal[i];
-		}
-	}
-	return *this;
-}
 
 ChartLine* ChartLine::getNextLaser(int laser) {
 	ChartLine* line = this->next;
@@ -211,6 +188,7 @@ ChartLine ChartLine::replaceMask(LineMask mask, const ChartLine& b) {
 			out.fxVal[i] = b.fxVal[i];
 		}
 		if (b.isWide[i] && !this->isWide[i]) out.isWide[i] = 1;
+		else if (!b.isWide[i]) out.isWide[i] = 0;
 	}
 	for (int i = 0; i < 4; i++) {
 		if (mask.bt[i]) {

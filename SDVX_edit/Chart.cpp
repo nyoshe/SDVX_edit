@@ -15,9 +15,11 @@ void Chart::fixLaserConnections(int pos1, int pos2, int laser) {
 	ChartLine* startLine = lines[std::min(pos1, pos2)];
 	ChartLine* endLine = lines[std::max(pos1, pos2)];
 
+	
 	if (startLine->laserPos[laser] >= 0 && endLine->laserPos[laser] == L_CONNECTOR) {
 		ChartLine* cLine = endLine;
 		while (cLine && cLine != startLine) {
+			addUndoBuffer(cLine);
 			if (!endLine->next || endLine->next->laserPos[laser] == L_NONE) {
 				cLine->laserPos[laser] = L_NONE;
 			}
@@ -30,6 +32,7 @@ void Chart::fixLaserConnections(int pos1, int pos2, int laser) {
 	else if (startLine->laserPos[laser] == L_CONNECTOR && endLine->laserPos[laser] >= 0) {
 		ChartLine* cLine = startLine;
 		while (cLine && cLine != endLine) {
+			addUndoBuffer(cLine);
 			if (!startLine->prev || startLine->prev->laserPos[laser] == L_NONE) {
 				cLine->laserPos[laser] = L_NONE;
 			}
@@ -151,22 +154,6 @@ void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& l
 			}
 		}
 	}
-	/*
-	if (lineMap.size() >= 2) {
-		LineMask mask;
-		for (int i = 0; i < 2; i++) {
-			if (std::prev(lineMap.end(), 2)->second.fxVal[i] == 1 && std::prev(lineMap.end(), 1)->second.fxVal[i] == 0) {
-				mask.fx[i] = 1;
-			}
-		}
-		for (int i = 0; i < 4; i++) {
-			if (std::prev(lineMap.end(), 2)->second.btVal[i] == 2 && std::prev(lineMap.end(), 1)->second.btVal[i] == 0) {
-				mask.bt[i] = 1;
-			}
-		}
-		insertChartLine(endLine, std::prev(lineMap.end(), 1)->second, mask);
-	}
-	*/
 }
 
 ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask) {
@@ -288,7 +275,7 @@ void Chart::removeChartLine(unsigned int line, LineMask mask) {
 void Chart::undo() {
 	if (undoStack.empty()) return;
 	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
-	for (auto it : undoStack.top()) {
+	for (auto it : undoStack.back()) {
 		if (!it.first) {
 			//make sure we don't delete the first line
 			redoBuffer.push_back(it);
@@ -307,13 +294,13 @@ void Chart::undo() {
 	validateChart();
 	//redoStack.push(buffer);
 	pushRedoBuffer();
-	undoStack.pop();
+	undoStack.pop_back();
 }
 
 void Chart::redo() {
 	if (redoStack.empty()) return;
 
-	for (auto it : redoStack.top()) {
+	for (auto it : redoStack.back()) {
 		if (!it.first) {
 			//buffer.push_back(it);
 			undoBuffer.push_back(it);
@@ -332,28 +319,28 @@ void Chart::redo() {
 	validateChart();
 	//undoStack.push(buffer);
 	pushUndoBuffer();
-	redoStack.pop();
+	redoStack.pop_back();
 }
 
 void Chart::clearRedoStack() {
 	while (!redoStack.empty()) {
-		for (auto it : redoStack.top()) {
+		for (auto it : redoStack.back()) {
 			if (it.first) {
 				delete it.second;
 			}
 		}
-		redoStack.pop();
+		redoStack.pop_back();
 	}
 }
 
 void Chart::clearUndoStack() {
 	while (!undoStack.empty()) {
-		for (auto it : undoStack.top()) {
+		for (auto it : undoStack.back()) {
 			if (it.first) {
 				delete it.second;
 			}
 		}
-		undoStack.pop();
+		undoStack.pop_back();
 	}
 }
 
@@ -461,7 +448,15 @@ void Chart::addUndoBuffer(ChartLine* line) {
 void Chart::pushUndoBuffer() {
 	if (undoBuffer.size() > 0) {
 		std::reverse(undoBuffer.begin(), undoBuffer.end());
-		undoStack.push(undoBuffer);
+		undoStack.push_back(undoBuffer);
+		if (undoStack.size() > maxUndoSize) {
+			for (auto it : undoStack.back()) {
+				if (it.first) {
+					delete it.second;
+				}
+			}
+			undoStack.pop_front();
+		}
 		undoBuffer.clear();
 	}
 }
@@ -478,7 +473,15 @@ void Chart::addRedoBuffer(ChartLine* line) {
 void Chart::pushRedoBuffer() {
 	if (redoBuffer.size() > 0) {
 		std::reverse(redoBuffer.begin(), redoBuffer.end());
-		redoStack.push(redoBuffer);
+		redoStack.push_back(redoBuffer);
+		if (redoStack.size() > maxUndoSize) {
+			for (auto it : redoStack.back()) {
+				if (it.first) {
+					delete it.second;
+				}
+			}
+			redoStack.pop_front();
+		}
 		redoBuffer.clear();
 	}
 }
@@ -504,7 +507,8 @@ ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change) {
 	}
 	addUndoBuffer(lines[line]);
 
-	*(lines[line + change]) += lines[line]->extractMask(moveMask);
+	*lines[line + change] = lines[line + change]->replaceMask(moveMask, *lines[line]);
+	//*(lines[line + change]) += lines[line]->extractMask(moveMask);
 
 	*lines[line] = lines[line]->extractMask(~moveMask);
 
@@ -743,12 +747,15 @@ std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigne
 		out.push_back(std::make_pair(nullptr, ChartLine()));
 	}
 
-	auto it = out.begin();
-	for (; it->second.empty(); it++);
+	if (out.size() > 0) {
+		auto it = out.begin();
+		for (; it != out.end() && it->second.empty(); it++);
 
-	if (it != out.begin()) {
-		out.erase(out.begin(), it);
+		if (it != out.begin()) {
+			out.erase(out.begin(), it);
+		}
 	}
+	
 
 	for (auto line : out) {
 		finalOut[line.second.pos] = line.second;

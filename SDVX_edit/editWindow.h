@@ -31,6 +31,7 @@ enum EditorState {
 	SELECTING,
 	MODIFYING_LASER,
 	CREATING_LASER,
+	PLAYING,
 };
 
 struct gameControl
@@ -45,6 +46,7 @@ struct gameControl
 /*
 struct MouseInfo {
 	int mouseStartLine = 0;
+	int mouseCurrentLine = 0;
 	int mouseEndLine = 0;
 	int mouseDownLane = 0;
 	int mouseUpLane = 0;
@@ -115,6 +117,7 @@ public:
 	//hackey but this function essentially generates the laser vertices
 	QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter, LineIterator endIter);
 	void drawChart();
+	void drawPlayBar();
 	void drawChart(sf::RenderTarget* target);
 	void checkLaserSelect(QuadArray& arr, int laser);
 	void drawLaserQuads(const QuadArray& arr);
@@ -126,11 +129,11 @@ public:
 	int getSnappedLine(int line);
 	int getMouseLaserPos(bool isWide);
 
-	int getMeasureFromGlobal(unsigned int loc);
+	int getMeasureFromLine(unsigned int loc);
 
 	void handleEvent(sf::Event event);
 	std::vector <float> getLaserX(ChartLine* line);
-	sf::Vector2f getMeasureStart(int measure);
+	sf::Vector2f getMeasurePos(int measure);
 
 	sf::Vector2f getSnappedPos(ToolType type);
 	//get the note location from measure, lane, and line positio
@@ -145,6 +148,7 @@ public:
 
 	float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
 	bool getMouseOverlap(const sf::VertexArray quad);
+	//QuadArray wrapLaserQuads(QuadArray& arr);
 
 	void loadFile(std::string mapFilePath, std::string mapFileName);
 	void saveFile(std::string fileName);

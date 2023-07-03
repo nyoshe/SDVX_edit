@@ -61,8 +61,6 @@ public:
 	unsigned int measurePos = 0;
 	std::vector <Command> cmds;
 	bool empty();
-	//merging
-	ChartLine& operator+=(const ChartLine& b);
 
 	LineMask operator&(const LineMask& line);
 
