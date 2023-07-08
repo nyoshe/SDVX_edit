@@ -156,6 +156,10 @@ void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& l
 	}
 }
 
+ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
+	return insertChartLine(line, cLine, cLine.makeMask());
+}
+
 ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask) {
 	unsigned int absPos = line;
 	//check to see if we are on a new measure

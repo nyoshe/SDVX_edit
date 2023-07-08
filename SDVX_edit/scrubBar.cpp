@@ -23,7 +23,7 @@ void ScrubBar::update() {
 
 	editor.setWindow(&targetTex);
 
-	editor.drawChart();
+	//editor.drawChart();
 
 	editor.editorMeasure = editorMeasure;
 	editor.measuresPerColumn = measuresPerColumn;

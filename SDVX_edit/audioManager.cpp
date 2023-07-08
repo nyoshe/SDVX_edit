@@ -8,14 +8,17 @@ bool AudioManager::loadFile(std::string fileName) {
 	}
 
 	track.load(buffer);
+	trackValid = true;
 	return true;
 }
 
 void AudioManager::playFrom(int ms) {
-	seekTime = ms;
-	track.setPlayingOffset(sf::milliseconds(ms));
-	track.play();
-	playClock.restart();
+	if (trackValid) {
+		seekTime = ms;
+		track.setPlayingOffset(sf::milliseconds(ms));
+		track.play();
+		playClock.restart();
+	}
 }
 
 void AudioManager::stop() {

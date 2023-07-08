@@ -26,7 +26,7 @@ void StatusBar::update()
 
 		if (ImGui::BeginMenu("View")) {
 			if (ImGui::BeginMenu(("Measures per column: " + std::to_string(EditWindow::instance().measuresPerColumn)).c_str())) {
-				for (int i = 1; i < 10; i++) {
+				for (int i = 1; i < 13; i++) {
 					if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::instance().measuresPerColumn)) {
 						EditWindow::instance().measuresPerColumn = i;
 						EditWindow::instance().updateVars();
@@ -36,7 +36,7 @@ void StatusBar::update()
 			}
 
 			if (ImGui::BeginMenu(("columns: " + std::to_string(EditWindow::instance().columns)).c_str())) {
-				for (int i = 1; i < 10; i++) {
+				for (int i = 4; i < 13; i++) {
 					if (ImGui::MenuItem(std::to_string(i).c_str(), NULL, i == EditWindow::instance().columns)) {
 						EditWindow::instance().columns = i;
 						EditWindow::instance().updateVars();
@@ -44,9 +44,13 @@ void StatusBar::update()
 				}
 				ImGui::EndMenu();
 			}
-
+			/*
 			if (ImGui::MenuItem("Show Scrub Bar", NULL, ScrubBar::instance().enabled)) {
 				ScrubBar::instance().enabled = !ScrubBar::instance().enabled;
+			}
+			*/
+			if (ImGui::MenuItem("Draw Debug", NULL, EditWindow::instance().DEBUG)) {
+				EditWindow::instance().DEBUG = !EditWindow::instance().DEBUG;
 			}
 
 			ImGui::EndMenu();

@@ -182,13 +182,14 @@ ChartLine ChartLine::replaceMask(LineMask mask, const ChartLine& b) {
 	for (int i = 0; i < 2; i++) {
 		if (mask.laser[i]) {
 			out.laserPos[i] = b.laserPos[i];
+			if (b.isWide[i] && !this->isWide[i]) out.isWide[i] = 1;
+			else if (!b.isWide[i]) out.isWide[i] = 0;
 		}
 		//a merge overwrites the laser position
 		if (mask.fx[i]) {
 			out.fxVal[i] = b.fxVal[i];
 		}
-		if (b.isWide[i] && !this->isWide[i]) out.isWide[i] = 1;
-		else if (!b.isWide[i]) out.isWide[i] = 0;
+		
 	}
 	for (int i = 0; i < 4; i++) {
 		if (mask.bt[i]) {
@@ -205,13 +206,16 @@ ChartLine ChartLine::extractMask(LineMask mask) {
 	}
 	for (int i = 0; i < 2; i++) {
 		if (mask.fx[i]) output.fxVal[i] = fxVal[i];
-		if (mask.laser[i]) output.laserPos[i] = laserPos[i];
+		if (mask.laser[i]) {
+			output.laserPos[i] = laserPos[i];
+			output.isWide[i] = isWide[i];
+		}
 	}
 	output.next = next;
 	output.prev = prev;
 	output.pos = pos;
 	output.measurePos = measurePos;
-	output.isWide = isWide;
+	
 	return output;
 }
 
@@ -233,6 +237,10 @@ void ChartLine::clearLaser(int laser) {
 	isWide[laser] = false;
 }
 
-std::vector<Command> ChartLine::getCommands(CommandType c) {
-	return std::vector<Command>();
+std::vector<Command> ChartLine::getCommandType(CommandType c) {
+	std::vector<Command> out;
+	for (auto command : cmds) {
+		out.push_back(command);
+	}
+	return out;
 }

@@ -86,7 +86,7 @@ public:
 
 	void clearLaser(int laser);
 
-	std::vector<Command> getCommands(CommandType c);
+	std::vector<Command> getCommandType(CommandType c);
 
 	static const uint8_t FX_HOLD = 1;
 	static const uint8_t BT_HOLD = 2;

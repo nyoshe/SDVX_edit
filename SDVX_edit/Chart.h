@@ -99,6 +99,7 @@ public:
 	void calcTimings();
 
 	void insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap);
+	ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
 	ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask maask);
 
 	//returns a pointer to the moved object

@@ -27,10 +27,11 @@
 
 enum EditorState {
 	IDLE,
+	PLACING_BT,
+	PLACING_FX,
 	PLACING_LASER,
 	SELECTING,
 	MODIFYING_LASER,
-	CREATING_LASER,
 	PLAYING,
 };
 
@@ -66,12 +67,13 @@ private:
 	void drawLineButtons(ChartLine* line, bool Selected);
 	void drawSelected(ChartLine* line, const sf::Sprite& sprite);
 
-	unsigned int selectStart = 0;
-	unsigned int selectEnd = 0;
+	int selectStart = 0;
+	int selectEnd = 0;
 
-	unsigned int mouseDownLine = 0;
+	int mouseDownLine = 0;
+	int mouseDownLane = 0;
 
-	unsigned int mouseDownLane = 0;
+	bool mouseValid = false;
 
 	std::pair<int, ChartLine*> laserHover;
 	std::pair<int, ChartLine*> selectedLaser;
@@ -115,15 +117,14 @@ public:
 
 	//hackey but this function essentially generates the laser vertices
 	QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter, LineIterator endIter);
-	void drawChart();
+	void drawChart(unsigned int start, unsigned int end);
 	void drawPlayBar();
-	void drawChart(sf::RenderTarget* target);
 	void checkLaserSelect(QuadArray& arr, int laser);
 	void drawLaserQuads(const QuadArray& arr);
 	std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, int start, int end, int laser, bool isWide);
 
 	int getMouseLane();
-	int getMouseMeasure();
+	//int getMouseMeasure();
 	int getMouseLine();
 	int getSnappedLine(int line);
 	int getMouseLaserPos(bool isWide);
@@ -160,7 +161,6 @@ public:
 	void cut(sf::Event event);
 	void paste(sf::Event event);
 
-	void updateSelect(sf::Event event);
 	void startSelect(sf::Event event);
 	void endSelect(sf::Event event);
 

@@ -113,6 +113,7 @@ public:
 
     sf::Clock playClock;
     MyStream track;
+    bool trackValid = false;
     bool loadFile(std::string fileName);
     void playFrom(int ms);
     void stop();

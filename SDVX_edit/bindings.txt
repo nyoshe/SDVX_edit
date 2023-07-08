@@ -41,14 +41,8 @@ type:MouseButtonReleased
 keys:LControl,LAlt
 endBinding
 
-action:selectStart,
+action:selectStart
 type:MouseButtonPressed
-keys:LControl,LAlt
-buttons:Left
-endBinding
-
-action:updateSelect
-type:MouseMoved
 keys:LControl,LAlt
 buttons:Left
 endBinding
