@@ -53,13 +53,13 @@ void Chart::addLaserConnections(ChartLine* line, int laser) {
 	if (line->prev && line->prev->laserPos[laser] >= 0 && line->laserPos[laser] >= 0) {
 		int diff = line->pos - line->prev->pos;
 		if (diff >= 2) {
-			insertChartLine(line->pos - diff / 2, newLaser, Mask::LASER_ALL);
+			insertChartLine(line->pos - diff / 2, newLaser, laser ? Mask::LASER_R : Mask::LASER_L);
 		}
 	}
 	if (line->next && line->next->laserPos[laser] >= 0 && line->laserPos[laser] >= 0) {
 		int diff = line->next->pos - line->pos;
 		if (diff >= 2) {
-			insertChartLine(line->pos + diff / 2, newLaser, Mask::LASER_ALL);
+			insertChartLine(line->pos + diff / 2, newLaser, laser ? Mask::LASER_R : Mask::LASER_L);
 		}
 	}
 }

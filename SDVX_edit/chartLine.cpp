@@ -232,3 +232,7 @@ void ChartLine::clearLaser(int laser) {
 	laserPos[laser] = L_NONE;
 	isWide[laser] = false;
 }
+
+std::vector<Command> ChartLine::getCommands(CommandType c) {
+	return std::vector<Command>();
+}

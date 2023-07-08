@@ -209,9 +209,6 @@
     <ClInclude Include="soundtouch\src\AAFilter.h">
       <Filter>SoundTouch\include</Filter>
     </ClInclude>
-    <ClInclude Include="audioManager.h">
-      <Filter>SoundTouch\include</Filter>
-    </ClInclude>
     <ClInclude Include="soundtouch\include\BPMDetect.h">
       <Filter>SoundTouch\include</Filter>
     </ClInclude>
@@ -354,6 +351,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="mouseInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="audioManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

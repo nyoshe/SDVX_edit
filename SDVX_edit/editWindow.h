@@ -27,7 +27,7 @@
 
 enum EditorState {
 	IDLE,
-	PLACING,
+	PLACING_LASER,
 	SELECTING,
 	MODIFYING_LASER,
 	CREATING_LASER,
@@ -41,8 +41,6 @@ struct gameControl
 	uint32_t seekPos = 0;
 	float speed = 1.0;
 };
-
-#define DEBUG false
 /*
 struct MouseInfo {
 	int mouseStartLine = 0;
@@ -54,7 +52,7 @@ struct MouseInfo {
 
 	bool isValid = false;
 	void update() {
-		isValid = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
+		hoveredGui = (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
 	}
 };
 */
@@ -108,6 +106,7 @@ public:
 	void setWindow(sf::RenderWindow* _window);
 	void setWindow(sf::RenderTarget* _window);
 	void update();
+	void drawPlacementGuides();
 	void drawDebug();
 	void updateVars();
 
@@ -204,6 +203,8 @@ public:
 	float measureHeight = 0;
 	float topPadding = 50;
 	float bottomPadding = 50;
+
+	bool DEBUG = true;
 
 	EditorState state = IDLE;
 	bool select;

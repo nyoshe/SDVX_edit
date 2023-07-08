@@ -57,10 +57,10 @@ EditWindow::EditWindow() {
 }
 
 void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
-	Parser p;
+	Parser parser;
 	Chart newChart;
 	chart = newChart;
-	p.loadFile(mapFileName, chart);
+	parser.loadFile(mapFileName, chart);
 	chart.calcTimings();
 	chart.metadata.mapFileName = mapFileName;
 	chart.metadata.mapFilePath = mapFilePath;
@@ -74,7 +74,7 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	memSegment = boost::interprocess::managed_shared_memory(boost::interprocess::create_only, "MySharedMemory", 1000);
 
 	controlPtr = static_cast<gameControl*>(memSegment.allocate(sizeof(gameControl)));
-	controlPtr->speed = 20.0;
+	controlPtr->speed = 1.0;
 	controlPtr->seekPos = 50;
 
 	//An handle from the base address can identify any byte of the shared
@@ -86,9 +86,10 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	//Launch child process
 	//std::system(s.str().c_str());
 
-	player.loadFile(mapFilePath + "\\" + chart.metadata.songFile);
-
-	PLOG_INFO << "chart File \"" << chart.metadata.mapFileName << "\" successfully loaded";
+	if(player.loadFile(mapFilePath + "\\" + chart.metadata.songFile))
+		PLOG_INFO << "chart File \"" << chart.metadata.mapFileName << "\" successfully loaded";
+	else
+		PLOG_ERROR << "chart File \"" << chart.metadata.mapFileName << "\" unable to be loaded";
 
 	int linesBefore = chart.lines.size();
 
@@ -97,8 +98,6 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName) {
 	chart.validateChart();
 
 	PLOG_INFO << "minimized lines (" << linesBefore << "->" << chart.lines.size() << ")";
-
-	p.saveFile(chart, "test.ksh");
 }
 
 void EditWindow::saveFile(std::string fileName) {
@@ -339,12 +338,6 @@ void EditWindow::drawLineButtons(ChartLine* line, bool selected) {
 			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(0, 255, 0)),
 			sf::Vertex(sf::Vector2f(v.x - laneWidth, v.y), sf::Color(0, 255, 0))
 		};
-		//sf::Text text;
-		//text.setFont(font);
-		//text.setString("Hello world");
-		//text.setCharacterSize(24);
-		//text.setFillColor(sf::Color::Green);
-
 		window->draw(l, 2, sf::Lines);
 	}
 
@@ -822,8 +815,17 @@ void EditWindow::update() {
 		drawDebug();
 	}
 
-	drawChart();
+	for (int i = 0; i < columns; i++) {
+		sf::View view;
+		view.setViewport(sf::FloatRect((1.f / columns) * i, 0.1, (1.f / columns) * (i + 1), 0.9));
+		window->setView(view);
+		drawChart();
+		drawPlacementGuides();
+	}
+}
 
+void EditWindow::drawPlacementGuides()
+{
 	if (!select && !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))) {
 		switch (tool) {
 		case ToolType::BT:
@@ -866,8 +868,8 @@ void EditWindow::drawDebug()
 
 	ImGui::Text(std::to_string(mouseX).c_str());
 	ImGui::Text(std::to_string(mouseY).c_str());
-	std::string s3 = "measure: " + std::to_string(getMouseMeasure());
-	ImGui::Text(s3.c_str());
+	//std::string s3 = "measure: " + std::to_string(getMouseMeasure());
+	ImGui::Text(std::string("measure: " + std::to_string(getMouseMeasure())).c_str());
 	std::string s4 = "lane: " + std::to_string(getMouseLane());
 	ImGui::Text(s4.c_str());
 	std::string s6 = "Mouse Line: " + std::to_string(getMouseLine());
@@ -1029,26 +1031,25 @@ void EditWindow::mouseScroll(sf::Event event) {
 }
 
 void EditWindow::mousePressedLeft(sf::Event event) {
-	if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) {
-		mouseDownLine = getSnappedLine(getMouseLine());
-		mouseDownLane = getMouseLane();
-		if (select && laserHover.second != nullptr) {
-			int laserBeginPos = laserHover.second->pos;
-			int laserEndPos = laserHover.second->getNextLaser(laserHover.first)->pos;
-			int mousePos = getMouseLine();
-			if (mousePos - laserBeginPos < laserEndPos - mousePos) {
-				selectedLaser = laserHover;
-			}
-			else {
-				selectedLaser = std::make_pair(laserHover.first, laserHover.second->getNextLaser(laserHover.first));
-			}
-			chart.pushUndoBuffer();
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow)) return;
+	mouseDownLine = getSnappedLine(getMouseLine());
+	mouseDownLane = getMouseLane();
+	if (select && laserHover.second != nullptr) {
+		int laserBeginPos = laserHover.second->pos;
+		int laserEndPos = laserHover.second->getNextLaser(laserHover.first)->pos;
+		int mousePos = getMouseLine();
+		if (mousePos - laserBeginPos < laserEndPos - mousePos) {
+			selectedLaser = laserHover;
 		}
 		else {
-			//deselect
-			chart.pushUndoBuffer();
-			selectedLaser = std::make_pair(0, nullptr);
+			selectedLaser = std::make_pair(laserHover.first, laserHover.second->getNextLaser(laserHover.first));
 		}
+		chart.pushUndoBuffer();
+	}
+	else {
+		//deselect
+		chart.pushUndoBuffer();
+		selectedLaser = std::make_pair(0, nullptr);
 	}
 }
 
@@ -1078,7 +1079,6 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 				newLine.pos = i;
 				holdMap[i] = newLine;
 			}
-			//ChartLine newLine.pos =
 			holdMap[mouseLine] = ChartLine();
 			holdMap[mouseLine].pos = mouseLine;
 			chart.insertChartLine(mouseDownLine, holdMap);
@@ -1101,5 +1101,6 @@ void EditWindow::mouseReleasedLeft(sf::Event event) {
 				chart.pushUndoBuffer();
 			}
 		}
+		state = EditorState::IDLE;
 	}
 }

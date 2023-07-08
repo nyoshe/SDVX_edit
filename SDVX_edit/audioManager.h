@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include "imgui.h"
+#include "plog/Log.h"
 #include "SoundTouch.h"
 
 using namespace soundtouch;
@@ -56,14 +57,7 @@ private:
 
     virtual bool onGetData(Chunk& data)
     {
-        
-        // number of samples to stream every time the function is called;
-        // in a more robust implementation, it should be a fixed
-        // amount of time rather than an arbitrary number of samples
-
-        // set the pointer to the next audio samples to be played
         data.samples = static_cast<sf::Int16*>(output);
-
         
         int nSamples;
 
@@ -119,7 +113,7 @@ public:
 
     sf::Clock playClock;
     MyStream track;
-    void loadFile(std::string fileName);
+    bool loadFile(std::string fileName);
     void playFrom(int ms);
     void stop();
     unsigned int getMs();
