@@ -5,8 +5,9 @@
 #include <iostream>
 #include <bitset>
 
-const int L_CONNECTOR = -2;
-const int L_NONE = -1;
+//really dumb, but these were initially ints
+const float L_CONNECTOR = -2;
+const float L_NONE = -1;
 
 struct Command {
 	CommandType type = CommandType::INVALID;
@@ -52,7 +53,7 @@ public:
 	std::vector <uint8_t> btVal = { 0, 0, 0, 0 };
 	//1 for long note, 2 for chip (legacy reasons tl. stupid devs)
 	std::vector <uint8_t> fxVal = { 0, 0 };
-	std::vector <int8_t> laserPos = { -1, -1 };
+	std::vector <float> laserPos = { L_NONE, L_NONE };
 	std::vector <bool>  isWide = { false, false };
 	ChartLine* next = nullptr;
 	ChartLine* prev = nullptr;
@@ -78,7 +79,7 @@ public:
 	std::vector<std::pair<ChartLine*, ChartLine*>> clearBtHold(int lane);
 	std::vector<std::pair<ChartLine*, ChartLine*>> clearFxHold(int lane);
 
-	void modifyLaserPos(int laser, int val);
+	void modifyLaserPos(int laser, float val);
 
 	ChartLine extractMask(LineMask mask);
 

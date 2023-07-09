@@ -1,11 +1,13 @@
 #include "statusBar.h"
-StatusBar::StatusBar() {
-	ImGuiIO& io = ImGui::GetIO();
-	font = io.Fonts->AddFontFromFileTTF("Fonts/CONSOLA.TTF", 16);
+
+void StatusBar::setWindow(sf::RenderWindow* _window) {
+	window = _window;
 }
+
 void StatusBar::update()
 {
-	ImGui::PushFont(font);
+	ImGui::PushFont(FontManager::instance().getDefaultFont());
+	static bool updatingScale = false;
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New")) {
@@ -44,6 +46,25 @@ void StatusBar::update()
 				}
 				ImGui::EndMenu();
 			}
+			static float scale = 1.0;
+			std::ostringstream oss;
+			oss << std::setprecision(2) << FontManager::instance().getAbsoluteScale();
+			if (ImGui::BeginMenu(("GUI scale: " + oss.str() + "x").c_str())) {
+				
+				if (ImGui::SliderFloat("scale", &scale, 0.5f, 2.f, "%.2f")) {
+
+				}
+				if (ImGui::IsItemHovered()) {
+					updatingScale = true;
+				}
+				else if (updatingScale) {
+					FontManager::instance().setScale(scale);
+					updatingScale = false;
+				}
+				
+				ImGui::EndMenu();
+			}
+			
 			/*
 			if (ImGui::MenuItem("Show Scrub Bar", NULL, ScrubBar::instance().enabled)) {
 				ScrubBar::instance().enabled = !ScrubBar::instance().enabled;
@@ -94,15 +115,15 @@ void StatusBar::update()
 
 			if (ImGui::MenuItem("Laser Placement: Normal", NULL, laserSnap == LaserSnap::NORMAL)) {
 				laserSnap = NORMAL;
-				EditWindow::instance().laserMoveSize = 5;
+				EditWindow::instance().laserMoveSize = 0.1;
 			}
 			if (ImGui::MenuItem("Laser Placement: Fine", NULL, laserSnap == LaserSnap::FINE)) {
 				laserSnap = FINE;
-				EditWindow::instance().laserMoveSize = 3;
+				EditWindow::instance().laserMoveSize = 0.05;
 			}
 			if (ImGui::MenuItem("Laser Placement: Very Fine", NULL, laserSnap == LaserSnap::VERY_FINE)) {
 				laserSnap = VERY_FINE;
-				EditWindow::instance().laserMoveSize = 1;
+				EditWindow::instance().laserMoveSize = 0.02;
 			}
 			ImGui::EndMenu();
 		}

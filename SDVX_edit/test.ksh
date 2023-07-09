@@ -32,7 +32,7 @@ icon=../sdvx05.png
 beat=4/4
 zoom_top=0
 zoom_bottom=0
-0000|00|--
+1000|00|--
 --
 tickrate_offset=1
 0000|00|--
@@ -69,12 +69,12 @@ fx-l=
 0100|10|--
 0001|10|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|02|--
 fx-l_se=clap;0
 0000|20|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|02|--
 --
 0001|00|--
@@ -110,7 +110,7 @@ fx-r=
 1000|01|--
 --
 fx-l=
-0000|10|--
+0010|10|--
 0000|02|--
 --
 0110|00|--
@@ -138,7 +138,7 @@ fx-l=
 1100|00|:-
 --
 0110|00|:-
-0110|00|o-
+0110|00|P-
 --
 0000|20|--
 0000|02|--
@@ -178,7 +178,7 @@ fx-r=
 0000|00|--
 --
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|--
 --
 0000|00|0-
@@ -3001,7 +3001,7 @@ fx-r=
 0000|00|--
 --
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|--
 --
 2002|00|--
@@ -3268,7 +3268,7 @@ fx-l_se=clap;0
 0000|00|--
 --
 0000|00|--
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0100|02|--
 --
 fx-l=
@@ -3923,7 +3923,7 @@ laserrange_l=2x
 0000|00|:-
 --
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|:-
 --
 laserrange_r=2x
@@ -4061,10 +4061,10 @@ laserrange_l=2x
 0000|00|:-
 --
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|:-
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|:-
 --
 0110|00|:-
@@ -4112,7 +4112,7 @@ laserrange_r=2x
 0000|00|::
 0000|00|::
 0000|00|::
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|02|::
 0000|00|::
 0000|00|::
@@ -4216,7 +4216,7 @@ fx-l_se=clap;0
 0000|00|::
 --
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|PP
 --
 0110|00|::
@@ -5245,14 +5245,14 @@ laserrange_l=2x
 0000|00|PP
 0000|00|::
 0000|00|::
-center_split=0
 zoom_top=0
 zoom_bottom=0
+center_split=0
 0000|00|::
 --
-center_split=125
 zoom_top=25
 zoom_bottom=250
+center_split=125
 0000|00|PP
 --
 0000|00|--
@@ -6242,7 +6242,7 @@ laserrange_r=2x
 0000|00|--
 0000|00|--
 fx-l_se=clap;0
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0000|22|--
 0000|00|--
 0000|00|--
@@ -6281,9 +6281,9 @@ fx-l_se=clap;0
 fx-l_se=clap;0
 0010|20|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0100|02|--
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 1000|02|--
 --
 laserrange_l=2x
@@ -6796,7 +6796,7 @@ fx-l_se=clap;0
 0100|00|--
 0010|00|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0100|02|--
 0010|00|--
 0100|00|--
@@ -6860,7 +6860,7 @@ fx-l_se=clap;0
 0000|00|--
 0000|00|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 1000|02|--
 0000|00|--
 0100|00|--
@@ -6890,7 +6890,7 @@ fx-l_se=clap;0
 0010|00|--
 0001|00|--
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 0100|02|--
 0000|00|--
 1000|00|--
@@ -7628,7 +7628,7 @@ center_split=125
 0000|02|::
 0000|02|::
 --
-fx-r_se=clap;0
+fx-r_se=clap;0;0
 center_split=0
 0000|02|Po
 0000|00|::

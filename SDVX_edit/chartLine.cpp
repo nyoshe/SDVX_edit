@@ -23,7 +23,7 @@ LineMask ChartLine::makeMask() const {
 		if (this->fxVal[i] > 0) {
 			out.fx[i] = 1;
 		}
-		if (this->laserPos[i] != -1) {
+		if (this->laserPos[i] != L_NONE) {
 			out.laser[i] = 1;
 		}
 	}
@@ -60,7 +60,7 @@ bool ChartLine::empty() {
 			return false;
 		}
 		//we are considered empty only if we are the connector to a following laser point
-		if (next && prev && laserPos[i] == -2) {
+		if (next && prev && laserPos[i] == L_CONNECTOR) {
 			if (next->laserPos[i] >= 0 && prev->laserPos[i] >= 0) {
 				return false;
 			}
@@ -74,8 +74,8 @@ bool ChartLine::empty() {
 
 ChartLine* ChartLine::getNextLaser(int laser) {
 	ChartLine* line = this->next;
-	while (line && line->laserPos[laser] != -1) {
-		if (line->laserPos[laser] == -1) {
+	while (line && line->laserPos[laser] != L_NONE) {
+		if (line->laserPos[laser] == L_NONE) {
 			return nullptr;
 		}
 		if (line->laserPos[laser] >= 0) {
@@ -88,8 +88,8 @@ ChartLine* ChartLine::getNextLaser(int laser) {
 
 ChartLine* ChartLine::getPrevLaser(int laser) {
 	ChartLine* line = this->prev;
-	while (line && line->laserPos[laser] != -1) {
-		if (line->laserPos[laser] == -1) {
+	while (line && line->laserPos[laser] != L_NONE) {
+		if (line->laserPos[laser] == L_NONE) {
 			return nullptr;
 		}
 		if (line->laserPos[laser] >= 0) {
@@ -164,9 +164,9 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearFxHold(int lane) 
 	return actionList;
 }
 
-void ChartLine::modifyLaserPos(int laser, int val) {
-	if (laserPos[laser] + val >= 50) {
-		laserPos[laser] = 50;
+void ChartLine::modifyLaserPos(int laser, float val) {
+	if (laserPos[laser] + val >= 1.0) {
+		laserPos[laser] = 1.0;
 	}
 	else if (laserPos[laser] + val <= 0) {
 		laserPos[laser] = 0;

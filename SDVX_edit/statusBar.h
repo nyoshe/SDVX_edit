@@ -4,22 +4,24 @@
 #include "editWindow.h"
 #include "fileDialog/ImGuiFileDialog.h"
 #include "scrubBar.h"
+#include "fontManager.h"
 #include <string>
-
+#include "Unique.h"
+#include <iomanip>
 enum LaserSnap {
 	NORMAL,
 	FINE,
 	VERY_FINE
 };
-
-class StatusBar
+	
+class StatusBar final : public Unique <StatusBar>
 {
 private:
-	ImFont* font;
+	sf::RenderWindow* window;
 
 public:
-	StatusBar();
 	~StatusBar() = default;
+	void setWindow(sf::RenderWindow* window);
 	void update();
 	LaserSnap laserSnap = LaserSnap::NORMAL;
 };

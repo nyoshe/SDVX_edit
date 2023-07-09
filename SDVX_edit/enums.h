@@ -14,7 +14,7 @@ enum CommandType {
 	FX_L, FX_R,
 	FX_L_EFFECT, FX_R_EFFECT,
 	FILTER_TYPE,
-	//no documentation for this????
+	//no documentation for this
 	TICKRATE_OFFSET
 };
 
@@ -50,5 +50,8 @@ enum Option {
 };
 
 enum ToolType {
-	BT, FX, LASER_L, LASER_R
+	LASER_L = 0,
+	LASER_R = 1,
+	BT,
+	FX,
 };

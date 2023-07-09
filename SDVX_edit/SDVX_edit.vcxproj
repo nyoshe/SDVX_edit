@@ -148,6 +148,7 @@
     <ClCompile Include="chartLine.cpp" />
     <ClCompile Include="editWindow.cpp" />
     <ClCompile Include="fileDialog\ImGuiFileDialog.cpp" />
+    <ClCompile Include="fontManager.cpp" />
     <ClCompile Include="imgui\imgui-SFML.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="fileDialog\dirent\dirent.h" />
     <ClInclude Include="fileDialog\ImGuiFileDialog.h" />
     <ClInclude Include="fileDialog\ImGuiFileDialogConfig.h" />
+    <ClInclude Include="fontManager.h" />
     <ClInclude Include="imgui\imconfig-SFML.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui-SFML.h" />

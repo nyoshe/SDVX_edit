@@ -155,33 +155,32 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 			line->fxVal[1] = s[6] - '0';
 
 			//lasers
-			//-1 represents no laser, -2 represents connection
 			for (int i = 0; i < 2; i++) {
 				switch (s[8 + i]) {
 				case '-':
-					line->laserPos[i] = -1;
+					line->laserPos[i] = L_NONE;
 					lastLaser[i] = nullptr;
 					break;
 				case ':':
-					line->laserPos[i] = -2;
+					line->laserPos[i] = L_CONNECTOR;
 					break;
 				default:
-					line->laserPos[i] = laserVals.find(s[8 + i]);
+					line->laserPos[i] = laserVals.find(s[8 + i])/50.f;
 					break;
 				}
 			}
 
 			for (auto it : line->cmds) {
-				if (it.type == CommandType::WIDE_LASER_L && line->laserPos[0] != -1) {
+				if (it.type == CommandType::WIDE_LASER_L && line->laserPos[0] != L_NONE) {
 					laserWide[0] = true;
 				}
-				else if (line->laserPos[0] == -1) {
+				else if (line->laserPos[0] == L_NONE) {
 					laserWide[0] = false;
 				}
-				if (it.type == CommandType::WIDE_LASER_R && line->laserPos[1] != -1) {
+				if (it.type == CommandType::WIDE_LASER_R && line->laserPos[1] != L_NONE) {
 					laserWide[1] = true;
 				}
-				else if (line->laserPos[1] == -1) {
+				else if (line->laserPos[1] == L_NONE) {
 					laserWide[1] = false;
 				}
 			}
@@ -287,13 +286,12 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 			mapFile << char(line.second->btVal[0] + '0') << char(line.second->btVal[1] + '0') << char(line.second->btVal[2] + '0') << char(line.second->btVal[3] + '0') << "|";
 			mapFile << char(line.second->fxVal[0] + '0') << char(line.second->fxVal[1] + '0') << "|";
 			for (int i = 0; i < 2; i++) {
-				switch (line.second->laserPos[i]) {
-				case -1: mapFile << "-"; break;
-				case -2: mapFile << ":"; break;
-				default:
-					mapFile << laserVals[line.second->laserPos[i]];
-					break;
-				}
+				if (line.second->laserPos[i] == L_NONE)
+					mapFile << "-"; 
+				else if (line.second->laserPos[i] == L_CONNECTOR)
+					mapFile << ":";
+				else 
+					mapFile << laserVals[std::clamp((int)std::lrint(line.second->laserPos[i] * 50.f), 0, 50)];
 			}
 
 			//now do spins

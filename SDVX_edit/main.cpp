@@ -8,6 +8,7 @@
 #include "toolBar.h"
 #include "scrubBar.h"
 #include "Input.h"
+#include "fontManager.h"
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -21,19 +22,17 @@ int main() {
 	PLOG_INFO << "initialized logging";
 	sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
 	ImGui::SFML::Init(window);
-	//IMGUI_IMPL_API
 
 	sf::Clock deltaClock;
-	sf::Clock deltaClock2;
-	int counter = 0;
+	FontManager::instance().setWindow(&window);
 	ScrubBar::instance().setWindow(&window);
-	StatusBar status_bar;
+	StatusBar::instance().setWindow(&window);
 	//toolWindow tool_window;
-	ToolBar tool_bar(&window);
+	ToolBar::instance().setWindow(&window);
 	EditWindow::instance().setWindow(&window);
-	//std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
-   // std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
-	//EditWindow::instance().loadFile(filePath, filePathName);
+	std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
+    std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
+	EditWindow::instance().loadFile(filePath, filePathName);
 
 	while (window.isOpen()) {
 		sf::Event event;
@@ -49,7 +48,6 @@ int main() {
 			if (event.type == sf::Event::Closed) {
 				EditWindow::instance().saveFile("editor_backup.ksh");
 				window.close();
-				//ImGui::PopFont();
 			}
 			else if (event.type == sf::Event::Resized) {
 				sf::View view = window.getDefaultView();
@@ -62,29 +60,23 @@ int main() {
 						static_cast<float>(event.size.width / 2),
 						static_cast<float>(event.size.height / 2)
 					});
-
+				//ImGui::SFML::Render(window);
 				window.setView(view);
+				FontManager::instance().setWindow(&window);
+				StatusBar::instance().setWindow(&window);
 				EditWindow::instance().setWindow(&window);
 				ScrubBar::instance().setWindow(&window);
+				ToolBar::instance().setWindow(&window);
+				//ImGui::NewFrame();
 			}
 		}
 
 		//ImGui::ShowDemoWindow();
-
-		status_bar.update();
+		StatusBar::instance().update();
+		FontManager::instance().update();
 		EditWindow::instance().update();
-		//tool_window.update();
-		tool_bar.update();
+		ToolBar::instance().update();
 		ScrubBar::instance().update();
-
-		if (counter == 10) {
-			float endTime = deltaClock2.restart().asSeconds();
-			window.setTitle("voltexEdit | FPS: " + std::to_string(10.0 / endTime));
-			counter = 0;
-		}
-		else {
-			counter++;
-		}
 
 		ImGui::SFML::Render(window);
 		window.display();

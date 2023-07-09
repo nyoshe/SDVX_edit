@@ -10,6 +10,7 @@
 #include "imgui/imgui-SFML.h"
 #include "structs.h"
 #include "audioManager.h"
+#include "fontManager.h"
 #include "Unique.h"
 #include "Input.h"
 #include <cmath>
@@ -33,6 +34,7 @@ enum EditorState {
 	SELECTING,
 	MODIFYING_LASER,
 	PLAYING,
+	HOVERED_GUI,
 };
 
 struct gameControl
@@ -72,8 +74,6 @@ private:
 
 	int mouseDownLine = 0;
 	int mouseDownLane = 0;
-
-	bool mouseValid = false;
 
 	std::pair<int, ChartLine*> laserHover;
 	std::pair<int, ChartLine*> selectedLaser;
@@ -121,19 +121,18 @@ public:
 	void drawPlayBar();
 	void checkLaserSelect(QuadArray& arr, int laser);
 	void drawLaserQuads(const QuadArray& arr);
-	std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, int start, int end, int laser, bool isWide);
+	std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, float start, float end, int laser, bool isWide);
 
 	int getMouseLane();
 	//int getMouseMeasure();
 	int getMouseLine();
 	int getSnappedLine(int line);
-	int getMouseLaserPos(bool isWide);
+	float getMouseLaserPos(bool isWide);
 
 	int getMeasureFromLine(unsigned int loc);
 
 	void handleEvent(sf::Event event);
-	std::vector <float> getLaserX(ChartLine* line);
-	sf::Vector2f getMeasurePos(int measure);
+	float getLaserX(ChartLine* line, int laser);
 
 	sf::Vector2f getSnappedPos(ToolType type);
 	//get the note location from measure, lane, and line positio
@@ -153,6 +152,7 @@ public:
 	void loadFile(std::string mapFilePath, std::string mapFileName);
 	void saveFile(std::string fileName);
 	void saveFile();
+	void saveEvent(sf::Event event);
 
 	//actions
 	void undo(sf::Event event);
@@ -187,12 +187,12 @@ public:
 	//derived from 4/4 with 4 measures per column
 	int pulsesPerColumn = 192 * 4;
 	int snapGridSize = 16;
-	int laserMoveSize = 5;
+	float laserMoveSize = 0.1;
 	int viewLines = 0;
 	float playbackSpeed = 1.0;
 	AudioManager player;
 
-	ToolType tool = ToolType::BT;
+	EditTool tool;
 
 	gameControl* controlPtr;
 
@@ -201,13 +201,12 @@ public:
 	float laneWidth = 0;
 	float columnWidth = 0;
 	float measureHeight = 0;
-	float topPadding = 50;
-	float bottomPadding = 50;
+	float topPadding = 0.05;
+	float bottomPadding = 0.1;
 
 	bool DEBUG = true;
 
 	EditorState state = IDLE;
-	bool select;
 
 	sf::RenderTarget* window = nullptr;
 	sf::RenderWindow* appWindow = nullptr;

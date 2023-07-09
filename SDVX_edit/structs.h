@@ -27,3 +27,10 @@ struct Measure {
 	unsigned int pos = 0;
 	float msStart = 0.0;
 };
+
+struct EditTool {
+	ToolType type = ToolType::BT;
+	bool select = false;
+	bool wideLaser = false;
+	bool laserDefaultStart = false;
+};

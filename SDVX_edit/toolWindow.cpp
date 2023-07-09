@@ -18,19 +18,19 @@ void toolWindow::update() {
 	ImGui::BeginGroup();
 
 	if (ImGui::ImageButton(selectIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().select = !EditWindow::instance().select;
+		EditWindow::instance().tool.select = !EditWindow::instance().tool.select;
 	}
 	if (ImGui::ImageButton(fxIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool = ToolType::FX;
+		EditWindow::instance().tool.type = ToolType::FX;
 	}
 	if (ImGui::ImageButton(btIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool = ToolType::BT;
+		EditWindow::instance().tool.type = ToolType::BT;
 	}
 	if (ImGui::ImageButton(knobRIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool = ToolType::LASER_R;
+		EditWindow::instance().tool.type = ToolType::LASER_R;
 	}
 	if (ImGui::ImageButton(knobLIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool = ToolType::LASER_L;
+		EditWindow::instance().tool.type = ToolType::LASER_L;
 	}
 
 	ImGui::EndGroup();
