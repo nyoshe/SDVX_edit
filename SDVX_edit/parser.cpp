@@ -1,6 +1,7 @@
 #include "Parser.h"
 
-Command Parser::parseCommand(std::string s) {
+Command Parser::parseCommand(std::string s)
+{
 	Command c;
 	int delim = s.find('=');
 	std::string val = s.substr(delim + 1);
@@ -32,40 +33,42 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 		//switch statement
 		const std::unordered_map<std::string, std::function<void()>> m{
 			{"title", [&]() { chart.metadata.title = val; }},
-			{ "title_img",   [&]() { chart.metadata.titleImg = val; } },
-			{ "artist",   [&]() { chart.metadata.artist = val; } },
-			{ "artist_img", [&]() { chart.metadata.artistImg = opt; } },
-			{ "effect",   [&]() { chart.metadata.effect = val; } },
-			{ "jacket",   [&]() { chart.metadata.jacket = val; } },
-			{ "illustrator",   [&]() { chart.metadata.illustrator = val; } },
-			{ "difficulty",   [&]() { chart.metadata.difficulty = val; } },
-			{ "level",   [&]() { chart.metadata.level = std::stoi(val); } },
-			{ "t",   [&]() { chart.metadata.bpm = std::stof(val); } },
-			{ "to",   [&]() { chart.metadata.bpmHi = std::stof(val); } },
-			{ "beat",   [&]() { chart.metadata.beat = val; } },
-			{ "m",   [&]() { chart.metadata.songFile = val; } },
-			{ "mvol",   [&]() { chart.metadata.volume = stoi(val); } },
-			{ "o",   [&]() { chart.metadata.offset = stoi(val); } },
-			{ "bg",   [&]() { chart.metadata.bg = val; } },
-			{ "layer",   [&]() { chart.metadata.layer = val; } },
-			{ "po",   [&]() { chart.metadata.previewOffset = stoi(val); } },
-			{ "plength",   [&]() { chart.metadata.previewLength = stoi(val); } },
-			{ "total",   [&]() { chart.metadata.total = stoi(val); } },
-			{ "chokkakuvol",   [&]() { chart.metadata.slamVol = stoi(val); } },
-			{ "chokkakuautovol",   [&]() { chart.metadata.slamToVol = stoi(val); } },
-			{ "filtertype",   [&]() { chart.metadata.filterType = val; } },
-			{ "pfiltergain",   [&]() { chart.metadata.pFilterGain = stoi(val); } },
-			{ "pfilterdelay",   [&]() { chart.metadata.pFilterDelay = stoi(val); } },
-			{ "v",   [&]() { chart.metadata.videoFile = val; } },
-			{ "vo",   [&]() { chart.metadata.videoOffset = stoi(val); } },
-			{ "ver",   [&]() { chart.metadata.version = val; } },
-			{ "info",   [&]() { chart.metadata.info = val; } },
-			{ "icon",   [&]() { chart.metadata.icon = val; } },
+			{"title_img", [&]() { chart.metadata.titleImg = val; }},
+			{"artist", [&]() { chart.metadata.artist = val; }},
+			{"artist_img", [&]() { chart.metadata.artistImg = opt; }},
+			{"effect", [&]() { chart.metadata.effect = val; }},
+			{"jacket", [&]() { chart.metadata.jacket = val; }},
+			{"illustrator", [&]() { chart.metadata.illustrator = val; }},
+			{"difficulty", [&]() { chart.metadata.difficulty = val; }},
+			{"level", [&]() { chart.metadata.level = std::stoi(val); }},
+			{"t", [&]() { chart.metadata.bpm = std::stof(val); }},
+			{"to", [&]() { chart.metadata.bpmHi = std::stof(val); }},
+			{"beat", [&]() { chart.metadata.beat = val; }},
+			{"m", [&]() { chart.metadata.songFile = val; }},
+			{"mvol", [&]() { chart.metadata.volume = stoi(val); }},
+			{"o", [&]() { chart.metadata.offset = stoi(val); }},
+			{"bg", [&]() { chart.metadata.bg = val; }},
+			{"layer", [&]() { chart.metadata.layer = val; }},
+			{"po", [&]() { chart.metadata.previewOffset = stoi(val); }},
+			{"plength", [&]() { chart.metadata.previewLength = stoi(val); }},
+			{"total", [&]() { chart.metadata.total = stoi(val); }},
+			{"chokkakuvol", [&]() { chart.metadata.slamVol = stoi(val); }},
+			{"chokkakuautovol", [&]() { chart.metadata.slamToVol = stoi(val); }},
+			{"filtertype", [&]() { chart.metadata.filterType = val; }},
+			{"pfiltergain", [&]() { chart.metadata.pFilterGain = stoi(val); }},
+			{"pfilterdelay", [&]() { chart.metadata.pFilterDelay = stoi(val); }},
+			{"v", [&]() { chart.metadata.videoFile = val; }},
+			{"vo", [&]() { chart.metadata.videoOffset = stoi(val); }},
+			{"ver", [&]() { chart.metadata.version = val; }},
+			{"info", [&]() { chart.metadata.info = val; }},
+			{"icon", [&]() { chart.metadata.icon = val; }},
 		};
 		//read header
 		while (getline(mapFile, s)) {
 			//chart start
-			if (s == "--") break;
+			if (s == "--") {
+				break;
+			}
 			int delim = s.find('=');
 			val = s.substr(delim + 1);
 			opt = s.substr(0, delim);
@@ -80,9 +83,9 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 		}
 
 		std::vector<ChartLine*> lineBuffer;
-		std::vector<bool> laserWide = { false, false };
+		std::vector<bool> laserWide = {false, false};
 
-		std::vector <ChartLine*> lastLaser = { nullptr, nullptr };
+		std::vector<ChartLine*> lastLaser = {nullptr, nullptr};
 		ChartLine* prev = nullptr;
 		unsigned int pos = 0;
 
@@ -93,10 +96,14 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 		//read chart body
 		while (getline(mapFile, s)) {
 			//check for comments
-			if (s.size() >= 2 && s.substr(0, 2) == "//") continue;
+			if (s.size() >= 2 && s.substr(0, 2) == "//") {
+				continue;
+			}
 			std::vector<std::vector<ChartLine*>> laserLines[2];
 
-			if (s == "") continue;
+			if (s == "") {
+				continue;
+			}
 			//check for measure end
 			if (s == "--") {
 				Measure m;
@@ -109,7 +116,7 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 				for (int i = 0; i < lineBuffer.size(); i++) {
 					lineBuffer[i]->pos = pos;
 					lineBuffer[i]->measurePos = measurePos;
-					m.lines.insert({ pos - m.pos, lineBuffer[i] });
+					m.lines.insert({pos - m.pos, lineBuffer[i]});
 					chart.lines[pos] = lineBuffer[i];
 					if (!lineBuffer[i]->cmds.empty()) {
 						chart.cmds[pos] = lineBuffer[i]->cmds;
@@ -127,11 +134,11 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 
 			//check for commands, these always have equal signs
 			std::vector<Command> commands;
-			ChartLine* line = new ChartLine;
+			auto line = new ChartLine;
 
 			while (s.find('=') != std::string::npos) {
 				Command cmd = parseCommand(s);
-				if (cmd.type == CommandType::BEAT_CHANGE) {
+				if (cmd.type == BEAT_CHANGE) {
 					timeSigTop = std::stoi(cmd.val.substr(0, cmd.val.find('/')));
 
 					//unnused
@@ -165,19 +172,19 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 					line->laserPos[i] = L_CONNECTOR;
 					break;
 				default:
-					line->laserPos[i] = laserVals.find(s[8 + i])/50.f;
+					line->laserPos[i] = laserVals.find(s[8 + i]) / 50.f;
 					break;
 				}
 			}
 
 			for (auto it : line->cmds) {
-				if (it.type == CommandType::WIDE_LASER_L && line->laserPos[0] != L_NONE) {
+				if (it.type == WIDE_LASER_L && line->laserPos[0] != L_NONE) {
 					laserWide[0] = true;
 				}
 				else if (line->laserPos[0] == L_NONE) {
 					laserWide[0] = false;
 				}
-				if (it.type == CommandType::WIDE_LASER_R && line->laserPos[1] != L_NONE) {
+				if (it.type == WIDE_LASER_R && line->laserPos[1] != L_NONE) {
 					laserWide[1] = true;
 				}
 				else if (line->laserPos[1] == L_NONE) {
@@ -218,13 +225,14 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 	mapFile.open(fileName, std::ofstream::trunc);
 
 	//write header
-	unsigned char bom[] = { 0xEF,0xBB,0xBF };
+	unsigned char bom[] = {0xEF, 0xBB, 0xBF};
 	mapFile.write((char*)bom, sizeof(bom));
 
 	//swap the key and value of the command table
 	std::unordered_map<CommandType, std::string> swappedCmdTable;
-	for (auto i : cmdTable)
+	for (auto i : cmdTable) {
 		swappedCmdTable.emplace(i.second, i.first);
+	}
 
 	mapFile << "title=" << chart.metadata.title << std::endl;
 	mapFile << "title_img=" << chart.metadata.titleImg << std::endl;
@@ -267,12 +275,12 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 			for (auto command : line.second->cmds) {
 				auto it = swappedCmdTable.find(command.type);
 				switch (it->first) {
-				case CommandType::SPIN_R:
-				case CommandType::SPIN_L:
-				case CommandType::HALF_SPIN_R:
-				case CommandType::HALF_SPIN_L:
-				case CommandType::SWING_R:
-				case CommandType::SWING_L:
+				case SPIN_R:
+				case SPIN_L:
+				case HALF_SPIN_R:
+				case HALF_SPIN_L:
+				case SWING_R:
+				case SWING_L:
 					hasSpin = true;
 					spinVal = command.val;
 					break;
@@ -283,15 +291,22 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 			}
 
 			//output the actual line
-			mapFile << char(line.second->btVal[0] + '0') << char(line.second->btVal[1] + '0') << char(line.second->btVal[2] + '0') << char(line.second->btVal[3] + '0') << "|";
-			mapFile << char(line.second->fxVal[0] + '0') << char(line.second->fxVal[1] + '0') << "|";
+			mapFile << static_cast<char>(line.second->btVal[0] + '0') << static_cast<char>(line.second->btVal[1] + '0')
+				<< static_cast<char>(line.second->btVal[2] + '0') << static_cast<char>(line.second->btVal[3] + '0') <<
+				"|";
+			mapFile << static_cast<char>(line.second->fxVal[0] + '0') << static_cast<char>(line.second->fxVal[1] + '0')
+				<< "|";
 			for (int i = 0; i < 2; i++) {
-				if (line.second->laserPos[i] == L_NONE)
-					mapFile << "-"; 
-				else if (line.second->laserPos[i] == L_CONNECTOR)
+				if (line.second->laserPos[i] == L_NONE) {
+					mapFile << "-";
+				}
+				else if (line.second->laserPos[i] == L_CONNECTOR) {
 					mapFile << ":";
-				else 
-					mapFile << laserVals[std::clamp((int)std::lrint(line.second->laserPos[i] * 50.f), 0, 50)];
+				}
+				else {
+					mapFile << laserVals[std::clamp(static_cast<int>(std::lrint(line.second->laserPos[i] * 50.f)), 0,
+					                                50)];
+				}
 			}
 
 			//now do spins

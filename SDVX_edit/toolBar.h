@@ -1,13 +1,13 @@
 #pragma once
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
 #include <SFML/Graphics.hpp>
 #include "EditWindow.h"
 #include "FontManager.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
-const int snapSizes[10] = { 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
+const int snapSizes[10] = {4, 8, 12, 16, 24, 32, 48, 64, 96, 192};
 
-class ToolBar final : public Unique <ToolBar>
+class ToolBar final : public Unique<ToolBar>
 {
 private:
 	sf::Texture selectIcon;

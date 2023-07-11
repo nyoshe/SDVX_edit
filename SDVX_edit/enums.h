@@ -1,7 +1,13 @@
 #pragma once
-enum CommandType {
+enum CommandType
+{
 	INVALID,
-	SPIN_R, SPIN_L, HALF_SPIN_R, HALF_SPIN_L, SWING_R, SWING_L,
+	SPIN_R,
+	SPIN_L,
+	HALF_SPIN_R,
+	HALF_SPIN_L,
+	SWING_R,
+	SWING_L,
 	TEMPO_CHANGE,
 	BEAT_CHANGE,
 	SLAM_VOLUME,
@@ -9,16 +15,23 @@ enum CommandType {
 	PEAK_FILTER_GAIN,
 	STOP,
 	TILT,
-	ZOOM_TOP, ZOOM_BOTTOM, ZOOM_SIDE, CENTER_SPLIT,
-	WIDE_LASER_L, WIDE_LASER_R,
-	FX_L, FX_R,
-	FX_L_EFFECT, FX_R_EFFECT,
+	ZOOM_TOP,
+	ZOOM_BOTTOM,
+	ZOOM_SIDE,
+	CENTER_SPLIT,
+	WIDE_LASER_L,
+	WIDE_LASER_R,
+	FX_L,
+	FX_R,
+	FX_L_EFFECT,
+	FX_R_EFFECT,
 	FILTER_TYPE,
 	//no documentation for this
 	TICKRATE_OFFSET
 };
 
-enum Option {
+enum Option
+{
 	TITLE,
 	TITLE_IMG,
 	ARTIST,
@@ -49,7 +62,8 @@ enum Option {
 	INFO
 };
 
-enum ToolType {
+enum ToolType
+{
 	LASER_L = 0,
 	LASER_R = 1,
 	BT,

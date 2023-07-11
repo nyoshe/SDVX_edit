@@ -1,18 +1,20 @@
 #pragma once
-#include "Unique.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
+#include <map>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <map>
+#include "Unique.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
-struct FontInfo {
+struct FontInfo
+{
 	std::string file = "Fonts/CONSOLA.TTF";
 	ImFont* font = nullptr;
 	float scale = 0;
 };
-class FontManager final : public Unique <FontManager>
+
+class FontManager final : public Unique<FontManager>
 {
 	sf::RenderWindow* window;
 	float scale = 1.0;
@@ -21,6 +23,7 @@ class FontManager final : public Unique <FontManager>
 	bool needsUpdate = false;
 	std::string defaultFontFile = "Fonts/CONSOLA.TTF";
 	void loadDefault();
+
 public:
 	FontManager();
 	~FontManager() = default;
@@ -35,4 +38,3 @@ public:
 	ImFont* getDefaultFont();
 	void update();
 };
-

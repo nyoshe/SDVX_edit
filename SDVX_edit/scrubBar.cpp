@@ -1,6 +1,10 @@
 #include "ScrubBar.h"
-void ScrubBar::update() {
-	if (!enabled) return;
+
+void ScrubBar::update()
+{
+	if (!enabled) {
+		return;
+	}
 	EditWindow& editor = EditWindow::instance();
 
 	sf::RenderWindow* beforeWin = editor.appWindow;
@@ -31,11 +35,12 @@ void ScrubBar::update() {
 	editor.setWindow(beforeWin);
 
 	sf::Sprite spr(targetTex.getTexture());
-	spr.setPosition(sf::Vector2f(0, window->getSize().x * (static_cast<float>(currentMeasure) / static_cast<float>(displayMeasures))));
+	spr.setPosition(sf::Vector2f(
+		0, window->getSize().x * (static_cast<float>(currentMeasure) / static_cast<float>(displayMeasures))));
 
 	//tex.draw(spr);
 
-	sf::BlendMode blender = sf::BlendMode(sf::BlendMode::Factor::One, sf::BlendMode::Factor::Zero, sf::BlendMode::Equation::Add);
+	auto blender = sf::BlendMode(sf::BlendMode::Factor::One, sf::BlendMode::Factor::Zero, sf::BlendMode::Equation::Add);
 	tex.draw(spr, blender);
 	tex.display();
 
@@ -51,7 +56,8 @@ void ScrubBar::update() {
 		//tex.clear();
 		//tex.create(100, window->getSize().x);
 	}
-	float linePos = window->getSize().x * static_cast<float>(editor.editorMeasure) / static_cast<float>(displayMeasures);
+	float linePos = window->getSize().x * static_cast<float>(editor.editorMeasure) / static_cast<float>(
+		displayMeasures);
 
 	sf::Vertex line[] = {
 		sf::Vertex(sf::Vector2f(linePos, topPadding * window->getSize().y), sf::Color::Red),
@@ -64,7 +70,8 @@ void ScrubBar::update() {
 	window->draw(displaySpr);
 }
 
-void ScrubBar::setWindow(sf::RenderWindow* _window) {
+void ScrubBar::setWindow(sf::RenderWindow* _window)
+{
 	window = _window;
 	tex.create(window->getSize().y * yScale, window->getSize().x);
 }

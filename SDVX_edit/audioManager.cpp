@@ -3,8 +3,7 @@
 bool AudioManager::loadFile(std::string fileName)
 {
 	sf::SoundBuffer buffer;
-	if (!buffer.loadFromFile(fileName))
-	{
+	if (!buffer.loadFromFile(fileName)) {
 		PLOG_ERROR << "couldn't find sound file at: " + fileName;
 		return false;
 	}
@@ -16,8 +15,7 @@ bool AudioManager::loadFile(std::string fileName)
 
 void AudioManager::playFrom(int ms)
 {
-	if (trackValid)
-	{
+	if (trackValid) {
 		seekTime = ms;
 		track.setPlayingOffset(sf::milliseconds(ms));
 		track.play();

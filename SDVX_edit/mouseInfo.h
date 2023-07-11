@@ -1,6 +1,6 @@
 #pragma once
-#include "imgui.h"
 #include "imgui-SFML.h"
+#include "imgui.h"
 
 class MouseInfo
 {
@@ -16,7 +16,10 @@ public:
 	int mouseLine = 0;
 
 	bool hoveredWindow = false;
-	void update() {
-		hoveredWindow = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
+
+	void update()
+	{
+		hoveredWindow = !(ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(
+			ImGuiFocusedFlags_AnyWindow));
 	}
 };

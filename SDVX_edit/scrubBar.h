@@ -1,10 +1,11 @@
 #pragma once
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
 #include <SFML/Graphics.hpp>
 #include "EditWindow.h"
 #include "Unique.h"
-class ScrubBar final : public Unique <ScrubBar>
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
+
+class ScrubBar final : public Unique<ScrubBar>
 {
 public:
 	ScrubBar() = default;

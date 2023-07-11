@@ -32,7 +32,8 @@ float FontManager::getScale()
 	return scale * absoluteScale;
 }
 
-float FontManager::getAbsoluteScale() {
+float FontManager::getAbsoluteScale()
+{
 	return absoluteScale;
 }
 
@@ -53,16 +54,18 @@ void FontManager::addFont(std::string id, float scale)
 
 void FontManager::updateFonts()
 {
-	if(ImGui::GetFrameCount())
+	if (ImGui::GetFrameCount()) {
 		ImGui::SFML::Render(*window);
-		
+	}
+
 	ImGui::GetIO().Fonts->Clear();
 	for (auto& [key, val] : fontMap) {
 		val.font = ImGui::GetIO().Fonts->AddFontFromFileTTF(val.file.c_str(), 16.f * val.scale * getScale());
 		ImGui::SFML::UpdateFontTexture();
 	}
-	if (ImGui::GetFrameCount())
+	if (ImGui::GetFrameCount()) {
 		ImGui::NewFrame();
+	}
 }
 
 ImFont* FontManager::getFont(std::string id)
@@ -70,9 +73,7 @@ ImFont* FontManager::getFont(std::string id)
 	if (fontMap.find(id) != fontMap.end()) {
 		return fontMap[id].font;
 	}
-	else {
-		return fontMap["default"].font;
-	}
+	return fontMap["default"].font;
 }
 
 ImFont* FontManager::getDefaultFont()

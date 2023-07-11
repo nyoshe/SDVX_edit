@@ -1,15 +1,18 @@
 #include "Input.h"
 #include <plog/Log.h>
 
-template<typename K, typename V>
-static std::map<V, K> swap_map(const std::map<K, V>& m) {
+template <typename K, typename V>
+static std::map<V, K> swap_map(const std::map<K, V>& m)
+{
 	std::map<V, K> r;
-	for (const auto& kv : m)
+	for (const auto& kv : m) {
 		r[kv.second] = kv.first;
+	}
 	return r;
 }
 
-Input::Input() {
+Input::Input()
+{
 	if (eventStrings.size() == 0) {
 #define INSERT_ELEMENT(p) eventStrings[sf::Event::EventType::p] = #p
 		INSERT_ELEMENT(Resized);
@@ -203,12 +206,14 @@ Input::Input() {
 	//else just return nothing
 }
 
-Input::~Input() {
+Input::~Input()
+{
 	std::ofstream output(fileName);
 	writeBinding(output);
 }
 
-std::vector<std::string>  Input::splitCommas(std::string str) {
+std::vector<std::string> Input::splitCommas(std::string str)
+{
 	std::stringstream ss(str);
 	std::vector<std::string> out = {};
 	if (str.empty()) {
@@ -222,7 +227,8 @@ std::vector<std::string>  Input::splitCommas(std::string str) {
 	return out;
 }
 
-void Input::writeBinding(std::ofstream& out) {
+void Input::writeBinding(std::ofstream& out)
+{
 	for (auto mapping : functionMap) {
 		for (auto item : mapping.second) {
 			out << "action:";
@@ -252,7 +258,8 @@ void Input::writeBinding(std::ofstream& out) {
 	}
 }
 
-void Input::handleEvent(sf::Event event) {
+void Input::handleEvent(sf::Event event)
+{
 	std::vector<sf::Keyboard::Key> keyVec;
 	std::vector<sf::Mouse::Button> mouseVec;
 	for (int i = 0; i < sf::Keyboard::KeyCount; i++) {
@@ -272,8 +279,7 @@ void Input::handleEvent(sf::Event event) {
 				try {
 					mapping.function(event);
 				}
-				catch (std::bad_function_call& e)
-				{
+				catch (std::bad_function_call& e) {
 					PLOG_WARNING << "Bad function call for function: " << mapping.name;
 				}
 			}
@@ -281,19 +287,26 @@ void Input::handleEvent(sf::Event event) {
 	}
 }
 
-void Input::addEventAction(sf::Event::EventType event, std::function<void(sf::Event)> func, std::string name) {
+void Input::addEventAction(sf::Event::EventType event, std::function<void(sf::Event)> func, std::string name)
+{
 	addAction(event, {}, {}, func, name);
 }
 
-void Input::addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
+void Input::addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button> buttonList,
+                           std::function<void(sf::Event)> func, std::string name)
+{
 	addAction(event, {}, buttonList, func, name);
 }
 
-void Input::addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::function<void(sf::Event)> func, std::string name) {
+void Input::addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList,
+                         std::function<void(sf::Event)> func, std::string name)
+{
 	addAction(event, keyList, {}, func, name);
 }
 
-void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList, std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name) {
+void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key> keyList,
+                      std::vector<sf::Mouse::Button> buttonList, std::function<void(sf::Event)> func, std::string name)
+{
 	std::sort(keyList.begin(), keyList.end());
 	std::sort(buttonList.begin(), buttonList.end());
 	//check if we already have a binding

@@ -1,6 +1,7 @@
 #include "ToolWindow.h"
 
-toolWindow::toolWindow() {
+toolWindow::toolWindow()
+{
 	selectIcon.loadFromFile("textures/selectIcon.png");
 	fxIcon.loadFromFile("textures/fxIcon.png");
 	btIcon.loadFromFile("textures/btIcon.png");
@@ -10,7 +11,8 @@ toolWindow::toolWindow() {
 	knobLIcon.loadFromFile("textures/knobRIcon.png");
 }
 
-void toolWindow::update() {
+void toolWindow::update()
+{
 	ImGui::Begin("tools");
 
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -21,16 +23,16 @@ void toolWindow::update() {
 		EditWindow::instance().tool.select = !EditWindow::instance().tool.select;
 	}
 	if (ImGui::ImageButton(fxIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool.type = ToolType::FX;
+		EditWindow::instance().tool.type = FX;
 	}
 	if (ImGui::ImageButton(btIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool.type = ToolType::BT;
+		EditWindow::instance().tool.type = BT;
 	}
 	if (ImGui::ImageButton(knobRIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool.type = ToolType::LASER_R;
+		EditWindow::instance().tool.type = LASER_R;
 	}
 	if (ImGui::ImageButton(knobLIcon, ImVec2(iconSize, iconSize))) {
-		EditWindow::instance().tool.type = ToolType::LASER_L;
+		EditWindow::instance().tool.type = LASER_L;
 	}
 
 	ImGui::EndGroup();

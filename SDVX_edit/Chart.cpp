@@ -1,6 +1,7 @@
 #include "Chart.h"
 
-Chart::~Chart() {
+Chart::~Chart()
+{
 	//iterate through lines and delete them
 	for (auto& it : lines) {
 		delete it.second;
@@ -11,11 +12,12 @@ Chart::~Chart() {
 
 //from start position + 1 to end position - 1, fixes laser weirdness
 //also checks laser boundaries
-void Chart::fixLaserConnections(int pos1, int pos2, int laser) {
+void Chart::fixLaserConnections(int pos1, int pos2, int laser)
+{
 	ChartLine* startLine = lines[std::min(pos1, pos2)];
 	ChartLine* endLine = lines[std::max(pos1, pos2)];
 
-	
+
 	if (startLine->laserPos[laser] >= 0 && endLine->laserPos[laser] == L_CONNECTOR) {
 		ChartLine* cLine = endLine;
 		while (cLine && cLine != startLine) {
@@ -46,7 +48,8 @@ void Chart::fixLaserConnections(int pos1, int pos2, int laser) {
 	addLaserConnections(endLine, laser);
 }
 
-void Chart::addLaserConnections(ChartLine* line, int laser) {
+void Chart::addLaserConnections(ChartLine* line, int laser)
+{
 	//now check if we have two lasers right next to eachother
 	ChartLine newLaser;
 	newLaser.laserPos[laser] = -2;
@@ -64,22 +67,25 @@ void Chart::addLaserConnections(ChartLine* line, int laser) {
 	}
 }
 
-float Chart::getMs(unsigned int lineNum) {
+float Chart::getMs(unsigned int lineNum)
+{
 	float currentMs = 0;
 	unsigned int lastChange = 0;
 	float currentBpm = metadata.bpm;
 	int topSig = std::stoi(metadata.beat.substr(0, metadata.beat.find('/')));
 	int bottomSig = std::stoi(metadata.beat.substr(metadata.beat.find('/') + 1));
 	for (auto cList : cmds) {
-		if (cList.first > lineNum) break;
+		if (cList.first > lineNum) {
+			break;
+		}
 		for (auto cmd : cList.second) {
 			int pulses = (192 * topSig) / bottomSig;
-			if (cmd.type == CommandType::TEMPO_CHANGE) {
+			if (cmd.type == TEMPO_CHANGE) {
 				currentMs += ((cList.first - lastChange) / pulses) * 1000.0 * topSig * (60.0 / currentBpm);
 				lastChange = cList.first;
 				currentBpm = std::stof(cmd.val);
 			}
-			else if (cmd.type == CommandType::BEAT_CHANGE) {
+			else if (cmd.type == BEAT_CHANGE) {
 				currentMs += ((cList.first - lastChange) / pulses) * 1000.0 * topSig * (60.0 / currentBpm);
 				lastChange = cList.first;
 
@@ -94,46 +100,53 @@ float Chart::getMs(unsigned int lineNum) {
 	return currentMs;
 }
 
-void Chart::calcTimings() {
+void Chart::calcTimings()
+{
 	for (int i = 0; i < measures.size(); i++) {
 		measures[i].msStart = getMs(measures[i].pos);
 	}
 }
 
-void Chart::connectLines(ChartLine* l1, ChartLine* l2) {
+void Chart::connectLines(ChartLine* l1, ChartLine* l2)
+{
 	l1->next = l2;
 	l2->prev = l1;
 }
 
-template <typename T> void Chart::connectLines(T l1, T l2)
+template <typename T>
+void Chart::connectLines(T l1, T l2)
 {
 	connectLines(l1->second, l2->second);
 }
 
-void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3) {
+void Chart::connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3)
+{
 	connectLines(l1, l2);
 	connectLines(l2, l3);
 }
 
-void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap) {
-	if (lineMap.size() == 0) return;
+void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap)
+{
+	if (lineMap.size() == 0) {
+		return;
+	}
 	int startLine = line;
 	int endLine = line + (std::prev(lineMap.end(), 1)->second.pos - lineMap.begin()->second.pos);
 	int offset = line - lineMap.begin()->second.pos;
 	//insert and update or locations
 
-	for (auto it = lineMap.rbegin(); it != lineMap.rend(); it++) {
+	for (auto it = lineMap.rbegin(); it != lineMap.rend(); ++it) {
 		insertChartLine(it->second.pos + offset, it->second, it->second.makeMask());
 	}
 
-	for (auto it = lines.find(startLine); it->first <= endLine; it++) {
+	for (auto it = lines.find(startLine); it->first <= endLine; ++it) {
 		addUndoBuffer(it->second);
 	}
 
-	for (auto it = lines.find(startLine); it->first <= endLine; it++) {
+	for (auto it = lines.find(startLine); it->first <= endLine; ++it) {
 		if (lineMap.find(it->first - offset) == lineMap.end()) {
-			ChartLine beforeLine = ChartLine(std::prev(lineMap.lower_bound(it->first - offset), 1)->second);
-			ChartLine afterLine = ChartLine(lineMap.lower_bound(it->first - offset)->second);
+			auto beforeLine = ChartLine(std::prev(lineMap.lower_bound(it->first - offset), 1)->second);
+			auto afterLine = ChartLine(lineMap.lower_bound(it->first - offset)->second);
 			for (int i = 0; i < 2; i++) {
 				if ((beforeLine.laserPos[i] == -2 && afterLine.laserPos[i] == -2) ||
 					(beforeLine.laserPos[i] >= 0 && afterLine.laserPos[i] == -2) ||
@@ -144,7 +157,7 @@ void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& l
 					it->second->fxVal[i] = 1;
 				}
 				if (beforeLine.isWide[i] == 1) {
-					it->second->isWide[i] = 1;
+					it->second->isWide[i] = true;
 				}
 			}
 			for (int i = 0; i < 4; i++) {
@@ -156,11 +169,13 @@ void Chart::insertChartLine(int line, const std::map<unsigned int, ChartLine>& l
 	}
 }
 
-ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine) {
+ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine)
+{
 	return insertChartLine(line, cLine, cLine.makeMask());
 }
 
-ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask) {
+ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask)
+{
 	unsigned int absPos = line;
 	//check to see if we are on a new measure
 	if (measures.size() == 0) {
@@ -187,7 +202,7 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask m
 	auto it = lines.find(absPos);
 	//if we don't exist
 	if (it == lines.end()) {
-		ChartLine* newLine = new ChartLine();
+		auto newLine = new ChartLine();
 		measures[measure].lines[localPos] = newLine;
 		lines[absPos] = newLine;
 
@@ -245,19 +260,25 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask m
 }
 
 //this should only really be called for user input
-void Chart::removeChartLine(unsigned int line, LineMask mask) {
+void Chart::removeChartLine(unsigned int line, LineMask mask)
+{
 	unsigned int absPos = line;
-	if (lines.lower_bound(absPos) == lines.end()) return;
+	if (lines.lower_bound(absPos) == lines.end()) {
+		return;
+	}
 	int measure = lines.lower_bound(absPos)->second->measurePos;
 	auto it = lines.find(absPos);
 
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
 
 	unsigned int holdLine = getLineBefore(line)->first;
-	if (it != lines.end()) holdLine = it->first;
+	if (it != lines.end()) {
+		holdLine = it->first;
+	}
 	for (int i = 0; i < 4; i++) {
-		if (mask.bt[i])
+		if (mask.bt[i]) {
 			addUndoBuffer(lines[holdLine]->clearBtHold(i));
+		}
 
 		if (it != lines.end() && it->second->btVal[i] == 1 && mask.bt[i]) {
 			addUndoBuffer(it->second);
@@ -266,8 +287,9 @@ void Chart::removeChartLine(unsigned int line, LineMask mask) {
 	}
 
 	for (int i = 0; i < 2; i++) {
-		if (mask.fx[i])
+		if (mask.fx[i]) {
 			addUndoBuffer(lines[holdLine]->clearFxHold(i));
+		}
 
 		if (it != lines.end() && it->second->fxVal[i] == 2 && mask.fx[i]) {
 			addUndoBuffer(it->second);
@@ -276,8 +298,11 @@ void Chart::removeChartLine(unsigned int line, LineMask mask) {
 	}
 }
 
-void Chart::undo() {
-	if (undoStack.empty()) return;
+void Chart::undo()
+{
+	if (undoStack.empty()) {
+		return;
+	}
 	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
 	for (auto it : undoStack.back()) {
 		if (!it.first) {
@@ -301,8 +326,11 @@ void Chart::undo() {
 	undoStack.pop_back();
 }
 
-void Chart::redo() {
-	if (redoStack.empty()) return;
+void Chart::redo()
+{
+	if (redoStack.empty()) {
+		return;
+	}
 
 	for (auto it : redoStack.back()) {
 		if (!it.first) {
@@ -326,7 +354,8 @@ void Chart::redo() {
 	redoStack.pop_back();
 }
 
-void Chart::clearRedoStack() {
+void Chart::clearRedoStack()
+{
 	while (!redoStack.empty()) {
 		for (auto it : redoStack.back()) {
 			if (it.first) {
@@ -337,7 +366,8 @@ void Chart::clearRedoStack() {
 	}
 }
 
-void Chart::clearUndoStack() {
+void Chart::clearUndoStack()
+{
 	while (!undoStack.empty()) {
 		for (auto it : undoStack.back()) {
 			if (it.first) {
@@ -350,11 +380,12 @@ void Chart::clearUndoStack() {
 
 //insert new measure with a dummy line, and also returns the pulses of the appended measure
 //TODO FOR TOMORROW: undo stack pulls the NULL pointer version
-int Chart::appendNewMeasure() {
+int Chart::appendNewMeasure()
+{
 	int measureStart = 0;
 	if (measures.size() == 0) {
 		Measure m;
-		ChartLine* newLine = new ChartLine;
+		auto newLine = new ChartLine;
 		measures.push_back(m);
 		measures[0].lines[0] = newLine;
 		lines[0] = newLine;
@@ -370,7 +401,7 @@ int Chart::appendNewMeasure() {
 
 		measures.push_back(m);
 
-		ChartLine* newLine = new ChartLine;
+		auto newLine = new ChartLine;
 		newLine->prev = std::prev(prevMeasure.lines.end(), 1)->second;
 		newLine->measurePos = measures.size() - 1;
 		newLine->pos = measureStart;
@@ -387,7 +418,8 @@ int Chart::appendNewMeasure() {
 	return measures.back().pulses;
 }
 
-void Chart::minimize() {
+void Chart::minimize()
+{
 	for (int m = 0; m < measures.size(); m++) {
 		int nonEmpty = 0;
 		int minJumpSize = 1;
@@ -397,8 +429,12 @@ void Chart::minimize() {
 			ChartLine* prev = nullptr;
 			//we want to find the smallest number for jump size where all values are non empty
 			for (int i = 0; i < measures[m].pulses; i += jumpSize) {
-				if (measures[m].lines.find(i) == measures[m].lines.end()) continue;
-				if (!measures[m].lines[i]->empty()) nonEmptyCounter++;
+				if (measures[m].lines.find(i) == measures[m].lines.end()) {
+					continue;
+				}
+				if (!measures[m].lines[i]->empty()) {
+					nonEmptyCounter++;
+				}
 				if (prev) {
 					for (int j = 0; j < 2; j++) {
 						if (prev->laserPos[j] >= 0 && measures[m].lines[i]->laserPos[j] >= 0) {
@@ -406,7 +442,9 @@ void Chart::minimize() {
 						}
 					}
 				}
-				if (!valid) break;
+				if (!valid) {
+					break;
+				}
 				prev = measures[m].lines[i];
 			}
 			if (nonEmptyCounter >= nonEmpty && valid) {
@@ -444,12 +482,14 @@ void Chart::minimize() {
 	}
 }
 
-void Chart::addUndoBuffer(ChartLine* line) {
+void Chart::addUndoBuffer(ChartLine* line)
+{
 	undoBuffer.push_back(std::make_pair(line, new ChartLine(*line)));
 }
 
 //pushes the undo buffer onto the undo stack, this signifies the end of a list of actions
-void Chart::pushUndoBuffer() {
+void Chart::pushUndoBuffer()
+{
 	if (undoBuffer.size() > 0) {
 		std::reverse(undoBuffer.begin(), undoBuffer.end());
 		undoStack.push_back(undoBuffer);
@@ -465,16 +505,19 @@ void Chart::pushUndoBuffer() {
 	}
 }
 
-void Chart::addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList) {
+void Chart::addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList)
+{
 	undoBuffer.insert(undoBuffer.end(), actionList.begin(), actionList.end());
 }
 
-void Chart::addRedoBuffer(ChartLine* line) {
+void Chart::addRedoBuffer(ChartLine* line)
+{
 	redoBuffer.push_back(std::make_pair(line, new ChartLine(*line)));
 }
 
 //pushes the undo buffer onto the undo stack, this signifies the end of a list of actions
-void Chart::pushRedoBuffer() {
+void Chart::pushRedoBuffer()
+{
 	if (redoBuffer.size() > 0) {
 		std::reverse(redoBuffer.begin(), redoBuffer.end());
 		redoStack.push_back(redoBuffer);
@@ -490,14 +533,16 @@ void Chart::pushRedoBuffer() {
 	}
 }
 
-void Chart::addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList) {
+void Chart::addRedoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList)
+{
 	redoBuffer.insert(redoBuffer.end(), actionList.begin(), actionList.end());
 }
 
 //I'm 90% sure that the bug is that it isn't also setting laser connection points for the ammount it moves
 //also, it doesn't reset the select end on undo
 //also, respect laser wide values
-ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change) {
+ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change)
+{
 	if (line - change < 0) {
 		change += line - change;
 	}
@@ -527,19 +572,24 @@ ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change) {
 	return lines[line + change];
 }
 
-lineIterator Chart::getLineBefore(int line) {
+lineIterator Chart::getLineBefore(int line)
+{
 	if (lines.lower_bound(line) == lines.begin()) {
 		return lines.begin();
 	}
 	return std::prev(lines.lower_bound(line), 1);
 }
 
-lineIterator Chart::getLineAfter(int line) {
+lineIterator Chart::getLineAfter(int line)
+{
 	return lines.upper_bound(line);
 }
 
-int Chart::getMeasureFromPos(int pos) {
-	if (lines.find(pos) != lines.end()) return lines[pos]->measurePos;
+int Chart::getMeasureFromPos(int pos)
+{
+	if (lines.find(pos) != lines.end()) {
+		return lines[pos]->measurePos;
+	}
 	return getLineBefore(pos)->second->measurePos;
 	/*
 	int i = 0;
@@ -553,7 +603,8 @@ int Chart::getMeasureFromPos(int pos) {
 	*/
 }
 
-void Chart::validateChart() {
+void Chart::validateChart()
+{
 	ChartLine* line = lines.begin()->second;
 	ChartLine* prev = nullptr;
 	int counter = 0;
@@ -562,56 +613,82 @@ void Chart::validateChart() {
 
 		if (loc == lines.end()) {
 			PLOG_DEBUG << "line position not found in " << metadata.mapFileName << " line: " << line->pos;
-			if (BREAK_ON_CHART_ERRORS) DebugBreak();
+			if constexpr (BREAK_ON_CHART_ERRORS) {
+				DebugBreak();
+			}
 		}
 
 		if (loc->second != line) {
 			PLOG_DEBUG << "line is in wrong position in " << metadata.mapFileName << " line: " << line->pos;
-			if (BREAK_ON_CHART_ERRORS) DebugBreak();
+			if constexpr (BREAK_ON_CHART_ERRORS) {
+				DebugBreak();
+			}
 		}
 
 		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
 
 		if (measureLoc == measures[line->measurePos].lines.end()) {
 			PLOG_DEBUG << "line was not found in measure in " << metadata.mapFileName << " line: " << line->pos;
-			if (BREAK_ON_CHART_ERRORS) DebugBreak();
+			if constexpr (BREAK_ON_CHART_ERRORS) {
+				DebugBreak();
+			}
 		}
 
 		if (measureLoc->second != line) {
-			PLOG_DEBUG << "line does not match the line found in measure in " << metadata.mapFileName << " line: " << line->pos;
-			if (BREAK_ON_CHART_ERRORS) DebugBreak();
+			PLOG_DEBUG << "line does not match the line found in measure in " << metadata.mapFileName << " line: " <<
+ line->pos;
+			if constexpr (BREAK_ON_CHART_ERRORS) {
+				DebugBreak();
+			}
 		}
 
 		if (counter != 0) {
 			if (prev != line->prev) {
 				PLOG_DEBUG << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
-				if (BREAK_ON_CHART_ERRORS) DebugBreak();
+				if constexpr (BREAK_ON_CHART_ERRORS) {
+					DebugBreak();
+				}
 			}
 
 			if (prev->next != line) {
 				PLOG_DEBUG << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
-				if (BREAK_ON_CHART_ERRORS) DebugBreak();
+				if constexpr (BREAK_ON_CHART_ERRORS) {
+					DebugBreak();
+				}
 			}
 
 			for (int i = 0; i < 2; i++) {
 				if (prev->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
 					PLOG_DEBUG << "two laser positions in a row in " << metadata.mapFileName << " line: " << line->pos;
-					if (BREAK_ON_CHART_ERRORS) DebugBreak();
+					if constexpr (BREAK_ON_CHART_ERRORS) {
+						DebugBreak();
+					}
 				}
 				if (prev->laserPos[i] == -1 && line->laserPos[i] == -2) {
-					PLOG_DEBUG << "missing laser position before connector in " << metadata.mapFileName << " line: " << line->pos;
-					if (BREAK_ON_CHART_ERRORS) DebugBreak();
+					PLOG_DEBUG << "missing laser position before connector in " << metadata.mapFileName << " line: " <<
+ line->pos;
+					if constexpr (BREAK_ON_CHART_ERRORS) {
+						DebugBreak();
+					}
 				}
 				if (prev->laserPos[i] == -2 && line->laserPos[i] == -1) {
-					PLOG_DEBUG << "missing laser position after connector in " << metadata.mapFileName << " line: " << line->pos;
-					if (BREAK_ON_CHART_ERRORS) DebugBreak();
+					PLOG_DEBUG << "missing laser position after connector in " << metadata.mapFileName << " line: " <<
+ line->pos;
+					if constexpr (BREAK_ON_CHART_ERRORS) {
+						DebugBreak();
+					}
 				}
 
 				if (line->next) {
 					if (prev->laserPos[i] == -1 && line->next->laserPos[i] == -1 && line->laserPos[i] >= 0) {
-						PLOG_DEBUG << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->pos;
-						if (BREAK_ON_CHART_ERRORS) DebugBreak();
-						if (TRY_FIX_CHART_ERRORS) line->laserPos[i] == -1;
+						PLOG_DEBUG << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->
+pos;
+						if constexpr (BREAK_ON_CHART_ERRORS) {
+							DebugBreak();
+						}
+						if constexpr (TRY_FIX_CHART_ERRORS) {
+							line->laserPos[i] == -1;
+						}
 					}
 				}
 			}
@@ -626,7 +703,9 @@ void Chart::validateChart() {
 	for (auto measure : measures) {
 		if (measure.lines.find(0) == measure.lines.end()) {
 			PLOG_DEBUG << "did not find zero'th line in measure in " << metadata.mapFileName << " measure: " << i;
-			if (BREAK_ON_CHART_ERRORS) DebugBreak();
+			if constexpr (BREAK_ON_CHART_ERRORS) {
+				DebugBreak();
+			}
 		}
 
 		measureCount += measure.lines.size();
@@ -634,19 +713,26 @@ void Chart::validateChart() {
 	}
 
 	if (counter != lines.size()) {
-		PLOG_DEBUG << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.size() << std::endl;
-		if (BREAK_ON_CHART_ERRORS) DebugBreak();
+		PLOG_DEBUG << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.
+size() << std::endl;
+		if constexpr (BREAK_ON_CHART_ERRORS) {
+			DebugBreak();
+		}
 	}
 
 	if (measureCount != lines.size()) {
-		PLOG_DEBUG << "mismatch in line size and the number of found measure lines, counter: " << measureCount << " size: " << lines.size() << std::endl;
-		if (BREAK_ON_CHART_ERRORS) DebugBreak();
+		PLOG_DEBUG << "mismatch in line size and the number of found measure lines, counter: " << measureCount <<
+ " size: " << lines.size() << std::endl;
+		if constexpr (BREAK_ON_CHART_ERRORS) {
+			DebugBreak();
+		}
 	}
 
 	std::cout << "no issues found :)" << std::endl;
 }
 
-std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask) {
+std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask)
+{
 	unsigned int start = std::min(pos1, pos2);
 	unsigned int end = std::max(pos1, pos2);
 	std::vector<std::pair<ChartLine*, ChartLine>> out;
@@ -654,18 +740,22 @@ std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigne
 	std::map<unsigned int, ChartLine> finalOut;
 
 	if (lines.find(start) == lines.end()) {
-		if (getLineAfter(start) == lines.end()) return finalOut;
+		if (getLineAfter(start) == lines.end()) {
+			return finalOut;
+		}
 		start = getLineAfter(start)->second->pos;
 	}
 	if (lines.find(end) == lines.end()) {
-		if (getLineBefore(end) == lines.end()) return finalOut;
+		if (getLineBefore(end) == lines.end()) {
+			return finalOut;
+		}
 		end = getLineBefore(end)->second->pos;
 	}
 
 	ChartLine* line = lines[start];
 	LineMask dropMask = *lines[start] & mask;
 	//this basically just goes from front to bakc and using the chart line mask, drops out the hold values when we don't see them
-	while (line && int(*line & dropMask) != 0) {
+	while (line && static_cast<int>(*line & dropMask) != 0) {
 		line = line->prev;
 		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
 		dropMask = *line & dropMask;
@@ -682,30 +772,33 @@ std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigne
 	line = lines[end];
 	dropMask = *lines[end] & mask;
 	//same as previous comment but not in reverse
-	while (line && int(*line & dropMask) != 0) {
+	while (line && static_cast<int>(*line & dropMask) != 0) {
 		line = line->next;
 		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
 		dropMask = *line & dropMask;
 	}
 
-	if (out.size() == 0) return finalOut;
+	if (out.size() == 0) {
+		return finalOut;
+	}
 	//cleanup laser ends
 
 	for (int i = 0; i < 2; i++) {
 		LineMask laserMask = Mask::NONE;
 		if (out.back().first->laserPos[i] == L_CONNECTOR && out.back().first->next->laserPos[i] >= 0) {
-			laserMask.laser[i] = 1;
+			laserMask.laser[i] = true;
 		}
-		if (int(laserMask) != 0) {
+		if (static_cast<int>(laserMask) != 0) {
 			out.push_back(std::make_pair(out.back().first->next, out.back().first->next->extractMask(laserMask)));
 		}
 
 		laserMask = Mask::NONE;
 		if (out.front().first->laserPos[i] == L_CONNECTOR && out.front().first->next->laserPos[i] >= 0) {
-			laserMask.laser[i] = 1;
+			laserMask.laser[i] = true;
 		}
-		if (int(laserMask) != 0) {
-			out.insert(out.begin(), std::make_pair(out.back().first->next, out.back().first->next->extractMask(laserMask)));
+		if (static_cast<int>(laserMask) != 0) {
+			out.insert(out.begin(),
+			           std::make_pair(out.back().first->next, out.back().first->next->extractMask(laserMask)));
 		}
 
 		//check for cutoff lasers
@@ -733,13 +826,13 @@ std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigne
 	LineMask endExtract;
 	for (int i = 0; i < 2; i++) {
 		if (out.back().second.fxVal[i] == 1) {
-			endExtract.fx[i] = 1;
+			endExtract.fx[i] = true;
 		}
 	}
 
 	for (int i = 0; i < 4; i++) {
 		if (out.back().second.btVal[i] == 2) {
-			endExtract.bt[i] = 1;
+			endExtract.bt[i] = true;
 		}
 	}
 
@@ -753,13 +846,15 @@ std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigne
 
 	if (out.size() > 0) {
 		auto it = out.begin();
-		for (; it != out.end() && it->second.empty(); it++);
+		for (; it != out.end() && it->second.empty(); ++it) {
+			;
+		}
 
 		if (it != out.begin()) {
 			out.erase(out.begin(), it);
 		}
 	}
-	
+
 
 	for (auto line : out) {
 		finalOut[line.second.pos] = line.second;

@@ -1,12 +1,12 @@
 #pragma once
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
-#include "fileDialog/ImGuiFileDialog.h"
-#include <string>
 #include <iostream>
+#include <string>
+#include <SFML/Graphics.hpp>
 #include "EditWindow.h"
 #include "Enums.h"
-#include <SFML/Graphics.hpp>
+#include "fileDialog/ImGuiFileDialog.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
 class toolWindow
 {

@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
-#include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdlib> //std::system
 #include <sstream>
+#include <boost/interprocess/managed_shared_memory.hpp>
 
 struct GameControl
 {
@@ -14,4 +14,5 @@ struct GameControl
 	boost::interprocess::managed_shared_memory memSegment;
 	GameControl();
 };
+
 GameControl* controlPtr;

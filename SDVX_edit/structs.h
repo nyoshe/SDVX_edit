@@ -1,12 +1,13 @@
 #pragma once
-#include "Enums.h"
-#include "ChartLine.h"
-#include <vector>
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 #include <SFML/Graphics.hpp>
+#include "ChartLine.h"
+#include "Enums.h"
 
-struct Measure {
+struct Measure
+{
 	//division of the measure (eg. 32, 16, 12, etc)
 	//the standard measure division is 192, it can go higher if the time signature is different
 
@@ -28,8 +29,9 @@ struct Measure {
 	float msStart = 0.0;
 };
 
-struct EditTool {
-	ToolType type = ToolType::BT;
+struct EditTool
+{
+	ToolType type = BT;
 	bool select = false;
 	bool wideLaser = false;
 	bool laserDefaultStart = false;

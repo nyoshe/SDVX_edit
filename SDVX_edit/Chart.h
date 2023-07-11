@@ -1,20 +1,23 @@
 #pragma once
-#include <string>
+#include <iostream>
 #include <map>
 #include <stack>
+#include <string>
 #include <vector>
-#include "Structs.h"
-#include "ChartLine.h"
-#include <iostream>
+#define NOMINMAX
 #include <windows.h>
 #include <plog/Log.h>
+#include "ChartLine.h"
 #include "Config.h"
+#include "Structs.h"
+
 #include <deque>
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
-const int validSnapSizes[12] = { 1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
+const int validSnapSizes[12] = {1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192};
 
-struct ChartMetadata {
+struct ChartMetadata
+{
 	std::string mapFileName;
 	std::string mapFilePath;
 
@@ -86,7 +89,8 @@ public:
 
 	float getMs(unsigned int lineNum);
 	void connectLines(ChartLine* l1, ChartLine* l2);
-	template <typename T> void connectLines(T l1, T l2);
+	template <typename T>
+	void connectLines(T l1, T l2);
 	void connectLines(ChartLine* l1, ChartLine* l2, ChartLine* l3);
 
 	void undo();

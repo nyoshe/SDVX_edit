@@ -1,26 +1,26 @@
 #pragma once
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
-#include "StatusBar.h"
-#include "EditWindow.h"
-#include "Parser.h"
-#include "ToolWindow.h"
-#include "ToolBar.h"
-#include "ScrubBar.h"
-#include "Input.h"
-#include "FontManager.h"
-#include "bezier.h"
+#include <string>
+#include <plog/Log.h>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-#include <string>
-#include <plog/Log.h>
+#include "bezier.h"
+#include "EditWindow.h"
+#include "FontManager.h"
+#include "Input.h"
+#include "Parser.h"
+#include "ScrubBar.h"
+#include "StatusBar.h"
+#include "ToolBar.h"
+#include "ToolWindow.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 #include "plog/Initializers/RollingFileInitializer.h"
 
-int main() {
-
-	plog::init(plog::debug, "logs/log.txt", 1000000, 3);
+int main()
+{
+	init(plog::debug, "logs/log.txt", 1000000, 3);
 	PLOG_INFO << "initialized logging";
 	sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
 	ImGui::SFML::Init(window);
@@ -33,7 +33,7 @@ int main() {
 	ToolBar::instance().setWindow(&window);
 	EditWindow::instance().setWindow(&window);
 	std::string filePath = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\";
-    std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
+	std::string filePathName = "C:\\Users\\niayo\\source\\repos\\SDVX_edit\\SDVX_edit\\exh.ksh";
 	EditWindow::instance().loadFile(filePath, filePathName);
 
 	while (window.isOpen()) {
@@ -55,13 +55,13 @@ int main() {
 				sf::View view = window.getDefaultView();
 				// resize my view
 				view.setSize({
-						static_cast<float>(event.size.width),
-						static_cast<float>(event.size.height)
-					});
+					static_cast<float>(event.size.width),
+					static_cast<float>(event.size.height)
+				});
 				view.setCenter({
-						static_cast<float>(event.size.width / 2),
-						static_cast<float>(event.size.height / 2)
-					});
+					static_cast<float>(event.size.width / 2),
+					static_cast<float>(event.size.height / 2)
+				});
 				//ImGui::SFML::Render(window);
 				window.setView(view);
 				FontManager::instance().setWindow(&window);
@@ -80,7 +80,7 @@ int main() {
 		ToolBar::instance().update();
 		ScrubBar::instance().update();
 
-		std::vector<sf::Vector2f> points = { {200, 300}, {500, 300}, {800, 500}, {1000, 1200} };  // Example points
+		std::vector<sf::Vector2f> points = {{200, 300}, {500, 300}, {800, 500}, {1000, 1200}}; // Example points
 		int numPoints = 100;
 
 		std::vector<sf::Vector2f> bezierCurve = calculateBezierCurve(points, numPoints);
@@ -91,7 +91,6 @@ int main() {
 
 		for (auto point : bezierCurve) {
 			curve.append(sf::Vertex(point, sf::Color::Red));
-			
 		}
 		for (auto point : points) {
 			ctrlPoints.append(sf::Vertex(point, sf::Color::Green));

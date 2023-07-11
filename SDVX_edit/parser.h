@@ -1,42 +1,42 @@
 #pragma once
-#include "Structs.h"
 #include "chart.h"
 #include "ChartLine.h"
+#include "Structs.h"
 
-#include <iostream>
 #include <fstream>
-#include <unordered_map>
 #include <functional>
+#include <iostream>
 #include <string>
+#include <unordered_map>
 
 static std::string laserVals = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmno";
 
-static std::unordered_map<std::string, CommandType> const cmdTable = {
-			{"t",CommandType::TEMPO_CHANGE},
-			{"beat",CommandType::BEAT_CHANGE},
-			{"chokkakuvol",CommandType::SLAM_VOLUME},
-			{"chokkakuse",CommandType::SLAM_SETTING},
-			{"pfiltergain",CommandType::PEAK_FILTER_GAIN},
-			{"stop",CommandType::STOP},
-			{"tilt",CommandType::TILT},
-			{"zoom_top",CommandType::ZOOM_TOP},
-			{"zoom_bottom",CommandType::ZOOM_BOTTOM},
-			{"zoom_side",CommandType::ZOOM_SIDE},
-			{"center_split",CommandType::CENTER_SPLIT},
-			{"laserrange_l",CommandType::WIDE_LASER_L},
-			{"laserrange_r",CommandType::WIDE_LASER_R},
-			{"fx-l",CommandType::FX_L},
-			{"fx-r",CommandType::FX_R},
-			{"fx-l_se",CommandType::FX_L_EFFECT},
-			{"fx-r_se",CommandType::FX_R_EFFECT},
-			{"filtertype",CommandType::FILTER_TYPE},
-			{"tickrate_offset",CommandType::TICKRATE_OFFSET},
-			{"@(", CommandType::SPIN_L},
-			{"@)", CommandType::SPIN_R},
-			{"@<", CommandType::HALF_SPIN_L},
-			{"@>", CommandType::HALF_SPIN_R},
-			{"S<", CommandType::SWING_L},
-			{"S>", CommandType::SWING_R}
+static const std::unordered_map<std::string, CommandType> cmdTable = {
+	{"t", TEMPO_CHANGE},
+	{"beat", BEAT_CHANGE},
+	{"chokkakuvol", SLAM_VOLUME},
+	{"chokkakuse", SLAM_SETTING},
+	{"pfiltergain", PEAK_FILTER_GAIN},
+	{"stop", STOP},
+	{"tilt", TILT},
+	{"zoom_top", ZOOM_TOP},
+	{"zoom_bottom", ZOOM_BOTTOM},
+	{"zoom_side", ZOOM_SIDE},
+	{"center_split", CENTER_SPLIT},
+	{"laserrange_l", WIDE_LASER_L},
+	{"laserrange_r", WIDE_LASER_R},
+	{"fx-l", FX_L},
+	{"fx-r", FX_R},
+	{"fx-l_se", FX_L_EFFECT},
+	{"fx-r_se", FX_R_EFFECT},
+	{"filtertype", FILTER_TYPE},
+	{"tickrate_offset", TICKRATE_OFFSET},
+	{"@(", SPIN_L},
+	{"@)", SPIN_R},
+	{"@<", HALF_SPIN_L},
+	{"@>", HALF_SPIN_R},
+	{"S<", SWING_L},
+	{"S>", SWING_R}
 };
 
 class Parser

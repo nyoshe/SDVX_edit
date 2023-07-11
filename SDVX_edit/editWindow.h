@@ -51,8 +51,8 @@ struct MouseInfo {
 	}
 };
 */
-using QuadArray = std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>;
-using LineIterator = std::map<unsigned int, ChartLine*>::iterator;
+typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
+typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 
 class EditWindow final : public Unique<EditWindow>
 {

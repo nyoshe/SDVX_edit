@@ -1,30 +1,34 @@
 #pragma once
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <type_traits>
+#include <vector>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <type_traits>
-#include <algorithm>
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
 #include "Unique.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
 #include <functional>
 #include <memory>
 
-struct FunctionInfo {
+struct FunctionInfo
+{
 	sf::Event::EventType eventType;
 	std::string name;
 	std::function<void(sf::Event)> function;
-	FunctionInfo(sf::Event::EventType _eventType, std::string _name, std::function<void(sf::Event)> _function) : function(_function), name(_name), eventType(_eventType) {};
+
+	FunctionInfo(sf::Event::EventType _eventType, std::string _name,
+	             std::function<void(sf::Event)> _function) : eventType(_eventType), name(_name), function(_function) {};
 };
 
 //might be nice to just turn this into a struct
-typedef std::map < std::pair<std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>>, std::vector<FunctionInfo>> InputMap;
+typedef std::map<std::pair<std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>>, std::vector<FunctionInfo>>
+InputMap;
 
-class Input final : public Unique <Input>
+class Input final : public Unique<Input>
 {
 private:
 	//InputMap keyDownFunctions;
@@ -52,7 +56,6 @@ private:
 	std::string onKeyUp = "onKeyUp";
 
 public:
-
 	Input();
 	~Input();
 
@@ -62,8 +65,11 @@ public:
 
 	std::vector<std::string> splitCommas(std::string str);
 
-	void addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>, std::function<void(sf::Event)>, std::string name);
-	void addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button>, std::function<void(sf::Event)>, std::string name);
-	void addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::function<void(sf::Event)>, std::string name);
+	void addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::vector<sf::Mouse::Button>,
+	               std::function<void(sf::Event)>, std::string name);
+	void addActionMouse(sf::Event::EventType event, std::vector<sf::Mouse::Button>, std::function<void(sf::Event)>,
+	                    std::string name);
+	void addActionKey(sf::Event::EventType event, std::vector<sf::Keyboard::Key>, std::function<void(sf::Event)>,
+	                  std::string name);
 	void addEventAction(sf::Event::EventType event, std::function<void(sf::Event)>, std::string name);
 };
