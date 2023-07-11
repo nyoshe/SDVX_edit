@@ -3,12 +3,12 @@
 #include <map>
 #include <stack>
 #include <vector>
-#include "structs.h"
-#include "chartLine.h"
+#include "Structs.h"
+#include "ChartLine.h"
 #include <iostream>
 #include <windows.h>
 #include <plog/Log.h>
-#include "config.h"
+#include "Config.h"
 #include <deque>
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
 typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;

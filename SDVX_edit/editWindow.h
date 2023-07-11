@@ -1,32 +1,31 @@
 #pragma once
+#include <algorithm>
+#include <cmath>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <stack>
+#include <string>
+#include <unordered_map>
+#include <vector>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
-#include <unordered_map>
-#include <string>
-#include <vector>
-#include "parser.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui-SFML.h"
-#include "structs.h"
-#include "audioManager.h"
-#include "fontManager.h"
-#include "Unique.h"
+#include "AudioManager.h"
+#include "FontManager.h"
 #include "Input.h"
-#include <cmath>
-#include <algorithm>
-#include <iostream>
-#include <stack>
-#include <functional>
-#include <memory>
-#include <functional>
-#include <memory>
+#include "Parser.h"
+#include "Structs.h"
+#include "Unique.h"
+#include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
-#include <boost/interprocess/managed_shared_memory.hpp>
 #include <cstdlib> //std::system
 #include <sstream>
+#include <boost/interprocess/managed_shared_memory.hpp>
 
-enum EditorState {
+enum EditorState
+{
 	IDLE,
 	PLACING_BT,
 	PLACING_FX,
@@ -37,13 +36,6 @@ enum EditorState {
 	HOVERED_GUI,
 };
 
-struct gameControl
-{
-	bool paused = true;
-	bool seek = false;
-	uint32_t seekPos = 0;
-	float speed = 1.0;
-};
 /*
 struct MouseInfo {
 	int mouseStartLine = 0;
@@ -59,13 +51,12 @@ struct MouseInfo {
 	}
 };
 */
-typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
-typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
+using QuadArray = std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>>;
+using LineIterator = std::map<unsigned int, ChartLine*>::iterator;
 
-class EditWindow final : public Unique <EditWindow>
+class EditWindow final : public Unique<EditWindow>
 {
 private:
-
 	void drawLineButtons(ChartLine* line, bool Selected);
 	void drawSelected(ChartLine* line, const sf::Sprite& sprite);
 
@@ -100,8 +91,8 @@ private:
 	sf::Sprite toolSprite;
 
 	sf::Font font;
-public:
 
+public:
 	EditWindow();
 	~EditWindow() = default;
 
@@ -116,7 +107,8 @@ public:
 	int drawMeasure(unsigned int measure, unsigned int startLine);
 
 	//hackey but this function essentially generates the laser vertices
-	QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter, LineIterator endIter);
+	QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter,
+	                             LineIterator endIter);
 	void drawChart(unsigned int start, unsigned int end);
 	void drawPlayBar();
 	void checkLaserSelect(QuadArray& arr, int laser);
@@ -146,7 +138,7 @@ public:
 	void conenctLines(std::map<unsigned int, ChartLine*> input);
 
 	float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
-	bool getMouseOverlap(const sf::VertexArray quad);
+	bool getMouseOverlap(sf::VertexArray quad);
 	//QuadArray wrapLaserQuads(QuadArray& arr);
 
 	void loadFile(std::string mapFilePath, std::string mapFileName);
@@ -175,8 +167,7 @@ public:
 
 	void mousePressedLeft(sf::Event event);
 	void mouseReleasedLeft(sf::Event event);
-	//vars
-	boost::interprocess::managed_shared_memory memSegment;
+
 	int editorMeasure = 0;
 	int editorLineStart = 0;
 	int columns = 6;
@@ -194,7 +185,6 @@ public:
 
 	EditTool tool;
 
-	gameControl* controlPtr;
 
 	float width = 0;
 	float height = 0;
@@ -213,7 +203,7 @@ public:
 
 	std::map<unsigned int, ChartLine*> selectedLines;
 
-	std::map<unsigned int, ChartLine>  clipboard;
+	std::map<unsigned int, ChartLine> clipboard;
 
 	Chart chart;
 	//functions

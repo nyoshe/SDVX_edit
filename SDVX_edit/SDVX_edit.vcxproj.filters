@@ -39,19 +39,16 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parser.cpp">
+    <ClCompile Include="Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="editWindow.cpp">
+    <ClCompile Include="EditWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="statusBar.cpp">
+    <ClCompile Include="StatusBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="menuItem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="toolWindow.cpp">
+    <ClCompile Include="ToolWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui\imgui.cpp">
@@ -75,7 +72,7 @@
     <ClCompile Include="imgui\imgui-SFML.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="audioManager.cpp">
+    <ClCompile Include="AudioManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Chart.cpp">
@@ -123,13 +120,13 @@
     <ClCompile Include="soundtouch\src\FIRFilter.cpp">
       <Filter>SoundTouch\src</Filter>
     </ClCompile>
-    <ClCompile Include="chartLine.cpp">
+    <ClCompile Include="ChartLine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="toolBar.cpp">
+    <ClCompile Include="ToolBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="scrubBar.cpp">
+    <ClCompile Include="ScrubBar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
@@ -138,30 +135,30 @@
     <ClCompile Include="Unique.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="spline.cpp">
+    <ClCompile Include="Bezier.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mouseInfo.cpp">
+    <ClCompile Include="MouseInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="fontManager.cpp">
+    <ClCompile Include="FontManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="editWindow.h">
+    <ClInclude Include="EditWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="statusBar.h">
+    <ClInclude Include="StatusBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="menuItem.h">
+    <ClInclude Include="Enums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="enums.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="structs.h">
+    <ClInclude Include="Structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fileDialog\ImGuiFileDialog.h">
@@ -173,7 +170,7 @@
     <ClInclude Include="fileDialog\dirent\dirent.h">
       <Filter>fileDialog</Filter>
     </ClInclude>
-    <ClInclude Include="toolWindow.h">
+    <ClInclude Include="ToolWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="imgui\imstb_truetype.h">
@@ -206,7 +203,7 @@
     <ClInclude Include="Chart.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="parser.h">
+    <ClInclude Include="Parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="soundtouch\src\AAFilter.h">
@@ -254,13 +251,13 @@
     <ClInclude Include="soundtouch\include\STTypes.h">
       <Filter>SoundTouch\include</Filter>
     </ClInclude>
-    <ClInclude Include="chartLine.h">
+    <ClInclude Include="ChartLine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="toolBar.h">
+    <ClInclude Include="ToolBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="scrubBar.h">
+    <ClInclude Include="ScrubBar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logging\plog\Appenders\AndroidAppender.h">
@@ -341,7 +338,7 @@
     <ClInclude Include="Logging\plog\WinApi.h">
       <Filter>Logging\plog</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
@@ -350,16 +347,19 @@
     <ClInclude Include="Unique.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="spline.h">
+    <ClInclude Include="Bezier.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="mouseInfo.h">
+    <ClInclude Include="MouseInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="audioManager.h">
+    <ClInclude Include="AudioManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fontManager.h">
+    <ClInclude Include="FontManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameControl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

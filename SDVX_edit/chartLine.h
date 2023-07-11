@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "enums.h"
+#include "Enums.h"
 #include <iostream>
 #include <bitset>
 

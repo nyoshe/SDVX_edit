@@ -4,8 +4,8 @@
 #include "fileDialog/ImGuiFileDialog.h"
 #include <string>
 #include <iostream>
-#include "editWindow.h"
-#include "enums.h"
+#include "EditWindow.h"
+#include "Enums.h"
 #include <SFML/Graphics.hpp>
 
 class toolWindow

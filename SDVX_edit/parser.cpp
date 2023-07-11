@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "Parser.h"
 
 Command Parser::parseCommand(std::string s) {
 	Command c;

@@ -1,4 +1,4 @@
-#include "statusBar.h"
+#include "StatusBar.h"
 
 void StatusBar::setWindow(sf::RenderWindow* _window) {
 	window = _window;

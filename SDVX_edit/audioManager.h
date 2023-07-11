@@ -26,6 +26,7 @@ public:
         //buffer half of a second
         buffSize = 0.5 * buffer.getSampleRate() * buffer.getChannelCount();
         output = static_cast<int16_t*>(malloc(sizeof(int16_t) * buffSize));
+
         input = static_cast<int16_t*>(malloc(sizeof(int16_t) * buffer.getChannelCount() * buffer.getSampleCount()));
 
         inputSize = buffer.getSampleCount();

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "../SDVX_edit/chartLine.h"
+#include "../SDVX_edit/ChartLine.h"
 
 TEST(TestCaseName, TestName) {
 	ChartLine* c;

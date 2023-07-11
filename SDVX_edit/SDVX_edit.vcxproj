@@ -143,12 +143,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="audioManager.cpp" />
-    <ClCompile Include="chart.cpp" />
-    <ClCompile Include="chartLine.cpp" />
-    <ClCompile Include="editWindow.cpp" />
+    <ClCompile Include="AudioManager.cpp" />
+    <ClCompile Include="Chart.cpp" />
+    <ClCompile Include="ChartLine.cpp" />
+    <ClCompile Include="EditWindow.cpp" />
     <ClCompile Include="fileDialog\ImGuiFileDialog.cpp" />
-    <ClCompile Include="fontManager.cpp" />
+    <ClCompile Include="FontManager.cpp" />
+    <ClCompile Include="GameControl.cpp" />
     <ClCompile Include="imgui\imgui-SFML.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -157,10 +158,9 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="menuItem.cpp" />
-    <ClCompile Include="mouseInfo.cpp" />
-    <ClCompile Include="parser.cpp" />
-    <ClCompile Include="scrubBar.cpp" />
+    <ClCompile Include="MouseInfo.cpp" />
+    <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="ScrubBar.cpp" />
     <ClCompile Include="soundtouch\src\AAFilter.cpp" />
     <ClCompile Include="soundtouch\src\BPMDetect.cpp" />
     <ClCompile Include="soundtouch\src\cpu_detect_x86.cpp" />
@@ -175,23 +175,24 @@
     <ClCompile Include="soundtouch\src\SoundTouch.cpp" />
     <ClCompile Include="soundtouch\src\sse_optimized.cpp" />
     <ClCompile Include="soundtouch\src\TDStretch.cpp" />
-    <ClCompile Include="spline.cpp" />
-    <ClCompile Include="statusBar.cpp" />
-    <ClCompile Include="toolBar.cpp" />
-    <ClCompile Include="toolWindow.cpp" />
+    <ClCompile Include="Bezier.cpp" />
+    <ClCompile Include="StatusBar.cpp" />
+    <ClCompile Include="ToolBar.cpp" />
+    <ClCompile Include="ToolWindow.cpp" />
     <ClCompile Include="Unique.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="audioManager.h" />
-    <ClInclude Include="chart.h" />
-    <ClInclude Include="chartLine.h" />
-    <ClInclude Include="config.h" />
-    <ClInclude Include="editWindow.h" />
-    <ClInclude Include="enums.h" />
+    <ClInclude Include="AudioManager.h" />
+    <ClInclude Include="Chart.h" />
+    <ClInclude Include="ChartLine.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="EditWindow.h" />
+    <ClInclude Include="Enums.h" />
     <ClInclude Include="fileDialog\dirent\dirent.h" />
     <ClInclude Include="fileDialog\ImGuiFileDialog.h" />
     <ClInclude Include="fileDialog\ImGuiFileDialogConfig.h" />
-    <ClInclude Include="fontManager.h" />
+    <ClInclude Include="FontManager.h" />
+    <ClInclude Include="GameControl.h" />
     <ClInclude Include="imgui\imconfig-SFML.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui-SFML.h" />
@@ -228,9 +229,9 @@
     <ClInclude Include="Logging\plog\Severity.h" />
     <ClInclude Include="Logging\plog\Util.h" />
     <ClInclude Include="Logging\plog\WinApi.h" />
-    <ClInclude Include="mouseInfo.h" />
-    <ClInclude Include="parser.h" />
-    <ClInclude Include="scrubBar.h" />
+    <ClInclude Include="MouseInfo.h" />
+    <ClInclude Include="Parser.h" />
+    <ClInclude Include="ScrubBar.h" />
     <ClInclude Include="soundtouch\include\BPMDetect.h" />
     <ClInclude Include="soundtouch\include\FIFOSampleBuffer.h" />
     <ClInclude Include="soundtouch\include\FIFOSamplePipe.h" />
@@ -246,12 +247,11 @@
     <ClInclude Include="soundtouch\src\PeakFinder.h" />
     <ClInclude Include="soundtouch\src\RateTransposer.h" />
     <ClInclude Include="soundtouch\src\TDStretch.h" />
-    <ClInclude Include="spline.h" />
-    <ClInclude Include="structs.h" />
-    <ClInclude Include="menuItem.h" />
-    <ClInclude Include="statusBar.h" />
-    <ClInclude Include="toolBar.h" />
-    <ClInclude Include="toolWindow.h" />
+    <ClInclude Include="Bezier.h" />
+    <ClInclude Include="Structs.h" />
+    <ClInclude Include="StatusBar.h" />
+    <ClInclude Include="ToolBar.h" />
+    <ClInclude Include="ToolWindow.h" />
     <ClInclude Include="Unique.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

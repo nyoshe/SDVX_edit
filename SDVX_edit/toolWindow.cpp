@@ -1,4 +1,4 @@
-#include "toolWindow.h"
+#include "ToolWindow.h"
 
 toolWindow::toolWindow() {
 	selectIcon.loadFromFile("textures/selectIcon.png");

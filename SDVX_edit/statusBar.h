@@ -1,10 +1,10 @@
 #pragma once
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
-#include "editWindow.h"
+#include "EditWindow.h"
 #include "fileDialog/ImGuiFileDialog.h"
-#include "scrubBar.h"
-#include "fontManager.h"
+#include "ScrubBar.h"
+#include "FontManager.h"
 #include <string>
 #include "Unique.h"
 #include <iomanip>

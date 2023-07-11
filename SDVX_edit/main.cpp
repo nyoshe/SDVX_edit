@@ -1,14 +1,15 @@
 #pragma once
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
-#include "statusBar.h"
-#include "editWindow.h"
-#include "parser.h"
-#include "toolWindow.h"
-#include "toolBar.h"
-#include "scrubBar.h"
+#include "StatusBar.h"
+#include "EditWindow.h"
+#include "Parser.h"
+#include "ToolWindow.h"
+#include "ToolBar.h"
+#include "ScrubBar.h"
 #include "Input.h"
-#include "fontManager.h"
+#include "FontManager.h"
+#include "bezier.h"
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -18,6 +19,7 @@
 #include "plog/Initializers/RollingFileInitializer.h"
 
 int main() {
+
 	plog::init(plog::debug, "logs/log.txt", 1000000, 3);
 	PLOG_INFO << "initialized logging";
 	sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
@@ -77,6 +79,28 @@ int main() {
 		EditWindow::instance().update();
 		ToolBar::instance().update();
 		ScrubBar::instance().update();
+
+		std::vector<sf::Vector2f> points = { {200, 300}, {500, 300}, {800, 500}, {1000, 1200} };  // Example points
+		int numPoints = 100;
+
+		std::vector<sf::Vector2f> bezierCurve = calculateBezierCurve(points, numPoints);
+
+		sf::VertexArray curve(sf::LineStrip);
+
+		sf::VertexArray ctrlPoints(sf::LineStrip);
+
+		for (auto point : bezierCurve) {
+			curve.append(sf::Vertex(point, sf::Color::Red));
+			
+		}
+		for (auto point : points) {
+			ctrlPoints.append(sf::Vertex(point, sf::Color::Green));
+		}
+
+		//curve.append(sf::Vertex({0,0}, sf::Color::Red));
+		window.draw(curve);
+
+		window.draw(ctrlPoints);
 
 		ImGui::SFML::Render(window);
 		window.display();

@@ -2,7 +2,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
 #include <SFML/Graphics.hpp>
-#include "editWindow.h"
+#include "EditWindow.h"
 #include "Unique.h"
 class ScrubBar final : public Unique <ScrubBar>
 {

@@ -1,7 +1,7 @@
 #pragma once
-#include "structs.h"
+#include "Structs.h"
 #include "chart.h"
-#include "chartLine.h"
+#include "ChartLine.h"
 
 #include <iostream>
 #include <fstream>

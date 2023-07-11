@@ -1,4 +1,4 @@
-#include "toolBar.h"
+#include "ToolBar.h"
 
 ToolBar::ToolBar() {
 	selectIcon.loadFromFile("textures/selectIcon.png");

@@ -2,8 +2,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
 #include <SFML/Graphics.hpp>
-#include "editWindow.h"
-#include "fontManager.h"
+#include "EditWindow.h"
+#include "FontManager.h"
 
 const int snapSizes[10] = { 4, 8, 12, 16, 24, 32, 48, 64, 96, 192 };
 

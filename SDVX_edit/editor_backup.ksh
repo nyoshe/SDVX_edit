@@ -32,7 +32,7 @@ icon=../sdvx05.png
 beat=4/4
 zoom_top=0
 zoom_bottom=0
-1000|00|--
+0000|00|--
 --
 tickrate_offset=1
 0000|00|--
@@ -7805,6 +7805,10 @@ zoom_bottom=-50
 zoom_top=-65
 zoom_bottom=0
 0000|00|-o
+--
+0000|00|--
+--
+0000|00|--
 --
 0000|00|--
 --

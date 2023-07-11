@@ -1,4 +1,4 @@
-#include "fontManager.h"
+#include "FontManager.h"
 
 
 void FontManager::loadDefault()

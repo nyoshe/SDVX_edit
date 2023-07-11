@@ -1,6 +1,6 @@
 #pragma once
-#include "enums.h"
-#include "chartLine.h"
+#include "Enums.h"
+#include "ChartLine.h"
 #include <vector>
 #include <string>
 #include <map>

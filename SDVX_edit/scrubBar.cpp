@@ -1,4 +1,4 @@
-#include "scrubBar.h"
+#include "ScrubBar.h"
 void ScrubBar::update() {
 	if (!enabled) return;
 	EditWindow& editor = EditWindow::instance();
