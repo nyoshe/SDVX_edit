@@ -13,7 +13,7 @@
 
 #include <deque>
 //typedef std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const unsigned int, ChartLine *>>>> lineIterator;
-typedef std::map<unsigned int, ChartLine*>::iterator lineIterator;
+typedef std::map<unsigned int, ChartLine*>::const_iterator lineIterator;
 const int validSnapSizes[12] = {1, 2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 192};
 
 struct ChartMetadata
@@ -70,6 +70,7 @@ public:
 
 	std::vector<Measure> measures = {};
 	std::map<unsigned int, ChartLine*> lines;
+
 	std::map<int, std::vector<Command>> cmds;
 
 	std::vector<std::pair<ChartLine*, ChartLine*>> redoBuffer;
@@ -104,7 +105,7 @@ public:
 
 	void insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap);
 	ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
-	ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask maask);
+	ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask mask);
 
 	//returns a pointer to the moved object
 	ChartLine* moveChartLine(int line, LineMask moveMask, int change);
@@ -121,8 +122,8 @@ public:
 	void pushRedoBuffer();
 
 	//exclusive of the input line
-	lineIterator getLineBefore(int line);
-	lineIterator getLineAfter(int line);
+	lineIterator getLineBefore(int line) const;
+	lineIterator getLineAfter(int line) const;
 
 	int getMeasureFromPos(int pos);
 

@@ -138,6 +138,7 @@ ChartLine* ChartLine::getFxEnd(int lane)
 std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearBtHold(int lane)
 {
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
+	if (this->btVal[lane] == 1) return actionList;
 	ChartLine* start = getBtStart(lane);
 	ChartLine* end = getBtEnd(lane);
 	while (start != end) {
@@ -153,6 +154,7 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearBtHold(int lane)
 std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearFxHold(int lane)
 {
 	std::vector<std::pair<ChartLine*, ChartLine*>> actionList;
+	if (this->fxVal[lane] == 2) return actionList;
 	ChartLine* start = getFxStart(lane);
 	ChartLine* end = getFxEnd(lane);
 	while (start != end) {
@@ -179,7 +181,7 @@ void ChartLine::modifyLaserPos(int laser, float val)
 }
 
 //essentially overwrites if mask bits are set
-ChartLine ChartLine::replaceMask(LineMask mask, const ChartLine& b)
+ChartLine ChartLine::replaceMask(const LineMask& mask, const ChartLine& b)
 {
 	ChartLine out = *this;
 	for (int i = 0; i < 2; i++) {
@@ -205,7 +207,7 @@ ChartLine ChartLine::replaceMask(LineMask mask, const ChartLine& b)
 	return out;
 }
 
-ChartLine ChartLine::extractMask(LineMask mask)
+ChartLine ChartLine::extractMask(const LineMask& mask)
 {
 	ChartLine output;
 	for (int i = 0; i < 4; i++) {

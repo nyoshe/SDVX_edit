@@ -12,7 +12,7 @@ const float L_NONE = -1;
 struct Command
 {
 	CommandType type = INVALID;
-	std::string val = "";
+	std::string val;
 };
 
 struct LineMask
@@ -70,7 +70,7 @@ public:
 
 	LineMask operator&(const LineMask& line);
 
-	ChartLine replaceMask(LineMask mask, const ChartLine& b);
+	ChartLine replaceMask(const LineMask& mask, const ChartLine& b);
 
 	ChartLine* getNextLaser(int laser);
 	ChartLine* getPrevLaser(int laser);
@@ -86,7 +86,7 @@ public:
 
 	void modifyLaserPos(int laser, float val);
 
-	ChartLine extractMask(LineMask mask);
+	ChartLine extractMask(const LineMask& mask);
 
 	LineMask makeMask() const;
 
@@ -94,9 +94,9 @@ public:
 
 	std::vector<Command> getCommandType(CommandType c);
 
-	static const uint8_t FX_HOLD = 1;
-	static const uint8_t BT_HOLD = 2;
+	static constexpr uint8_t FX_HOLD = 1;
+	static constexpr uint8_t BT_HOLD = 2;
 
-	static const uint8_t FX_CHIP = 2;
-	static const uint8_t BT_CHIP = 1;
+	static constexpr uint8_t FX_CHIP = 2;
+	static constexpr uint8_t BT_CHIP = 1;
 };

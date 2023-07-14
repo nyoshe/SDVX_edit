@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="Chart.cpp" />
+    <ClCompile Include="ChartDisplay.cpp" />
     <ClCompile Include="ChartLine.cpp" />
     <ClCompile Include="EditWindow.cpp" />
     <ClCompile Include="fileDialog\ImGuiFileDialog.cpp" />
@@ -184,6 +185,7 @@
   <ItemGroup>
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="Chart.h" />
+    <ClInclude Include="ChartDisplay.h" />
     <ClInclude Include="ChartLine.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="EditWindow.h" />
@@ -192,6 +194,7 @@
     <ClInclude Include="fileDialog\ImGuiFileDialog.h" />
     <ClInclude Include="fileDialog\ImGuiFileDialogConfig.h" />
     <ClInclude Include="FontManager.h" />
+    <ClInclude Include="fsmlist.h" />
     <ClInclude Include="GameControl.h" />
     <ClInclude Include="imgui\imconfig-SFML.h" />
     <ClInclude Include="imgui\imconfig.h" />

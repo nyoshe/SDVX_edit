@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="imgui">
       <UniqueIdentifier>{e1c7faa6-db69-41a8-8f00-c0f59cb5c114}</UniqueIdentifier>
     </Filter>
@@ -33,6 +29,10 @@
     </Filter>
     <Filter Include="Logging\plog">
       <UniqueIdentifier>{0e9e5360-54a6-40fc-9af5-3298ce6511cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SoundTouch\Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +145,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChartDisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -360,6 +363,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fsmlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChartDisplay.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

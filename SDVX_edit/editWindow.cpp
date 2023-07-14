@@ -1,6 +1,204 @@
 #include "EditWindow.h"
 using namespace std::placeholders;
 
+class Idle;
+class DragPlacing;
+
+class AwaitPlacement
+	: public EditController
+{
+	void react(UpdateEvent const& e) override
+	{
+		if (e.lane != -1 && e.line != -1) {
+			for (auto [key, val] : placingMap) {
+				delete val;
+			}
+			placingMap.clear();
+			ChartLine* line = new ChartLine();
+			switch (e.tool.type) {
+			case BT:
+				line->btVal[e.lane] = 1;
+				break;
+			case FX:
+				line->fxVal[e.lane/2] = 2;
+				break;
+			}
+			
+			line->pos = e.line;
+			placingMap[e.line] = line;
+			EditWindow::instance().display.drawAsColor(*e.window, placingMap,sf::Color(255,255,255,100),
+				EditWindow::instance().editorLineStart, e.line, e.line, Mask::ALL);
+		}
+	}
+
+	void react(DeleteEvent const& e) override {
+		LineMask mask;
+		switch (e.tool.type) {
+		case BT:
+			mask.bt[e.lane] = true;
+			break;
+		case FX:
+			mask.fx[e.lane / 2] = true;
+			break;
+		}
+		EditWindow::instance().chart.removeChartLine(e.line, mask);
+		EditWindow::instance().chart.pushUndoBuffer();
+		EditWindow::instance().chart.clearRedoStack();
+	}
+
+
+	void react(MouseDown const& e) override {
+		if (!ImGui::GetIO().WantCaptureMouse && e.lane != -1 && e.line != -1) {
+			iState = e;
+			transit<DragPlacing>();
+			return;
+		}
+	};
+protected:
+	inline static std::map<unsigned int, ChartLine*> placingMap = {};
+};
+
+class DragPlacing
+	: public AwaitPlacement
+{
+	void entry() override {
+
+	}
+
+	void react(MouseUp const& e) override {
+		std::map<unsigned int, ChartLine> insertMap;
+		for (auto [key, val] : placingMap) {
+			insertMap[key] = *val;
+		}
+		EditWindow::instance().chart.clearRedoStack();
+		EditWindow::instance().chart.insertChartLine(std::min(e.line, iState.line), insertMap);
+		EditWindow::instance().chart.pushUndoBuffer();
+		transit<AwaitPlacement>();
+	};
+	void react(UpdateEvent const& e) override
+	{
+		if(placingMap.size() > 0) {
+			EditWindow::instance().display.drawAsColor(*e.window, placingMap, sf::Color(255, 255, 255, 100),
+				EditWindow::instance().editorLineStart, placingMap.begin()->second->pos, std::prev(placingMap.end(), 1)->second->pos, Mask::ALL);
+		}
+		
+	}
+	void react(MouseMove const& e) override
+	{
+		
+		int mouseLine = e.line;
+		if (mouseLine != iState.line && mouseLine != -1) {
+			for (auto [key, val] : placingMap) {
+				delete val;
+			}
+			placingMap.clear();
+			LineMask mask;
+			for (int i = std::min(e.line, iState.line); i < std::max(e.line, iState.line); i += (192 /
+				EditWindow::instance().snapGridSize)) {
+				ChartLine* newLine = new ChartLine();
+				switch (e.tool.type) {
+				case BT:
+					newLine->btVal[iState.lane] = 2;
+					mask.bt[iState.lane] = true;
+					break;
+				case FX:
+					newLine->fxVal[iState.lane / 2] = 1;
+					mask.fx[iState.lane / 2] = true;
+					break;
+				}
+				newLine->pos = i;
+				placingMap[i] = newLine;
+			}
+			placingMap[std::max(e.line, iState.line)] = new ChartLine();
+			placingMap[std::max(e.line, iState.line)]->pos = std::max(e.line, iState.line);
+			EditWindow::instance().connectLines(placingMap);
+		}
+	}
+
+	void exit() override
+	{
+		for (auto [key, val] : placingMap) {
+			delete val;
+		}
+		placingMap.clear();
+	}
+
+};
+
+class awaitSelection
+	: public EditController
+{
+	void react()
+	{
+
+	}
+};
+
+class Idle
+	: public EditController
+{
+	void react(MouseDown const& e) override {
+		iState = e;
+	};
+};
+
+
+class EditingLaser
+	: public EditController
+{
+	void react()
+	{
+		
+	}
+};
+
+void EditController::entry() {
+}
+
+void EditController::react(MouseDown const&) {
+	std::cout << "mouse down ignored" << std::endl;
+}
+
+void EditController::react(MouseUp const&) {
+	std::cout << "mouse up ignored" << std::endl;
+}
+
+void EditController::react(UpdateEvent const&) {
+	//do nothing
+}
+
+void EditController::react(MouseMove const&) {
+	//do nothing
+}
+
+void EditController::react(ToolChangeEvent const& e) {
+	if (e.tool.select) {
+		transit<awaitSelection>();
+		return;
+	}
+	switch(e.tool.type) {
+	case BT:
+	case FX:
+		transit<AwaitPlacement>();
+		break;
+	}
+}
+
+void EditController::react(DeleteEvent const& e) {
+	
+	switch (e.tool.type) {
+	case BT:
+	case FX:
+		transit<AwaitPlacement>();
+		break;
+	}
+}
+
+MouseEvent EditController::iState = MouseEvent();
+
+FSM_INITIAL_STATE(EditController, AwaitPlacement)
+
+
 EditWindow::EditWindow()
 {
 	Input::instance().addActionKey(sf::Event::KeyPressed, {sf::Keyboard::LControl, sf::Keyboard::Z},
@@ -33,56 +231,12 @@ EditWindow::EditWindow()
 	                                 std::bind(&EditWindow::mousePressedLeft, this, _1), "mousePress");
 	Input::instance().addActionMouse(sf::Event::MouseButtonReleased, {},
 	                                 std::bind(&EditWindow::mouseReleasedLeft, this, _1), "mouseRelease");
-
-	//bt button
-	if (!entryTex.loadFromFile("textures/entryTex.png")) {
-		PLOG_WARNING << "failed to load entry sprite!";
-	}
-	entrySprite.setTexture(entryTex);
-
-	//bt button
-	if (!btTex.loadFromFile("textures/button.png")) {
-		PLOG_WARNING << "failed to load bt sprite!";
-	}
-	btSprite.setTexture(btTex);
-
-	sf::Texture testTex;
-	//btHold
-	if (!testTex.loadFromFile("textures/buttonhold.png")) {
-		PLOG_WARNING << "failed to load fx sprite!";
-	}
-
-	if (!btHoldTex.loadFromFile("textures/buttonhold.png",
-	                            sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y))) {
-		PLOG_WARNING << "failed to load fx sprite!";
-	}
-	btHoldSprite.setTexture(btHoldTex);
-	btHoldSprite.setTextureRect(sf::IntRect(0, btHoldTex.getSize().y - 1, btHoldTex.getSize().x,
-	                                        btHoldTex.getSize().y));
-
-	//fx button
-	if (!fxTex.loadFromFile("textures/fxbutton.png")) {
-		PLOG_WARNING << "failed to load fx sprite!";
-	}
-	fxSprite.setTexture(fxTex);
-
-	//fx hold
-	if (!testTex.loadFromFile("textures/fxbuttonhold.png")) {
-		PLOG_WARNING << "failed to load fx sprite!";
-	}
-
-	if (!fxHoldTex.loadFromFile("textures/fxbuttonhold.png",
-	                            sf::IntRect(0, testTex.getSize().y - 1, testTex.getSize().x, testTex.getSize().y))) {
-		PLOG_WARNING << "failed to load fx sprite!";
-	}
-	fxHoldSprite.setTexture(fxHoldTex);
-	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x,
-	                                        fxHoldTex.getSize().y));
+	fsm_list::start();
 
 	font.loadFromFile("Fonts/CONSOLA.TTF");
 }
 
-void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName)
+void EditWindow::loadFile(const std::string& mapFilePath, const std::string& mapFileName)
 {
 	Parser parser;
 	Chart newChart;
@@ -107,7 +261,7 @@ void EditWindow::loadFile(std::string mapFilePath, std::string mapFileName)
 	PLOG_INFO << "minimized lines (" << linesBefore << "->" << chart.lines.size() << ")";
 }
 
-void EditWindow::saveFile(std::string fileName)
+void EditWindow::saveFile(const std::string& fileName)
 {
 	Parser p;
 	p.saveFile(chart, fileName);
@@ -136,22 +290,14 @@ void EditWindow::updateVars()
 	editorLineStart = editorMeasure * 192;
 	pulsesPerColumn = measuresPerColumn * 192;
 
-	entrySprite.setScale(laneWidth / entrySprite.getTexture()->getSize().x,
-	                     laneWidth / entrySprite.getTexture()->getSize().x);
-	entrySprite.setOrigin(0, entrySprite.getTexture()->getSize().y);
+}
 
-	btSprite.setScale(laneWidth / btSprite.getTexture()->getSize().x, laneWidth / btSprite.getTexture()->getSize().x);
-	btSprite.setOrigin(0, btSprite.getTexture()->getSize().y);
-
-	btHoldSprite.setScale(laneWidth / btHoldSprite.getTexture()->getSize().x, 1);
-	btHoldSprite.setOrigin(0, 1);
-
-	fxSprite.setScale(2 * laneWidth / fxSprite.getTexture()->getSize().x,
-	                  2 * laneWidth / fxSprite.getTexture()->getSize().x);
-	fxSprite.setOrigin(0, fxSprite.getTexture()->getSize().y);
-
-	fxHoldSprite.setScale(2 * laneWidth / fxHoldSprite.getTexture()->getSize().x, 1);
-	fxHoldSprite.setOrigin(0, 1);
+void EditWindow::changeTool(EditTool _tool)
+{
+	tool = _tool;
+	ToolChangeEvent event;
+	event.tool = _tool;
+	send_event(event);
 }
 
 void EditWindow::setWindow(sf::RenderTarget* _window)
@@ -201,7 +347,7 @@ int EditWindow::getSnappedLine(int line)
 	return (line / (192 / snapGridSize) * (192 / snapGridSize));
 }
 
-float EditWindow::getMouseLaserPos(bool isWide)
+float EditWindow::getMouseLaserPos(bool isWide) const
 {
 	if (state == HOVERED_GUI) {
 		return -1;
@@ -233,7 +379,7 @@ float EditWindow::getLaserX(ChartLine* line, int laser)
 		ChartLine* nextLaser = line->getNextLaser(laser);
 		float startPos = prevLaser->laserPos[laser];
 		float endPos = nextLaser->laserPos[laser];
-		float diff = nextLaser->pos - prevLaser->pos;
+		int diff = nextLaser->pos - prevLaser->pos;
 		ourPos = startPos - (startPos - endPos) * (static_cast<float>(line->pos - prevLaser->pos) / diff);
 	}
 	else {
@@ -244,326 +390,23 @@ float EditWindow::getLaserX(ChartLine* line, int laser)
 		return ourPos * (9 * laneWidth) - 3 * laneWidth;
 	}
 	return ourPos * (5 * laneWidth) - laneWidth;
-
-	return 0;
 }
 
-int EditWindow::drawMeasure(unsigned int measure, unsigned int startLine)
-{
-	int mPulses = 192;
-
-	if (measure < chart.measures.size() && chart.measures.size() != 0) {
-		mPulses = chart.measures[measure].pulses;
-	}
-
-	//draw in beats
-	for (int i = startLine + 48; i < startLine + mPulses; i += 48) {
-		sf::Vector2f v = getNoteLocation(i);
-		sf::Vertex line[] = {
-			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(50, 50, 50)),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y), sf::Color(50, 50, 50))
-		};
-		window->draw(line, 2, sf::Lines);
-	}
-
-	//draw the start line
-	if (editorLineStart <= startLine) {
-		sf::Vector2f v = getNoteLocation(startLine);
-		sf::Vertex line[] = {
-			sf::Vertex(sf::Vector2f(v.x, v.y - 1), sf::Color(255, 255, 0)),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y - 1), sf::Color(255, 255, 0))
-		};
-		window->draw(line, 2, sf::Lines);
-	}
-
-	//draw the end line
-	if (editorLineStart + viewLines >= startLine + mPulses) {
-		sf::Vector2f v = getNoteLocation(startLine + mPulses);
-		sf::Vertex line[] = {
-			sf::Vertex(sf::Vector2f(v.x, v.y), sf::Color(255, 255, 0)),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4, v.y), sf::Color(255, 255, 0))
-		};
-		window->draw(line, 2, sf::Lines);
-	}
-
-	return mPulses;
-}
-
-void EditWindow::drawSelected(ChartLine* line, const sf::Sprite& sprite)
-{
-	//static sf::RectangleShape rectangle;
-	//rectangle.setSize(sf::Vector2f(sprite.getGlobalBounds().width, sprite.getGlobalBounds().height));
-
-	//rectangle.setPosition(sf::Vector2f(sprite.getPosition().x, sprite.getPosition().y - sprite.getGlobalBounds().height));
-	float x = sprite.getPosition().x;
-	float y = sprite.getPosition().y - sprite.getGlobalBounds().height;
-
-	//rectangle.setOutlineThickness(3.0);
-	//rectangle.setFillColor(sf::Color::Red);
-	//rectangle.setOutlineColor(sf::Color(255, 0, 0));
-	float outlineSize = 4 * FontManager::instance().getScale();
-	sf::VertexArray quad(sf::Quads, 4);
-	quad[0] = (sf::Vertex(sf::Vector2f(x - outlineSize, y - outlineSize), sf::Color::Red));
-	quad[1] = (sf::Vertex(sf::Vector2f(x + outlineSize + sprite.getGlobalBounds().width, y - outlineSize),
-	                      sf::Color::Red));
-	quad[2] = (sf::Vertex(sf::Vector2f(x + outlineSize + sprite.getGlobalBounds().width,
-	                                   y + outlineSize + sprite.getGlobalBounds().height), sf::Color::Red));
-	quad[3] = (sf::Vertex(sf::Vector2f(x - outlineSize, y + outlineSize + sprite.getGlobalBounds().height),
-	                      sf::Color::Red));
-	window->draw(quad);
-}
-
-void EditWindow::drawLineButtons(ChartLine* line, bool selected)
-{
-	int pos = line->pos;
-	for (int lane = 0; lane < 2; lane++) {
-		//fx chips
-		if (line->fxVal[lane] == 2) {
-			fxSprite.setPosition(getNoteLocation(lane * 2, pos));
-			if (selected) {
-				drawSelected(line, fxSprite);
-			}
-			else {
-				window->draw(fxSprite);
-			}
-		}
-		//fx hold
-		else if (line->fxVal[lane] == 1) {
-			fxHoldSprite.setPosition(getNoteLocation(lane * 2, pos));
-			if (line->next) {
-				fxHoldSprite.setScale(fxHoldSprite.getScale().x,
-				                      (measureHeight / 192) * (line->next->pos - line->pos));
-			}
-			if (selected) {
-				drawSelected(line, fxHoldSprite);
-			}
-			else {
-				window->draw(fxHoldSprite);
-			}
-		}
-	}
-
-	if (DEBUG) {
-		sf::Vector2f v = getNoteLocation(0, pos);
-		sf::Vertex l[] = {
-			sf::Vertex(sf::Vector2f(v.x - laneWidth * 0.5, v.y), sf::Color(0, 255, 0, 60)),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4.5, v.y), sf::Color(0, 255, 0, 60))
-		};
-		window->draw(l, 2, sf::Lines);
-	}
-
-	for (int lane = 0; lane < 4; lane++) {
-		//bt chips
-		if (line->btVal[lane] == 1) {
-			btSprite.setPosition(getNoteLocation(lane, pos));
-			if (selected) {
-				drawSelected(line, btSprite);
-			}
-			else {
-				window->draw(btSprite);
-			}
-		}
-		//bt hold
-		else if (line->btVal[lane] == 2) {
-			btHoldSprite.setPosition(getNoteLocation(lane, pos));
-			if (line->next) {
-				btHoldSprite.setScale(btHoldSprite.getScale().x,
-				                      (measureHeight / 192) * (line->next->pos - line->pos));
-			}
-			if (selected) {
-				drawSelected(line, btHoldSprite);
-			}
-			else {
-				window->draw(btHoldSprite);
-			}
-		}
-	}
-}
-
-QuadArray EditWindow::generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects,
-                                         LineIterator startIter, LineIterator endIter)
-{
-	std::vector<sf::VertexArray> laserBuffer;
-	QuadArray vertexBuffer;
-	if (editorMeasure >= chart.measures.size() ||
-		startIter == objects.end() ||
-		endIter == objects.end()) {
-		return vertexBuffer;
-	}
-
-
-	ChartLine* line = startIter->second;
-	if (line->laserPos[l] == L_CONNECTOR) {
-		line = line->getPrevLaser(l);
-	}
-	ChartLine* start = line;
-
-	bool isSelected = false;
-	while (line && line->pos <= (endIter->second->pos)) {
-		//int measureNum = line->measurePos - editorMeasure;
-		sf::Color c;
-		if (l == 1) {
-			//pink
-			c = sf::Color(255, 0, 200, 150);
-		}
-		else {
-			//blue
-			c = sf::Color(0, 160, 255, 150);
-		}
-
-		if (!(line->laserPos[l] >= 0) ||
-			!line->next ||
-			!line->getNextLaser(l)) {
-			if (laserBuffer.size() > 0) {
-				vertexBuffer.push_back(std::make_pair(line, laserBuffer));
-			}
-			laserBuffer.clear();
-			line = line->next;
-			continue;
-		}
-
-		sf::VertexArray quad(sf::Quads, 4);
-		int lineNum = line->pos;
-		float x = 0;
-		float y = 0;
-		//draw entry point
-		if (line->getPrevLaser(l) == nullptr && line->laserPos[l] >= 0) {
-			x = getNoteLocation(lineNum).x + getLaserX(line, l);
-			y = getNoteLocation(lineNum).y;
-
-			quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
-			quad[1] = sf::Vertex(sf::Vector2f(x, y), c);
-			quad[2] = sf::Vertex(sf::Vector2f(x, y + laneWidth), c);
-			quad[3] = sf::Vertex(sf::Vector2f(x + laneWidth, y + laneWidth), c);
-			laserBuffer.push_back(quad);
-
-			quad[0].color = sf::Color(255, 255, 255, 255);
-			quad[1].color = sf::Color(255, 255, 255, 255);
-			quad[2].color = sf::Color(255, 255, 255, 255);
-			quad[3].color = sf::Color(255, 255, 255, 255);
-			quad[0].texCoords = sf::Vector2f(0.f, 0.f);
-			quad[1].texCoords = sf::Vector2f(128.f, 0.f);
-			quad[2].texCoords = sf::Vector2f(128.f, 128.f);
-			quad[3].texCoords = sf::Vector2f(0.f, 128.f);
-
-			laserBuffer.push_back(quad);
-		}
-
-		ChartLine* nextLaser = line->getNextLaser(l);
-		//check for slams, this is not kson compliant and checks based on timing
-		if ((nextLaser->pos - line->pos) <= (192 / 32) &&
-			line->laserPos[l] != L_CONNECTOR &&
-			line->laserPos[l] != nextLaser->laserPos[l]) {
-			x = std::max(getLaserX(line, l), getLaserX(nextLaser, l)) + getNoteLocation(lineNum).x;
-			y = getNoteLocation(lineNum).y;
-			// build laser quad
-
-			float diff = getNoteLocation(lineNum).y - getNoteLocation(nextLaser->pos).y;
-			quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
-			quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - diff), c);
-
-			x = std::min(getLaserX(line, l), getLaserX(nextLaser, l)) + getNoteLocation(lineNum).x;
-			quad[2] = sf::Vertex(sf::Vector2f(x, y - diff), c);
-			quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
-
-			//window->draw(quad);
-			laserBuffer.push_back(quad);
-
-			//draw tail if we need it
-			if (nextLaser->getNextLaser(l) == nullptr) {
-				x = getLaserX(nextLaser, l) + getNoteLocation(lineNum).x;
-				quad[0] = sf::Vertex(sf::Vector2f(x, y - diff), c);
-				quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - diff), c);
-				quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth * 1.0), c);
-				quad[3] = sf::Vertex(sf::Vector2f(x, y - laneWidth * 1.0), c);
-				//window->draw(quad);
-				laserBuffer.push_back(quad);
-			}
-
-			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
-			laserBuffer.clear();
-
-			line = nextLaser;
-			continue;
-		}
-
-		x = getLaserX(line, l) + getNoteLocation(lineNum).x;
-		y = getNoteLocation(lineNum).y;
-		quad[0] = sf::Vertex(sf::Vector2f(x, y), c);
-		quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
-
-		int nextLineNum = line->getNextLaser(l)->pos;
-		ChartLine* nextLine = line->getNextLaser(l);
-
-		x = getLaserX(nextLine, l) + getNoteLocation(lineNum).x;
-		y = getNoteLocation(nextLineNum).y;
-
-		quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
-		quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
-
-		laserBuffer.push_back(quad);
-
-		if (nextLine->laserPos[l] >= 0 ||
-			nextLine->pos > (editorLineStart + viewLines)) {
-			vertexBuffer.push_back(std::make_pair(line, laserBuffer));
-			laserBuffer.clear();
-		}
-
-		line = nextLine;
-	}
-
-	return vertexBuffer;
-}
 
 void EditWindow::drawChart(unsigned int start, unsigned int end)
 {
-	int drawLine = start;
-	while (drawLine <= end) {
-		int m = getMeasureFromLine(drawLine);
-		int add = drawMeasure(m, drawLine);
-		drawLine += add;
+
+	display.drawSelection(*window, selectedLines, editorLineStart, start, end);
+
+	display.draw(*window, chart, editorLineStart, start, end);
+
+	ChartLine* hover = display.getLaserHover(0, mouseX, mouseY);
+
+	if(hover) {
+		display.drawAsColor(*window, chart.lines, sf::Color(255, 255, 255, 100), editorLineStart, hover->pos, hover->getNextLaser(0)->pos, Mask::LASER_L);
+		laserHover = std::make_pair(0, hover);
 	}
-
-	for (int j = 0; j < 5; j++) {
-		sf::Vertex line[] = {
-			sf::Vertex(sf::Vector2f((3 * laneWidth) + (laneWidth * j), getNoteLocation(start).y),
-			           sf::Color(100, 100, 100)),
-			sf::Vertex(sf::Vector2f((3 * laneWidth) + (laneWidth * j), getNoteLocation(end).y),
-			           sf::Color(100, 100, 100))
-		};
-		window->draw(line, 2, sf::Lines);
-	}
-
-
-	if (selectedLines.size() > 1) {
-		for (int l = 0; l < 2; l++) {
-			QuadArray vertexBuffer = generateLaserQuads(l, selectedLines, selectedLines.begin(),
-			                                            std::prev(selectedLines.end(), 1));
-			drawLaserQuads(vertexBuffer);
-		}
-	}
-
-
-	for (const auto& [key, val] : selectedLines) {
-		drawLineButtons(val, true);
-	}
-
-
-	auto lineIt = chart.lines.lower_bound(start);
-	if (lineIt != chart.lines.end()) {
-		ChartLine* line = lineIt->second;
-		while (line && line->pos <= end) {
-			drawLineButtons(line, false);
-			line = line->next;
-		}
-	}
-
-	for (int l = 0; l < 2; l++) {
-		QuadArray vertexBuffer =
-			generateLaserQuads(l, chart.lines, chart.getLineBefore(start), chart.getLineAfter(end));
-		checkLaserSelect(vertexBuffer, l);
-		drawLaserQuads(vertexBuffer);
-	}
+	
 
 	if (selectedLaser.second) {
 		sf::Vector2f v = getNoteLocation(0, selectedLaser.second->pos);
@@ -687,97 +530,28 @@ std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, float st
 	return drawVec;
 }
 
-void EditWindow::checkLaserSelect(QuadArray& arr, int laser)
-{
-	//run over the buffer and then check for collision
-	for (auto& vBuffer : arr) {
-		if (vBuffer.first->laserPos[laser] == L_CONNECTOR || vBuffer.first->next->laserPos[laser] == L_NONE) {
-			vBuffer.first = vBuffer.first->getPrevLaser(laser);
-		}
-		for (auto quad : vBuffer.second) {
-			if (getMouseOverlap(quad)) {
-				laserHover = std::make_pair(laser, vBuffer.first);
-			}
-			if (vBuffer.first == selectedLaser.second && selectedLaser.first == laser) { }
-		}
-	}
-}
-
-void EditWindow::drawLaserQuads(const QuadArray& arr)
-{
-	for (auto& vBuffer : arr) {
-		for (auto quad : vBuffer.second) {
-			//hackey but it works
-			if (quad[0].color == sf::Color(255, 255, 255, 255)) {
-				window->draw(quad, &entryTex);
-			}
-			else {
-				window->draw(quad);
-			}
-
-			if (vBuffer.first == laserHover.second) {
-				for (int i = 0; i < 4; i++) {
-					quad[i].color = sf::Color(255, 255, 255, 100);
-				}
-				//window->draw(l, 2, sf::Lines);
-				window->draw(quad);
-			}
-		}
-	}
-}
-
-
-sf::Vector2f EditWindow::getSnappedPos(ToolType type)
-{
-	//first check if we have a valid position
-	int snappedLine = (getMouseLine() / (192 / snapGridSize)) * (192 / snapGridSize);
-	sf::Vector2f start(laneWidth * 3, 0);
-	float snapSize = measureHeight / snapGridSize;
-	if (state != HOVERED_GUI) {
-		switch (type) {
-		case BT:
-			return sf::Vector2f(getNoteLocation(getMouseLane(), snappedLine));
-		case FX:
-			return sf::Vector2f(getNoteLocation((getMouseLane() / 2) * 2, snappedLine));
-		case LASER_L:
-			return sf::Vector2f(-1, -1);
-		//placeholder
-		//TODO
-		}
-	}
-	return sf::Vector2f(-1, -1);
-}
-
 void EditWindow::handleEvent(sf::Event event)
 {
 	if (event.mouseButton.button == sf::Mouse::Right && event.type == sf::Event::MouseButtonReleased) {
-		if (state == IDLE && getMouseLane() != -1) {
-			LineMask mask;
-			switch (tool.type) {
-			case BT:
-				mask.bt[getMouseLane()] = true;
-				break;
-			case FX:
-				mask.fx[getMouseLane() / 2] = true;
-				break;
-			}
-			chart.removeChartLine(getSnappedLine(getMouseLine()), mask);
-			chart.pushUndoBuffer();
-			chart.clearRedoStack();
-		}
+		DeleteEvent dEvent;
+		dEvent.lane = getMouseLane();
+		dEvent.line = getSnappedLine(getMouseLine());
+		dEvent.laserPos = getMouseLaserPos(true);
+		dEvent.tool = tool;
+		send_event(dEvent);
 	}
 	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonReleased) {
 		endSelect(event);
 	}
 
-	if (ImGui::GetIO().WantCaptureMouse) {
-		state = HOVERED_GUI;
-	}
-	else if (state == HOVERED_GUI) {
-		state = IDLE;
-	}
-
 	if (event.type == sf::Event::MouseMoved) {
+		MouseMove mEvent;
+		mEvent.lane = getMouseLane();
+		mEvent.line = getSnappedLine(getMouseLine());
+		mEvent.laserPos = getMouseLaserPos(true);
+		mEvent.tool = tool;
+		send_event(mEvent);
+
 		if (state == SELECTING) {
 			selectEnd = getSnappedLine(getMouseLine());
 		}
@@ -802,25 +576,6 @@ sf::Vector2f EditWindow::getNoteLocation(int line)
 	return getNoteLocation(0, line);
 }
 
-float EditWindow::triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C)
-{
-	return std::abs((A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y)) / 2);
-}
-
-//thanks to this stackoverflow question: https://stackoverflow.com/questions/5922027/how-to-determine-if-a-point-is-within-a-quadrilateral
-bool EditWindow::getMouseOverlap(const sf::VertexArray quad)
-{
-	float leniency = 0.1;
-	float area = triArea(quad[0].position, quad[1].position, quad[2].position) + triArea(
-		quad[2].position, quad[3].position, quad[0].position);
-	float areaSum = 0;
-	for (int i = 0; i < 4; i++) {
-		areaSum += triArea(quad[i % 4].position, quad[(i + 1) % 4].position, sf::Vector2f(mouseX, mouseY));
-	}
-
-	return areaSum < area + leniency && areaSum > area - leniency;
-}
-
 void EditWindow::update()
 {
 	updateVars();
@@ -828,9 +583,9 @@ void EditWindow::update()
 
 	sf::Clock deltaClock;
 	//controlPtr->seekPos = 50;
+	
 
-
-	if constexpr (true) {
+	if (DEBUG) {
 		drawDebug();
 	}
 
@@ -856,7 +611,15 @@ void EditWindow::update()
 			checkValid = true;
 		}
 		drawChart(editorLineStart + pulsesPerColumn * i, editorLineStart + pulsesPerColumn * (i + 1));
-		drawPlacementGuides();
+
+		UpdateEvent uEvent;
+		uEvent.lane = getMouseLane();
+		uEvent.line = getSnappedLine(getMouseLine());
+		uEvent.laserPos = getMouseLaserPos(true);
+		uEvent.tool = tool;
+		uEvent.window = window;
+		send_event(uEvent);
+
 
 		if (DEBUG) {
 			sf::RectangleShape rect(sf::Vector2f(view.getSize().x - 4.0, view.getSize().y - 2.0));
@@ -874,68 +637,6 @@ void EditWindow::update()
 		}
 	}
 	window->setView(prevView);
-}
-
-void EditWindow::drawPlacementGuides()
-{
-	if (!tool.select && state != HOVERED_GUI) {
-		std::vector<sf::VertexArray> arr;
-		switch (tool.type) {
-		case BT:
-			toolSprite = btSprite;
-			break;
-		case FX:
-			toolSprite = fxSprite;
-			break;
-		case LASER_L:
-			arr = generateSlamQuads(getSnappedLine(getMouseLine()),
-			                        tool.wideLaser && tool.laserDefaultStart ? 11.f / 50.f : 0,
-			                        (getMouseLaserPos(tool.wideLaser) / laserMoveSize) * laserMoveSize, LASER_L,
-			                        tool.wideLaser);
-			for (auto quad : arr) {
-				window->draw(quad);
-			}
-			break;
-		case LASER_R:
-			arr = generateSlamQuads(getSnappedLine(getMouseLine()),
-			                        tool.wideLaser && tool.laserDefaultStart ? 39 / 50.f : 1.0,
-			                        (getMouseLaserPos(tool.wideLaser) / laserMoveSize) * laserMoveSize, LASER_R,
-			                        tool.wideLaser);
-			for (auto quad : arr) {
-				window->draw(quad);
-			}
-			break;
-		}
-		if (getMouseLane() != -1) {
-			toolSprite.setPosition(getSnappedPos(tool.type));
-			toolSprite.setColor(sf::Color(255, 255, 255, 128));
-			window->draw(toolSprite);
-		}
-		if (getMouseLane() != -1 &&
-			mouseDownLane != -1 &&
-			mouseDownLine != getSnappedLine(getMouseLine()) &&
-			getMouseLine() != -1) {
-			switch (state) {
-			case PLACING_BT:
-				toolSprite = btHoldSprite;
-				toolSprite.setColor(sf::Color(255, 255, 255, 128));
-				toolSprite.setPosition(getNoteLocation(mouseDownLane, mouseDownLine));
-				toolSprite.setScale(toolSprite.getScale().x,
-				                    (measureHeight / 192) * (getSnappedLine(getMouseLine()) - mouseDownLine));
-				window->draw(toolSprite);
-
-				break;
-			case PLACING_FX:
-				toolSprite = fxHoldSprite;
-				toolSprite.setColor(sf::Color(255, 255, 255, 128));
-				toolSprite.setPosition(getNoteLocation((mouseDownLane / 2) * 2, mouseDownLine));
-				toolSprite.setScale(toolSprite.getScale().x,
-				                    (measureHeight / 192) * (getSnappedLine(getMouseLine()) - mouseDownLine));
-				window->draw(toolSprite);
-				break;
-			}
-		}
-	}
 }
 
 void EditWindow::drawDebug()
@@ -1041,7 +742,7 @@ void EditWindow::startSelect(sf::Event event)
 	}
 }
 
-void EditWindow::conenctLines(std::map<unsigned int, ChartLine*> input)
+void EditWindow::connectLines(std::map<unsigned int, ChartLine*> input)
 {
 	if (input.size() <= 1) {
 		return;
@@ -1064,11 +765,7 @@ void EditWindow::endSelect(sf::Event event)
 		selectEnd = getSnappedLine(getMouseLine());
 		selectedLines.clear();
 
-		std::map<unsigned int, ChartLine> out = chart.getSelection(selectStart, selectEnd, Mask::ALL);
-		for (auto line : out) {
-			selectedLines[line.second.pos] = new ChartLine(line.second);
-		}
-		conenctLines(selectedLines);
+		selectedLines = chart.getSelection(selectStart, selectEnd, Mask::ALL);
 		state = IDLE;
 	}
 }
@@ -1137,6 +834,13 @@ void EditWindow::mouseScroll(sf::Event event)
 
 void EditWindow::mousePressedLeft(sf::Event event)
 {
+	MouseDown mEvent;
+	mEvent.lane = getMouseLane();
+	mEvent.line = getSnappedLine(getMouseLine());
+	mEvent.laserPos = getMouseLaserPos(true);
+	mEvent.tool = tool;
+	send_event(mEvent);
+
 	if (tool.select && laserHover.second && state == IDLE) {
 		int laserBeginPos = laserHover.second->pos;
 		int laserEndPos = laserHover.second->getNextLaser(laserHover.first)->pos;
@@ -1154,7 +858,7 @@ void EditWindow::mousePressedLeft(sf::Event event)
 		chart.pushUndoBuffer();
 		selectedLaser = std::make_pair(0, nullptr);
 	}
-	if (!tool.select && state == IDLE) {
+	if (getMouseLane() != -1 && !tool.select && state == IDLE) {
 		switch (tool.type) {
 		case BT:
 			state = PLACING_BT;
@@ -1175,52 +879,11 @@ void EditWindow::mouseReleasedLeft(sf::Event event)
 	if (event.mouseButton.button != sf::Mouse::Left) {
 		return;
 	}
-
-	if (mouseDownLane != -1 && (state == PLACING_BT || state == PLACING_FX)) {
-		int mouseLine = getSnappedLine(getMouseLine());
-		if (mouseLine != mouseDownLine && mouseLine != -1) {
-			chart.clearRedoStack();
-			LineMask mask;
-
-			std::map<unsigned int, ChartLine> holdMap;
-			for (int i = std::min(mouseDownLine, mouseLine); i < std::max(mouseDownLine, mouseLine); i += (192 /
-				     snapGridSize)) {
-				ChartLine newLine;
-				switch (tool.type) {
-				case BT:
-					newLine.btVal[mouseDownLane] = 2;
-					mask.bt[mouseDownLane] = true;
-					break;
-				case FX:
-					newLine.fxVal[mouseDownLane / 2] = 1;
-					mask.fx[mouseDownLane / 2] = true;
-					break;
-				}
-				newLine.pos = i;
-				holdMap[i] = newLine;
-			}
-			holdMap[std::max(mouseDownLine, mouseLine)] = ChartLine();
-			holdMap[std::max(mouseDownLine, mouseLine)].pos = std::max(mouseDownLine, mouseLine);
-			chart.insertChartLine(std::min(mouseDownLine, mouseLine), holdMap);
-			chart.pushUndoBuffer();
-		}
-		else {
-			ChartLine newLine;
-			switch (tool.type) {
-			case BT:
-				newLine.btVal[mouseDownLane] = 1;
-				break;
-			case FX:
-				newLine.fxVal[mouseDownLane / 2] = 2;
-				break;
-			}
-
-			if (!tool.select) {
-				chart.clearRedoStack();
-				chart.insertChartLine(getSnappedLine(getMouseLine()), newLine, newLine.makeMask());
-				chart.pushUndoBuffer();
-			}
-		}
-		state = IDLE;
-	}
+	MouseUp mEvent;
+	mEvent.lane = getMouseLane();
+	mEvent.line = getSnappedLine(getMouseLine());
+	mEvent.laserPos = getMouseLaserPos(true);
+	mEvent.tool = tool;
+	send_event(mEvent);
+	state = IDLE;
 }

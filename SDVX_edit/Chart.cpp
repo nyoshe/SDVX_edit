@@ -507,7 +507,7 @@ void Chart::pushUndoBuffer()
 
 void Chart::addUndoBuffer(std::vector<std::pair<ChartLine*, ChartLine*>> actionList)
 {
-	undoBuffer.insert(undoBuffer.end(), actionList.begin(), actionList.end());
+	if(!actionList.empty()) undoBuffer.insert(undoBuffer.end(), actionList.begin(), actionList.end());
 }
 
 void Chart::addRedoBuffer(ChartLine* line)
@@ -572,7 +572,7 @@ ChartLine* Chart::moveChartLine(int line, LineMask moveMask, int change)
 	return lines[line + change];
 }
 
-lineIterator Chart::getLineBefore(int line)
+lineIterator Chart::getLineBefore(int line) const
 {
 	if (lines.lower_bound(line) == lines.begin()) {
 		return lines.begin();
@@ -580,7 +580,7 @@ lineIterator Chart::getLineBefore(int line)
 	return std::prev(lines.lower_bound(line), 1);
 }
 
-lineIterator Chart::getLineAfter(int line)
+lineIterator Chart::getLineAfter(int line) const
 {
 	return lines.upper_bound(line);
 }

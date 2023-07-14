@@ -4,7 +4,6 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <stack>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -20,9 +19,68 @@
 #include "imgui/imgui-SFML.h"
 #include "imgui/imgui.h"
 
-#include <cstdlib> //std::system
-#include <sstream>
-#include <boost/interprocess/managed_shared_memory.hpp>
+#include <tinyfsm.hpp>
+
+#include "ChartDisplay.h"
+
+
+class EditController;
+struct MouseEvent : tinyfsm::Event
+{
+	int lane = -1;
+	int line = -1;
+	float laserPos = L_NONE;
+	EditTool tool;
+};
+struct UpdateEvent : MouseEvent
+{
+	sf::RenderTarget* window;
+};
+struct ToolChangeEvent : tinyfsm::Event
+{
+	ToolChangeEvent() = default;
+	ToolChangeEvent(ToolType _tool) : tool(_tool) {};
+	EditTool tool;
+};
+
+
+
+#include "fsmlist.h"
+
+struct DeleteEvent : MouseEvent { };
+struct MouseDown : MouseEvent { };
+struct MouseUp : MouseEvent { };
+struct MouseMove : MouseEvent { };
+struct KeyEvent : tinyfsm::Event { };
+
+class EditController
+	: public tinyfsm::Fsm<EditController>
+{
+	/* NOTE: react(), entry() and exit() functions need to be accessible
+	 * from tinyfsm::Fsm class. You might as well declare friendship to
+	 * tinyfsm::Fsm, and make these functions private:
+	 *
+	 * friend class Fsm;
+	 */
+public:
+
+	/* default reaction for unhandled events */
+	void react(tinyfsm::Event const&) { };
+
+	virtual void react(MouseDown const&);
+	virtual void react(MouseUp const&);
+	virtual void react(UpdateEvent const&);
+	virtual void react(MouseMove const&);
+	virtual void react(ToolChangeEvent const& e);
+	virtual void react(DeleteEvent const& e);
+
+	virtual void entry(void);  /* entry actions in some states */
+	virtual void exit(void) { };  /* no exit actions at all */
+
+protected:
+	static MouseEvent iState;
+};
+
 
 enum EditorState
 {
@@ -36,30 +94,11 @@ enum EditorState
 	HOVERED_GUI,
 };
 
-/*
-struct MouseInfo {
-	int mouseStartLine = 0;
-	int mouseCurrentLine = 0;
-	int mouseEndLine = 0;
-	int mouseDownLane = 0;
-	int mouseUpLane = 0;
-	int mouseDownLaserPos = 0;
-
-	bool isValid = false;
-	void update() {
-		hoveredGui = (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow));
-	}
-};
-*/
 typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
-typedef std::map<unsigned int, ChartLine*>::iterator LineIterator;
 
 class EditWindow final : public Unique<EditWindow>
 {
 private:
-	void drawLineButtons(ChartLine* line, bool Selected);
-	void drawSelected(ChartLine* line, const sf::Sprite& sprite);
-
 	int selectStart = 0;
 	int selectEnd = 0;
 
@@ -73,22 +112,6 @@ private:
 	std::vector<Measure> measures;
 	float mouseX = 0;
 	float mouseY = 0;
-	sf::Texture btTex;
-	sf::Sprite btSprite;
-
-	sf::Texture fxTex;
-	sf::Sprite fxSprite;
-
-	sf::Texture btHoldTex;
-	sf::Sprite btHoldSprite;
-
-	sf::Texture fxHoldTex;
-	sf::Sprite fxHoldSprite;
-
-	sf::Texture entryTex;
-	sf::Sprite entrySprite;
-
-	sf::Sprite toolSprite;
 
 	sf::Font font;
 
@@ -99,27 +122,19 @@ public:
 	void setWindow(sf::RenderWindow* _window);
 	void setWindow(sf::RenderTarget* _window);
 	void update();
-	void drawPlacementGuides();
 	void drawDebug();
 	void updateVars();
+	void changeTool(EditTool tool);
 
-	//the line specifies where we want to start drawing the measure, it returns the end location
-	int drawMeasure(unsigned int measure, unsigned int startLine);
-
-	//hackey but this function essentially generates the laser vertices
-	QuadArray generateLaserQuads(int l, const std::map<unsigned int, ChartLine*>& objects, LineIterator startIter,
-	                             LineIterator endIter);
 	void drawChart(unsigned int start, unsigned int end);
 	void drawPlayBar();
-	void checkLaserSelect(QuadArray& arr, int laser);
-	void drawLaserQuads(const QuadArray& arr);
-	std::vector<sf::VertexArray> generateSlamQuads(int llineNumine, float start, float end, int laser, bool isWide);
+	std::vector<sf::VertexArray> generateSlamQuads(int lineNum, float start, float end, int laser, bool isWide);
 
 	int getMouseLane();
 	//int getMouseMeasure();
 	int getMouseLine();
 	int getSnappedLine(int line);
-	float getMouseLaserPos(bool isWide);
+	float getMouseLaserPos(bool isWide) const;
 
 	int getMeasureFromLine(unsigned int loc);
 
@@ -127,22 +142,18 @@ public:
 	float getLaserX(ChartLine* line, int laser);
 
 	sf::Vector2f getSnappedPos(ToolType type);
-	//get the note location from measure, lane, and line positio
-	//sf::Vector2f getNoteLocation(int measure, int lane, int line);
 
 	//get the note location from line (global) and lane
 	sf::Vector2f getNoteLocation(int lane, int line);
 	//get the note location from line (global)
 	sf::Vector2f getNoteLocation(int line);
 
-	void conenctLines(std::map<unsigned int, ChartLine*> input);
+	void connectLines(std::map<unsigned int, ChartLine*> input);
 
-	float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
-	bool getMouseOverlap(sf::VertexArray quad);
 	//QuadArray wrapLaserQuads(QuadArray& arr);
 
-	void loadFile(std::string mapFilePath, std::string mapFileName);
-	void saveFile(std::string fileName);
+	void loadFile(const std::string& mapFilePath, const std::string& mapFileName);
+	void saveFile(const std::string& fileName);
 	void saveFile();
 	void saveEvent(sf::Event event);
 
@@ -201,9 +212,11 @@ public:
 	sf::RenderTarget* window = nullptr;
 	sf::RenderWindow* appWindow = nullptr;
 
-	std::map<unsigned int, ChartLine*> selectedLines;
+	std::map<unsigned int, ChartLine> selectedLines;
 
 	std::map<unsigned int, ChartLine> clipboard;
+
+	ChartDisplay display = ChartDisplay();
 
 	Chart chart;
 	//functions

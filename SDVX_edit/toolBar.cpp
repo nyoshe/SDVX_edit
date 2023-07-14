@@ -63,7 +63,9 @@ void ToolBar::update()
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(selectIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::instance().tool.select = !EditWindow::instance().tool.select;
+			EditTool tool = EditWindow::instance().tool;
+			tool.select = !EditWindow::instance().tool.select;
+			EditWindow::instance().changeTool(tool);
 		}
 		if (styleChanges) {
 			ImGui::PopStyleColor(styleChanges--);
@@ -76,7 +78,7 @@ void ToolBar::update()
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(fxIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::instance().tool.type = FX;
+			EditWindow::instance().changeTool(FX);
 		}
 		if (styleChanges) {
 			ImGui::PopStyleColor(styleChanges--);
@@ -88,7 +90,7 @@ void ToolBar::update()
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(btIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::instance().tool.type = BT;
+			EditWindow::instance().changeTool(BT);
 		}
 		if (styleChanges) {
 			ImGui::PopStyleColor(styleChanges--);

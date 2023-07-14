@@ -79,7 +79,7 @@ int main()
 		EditWindow::instance().update();
 		ToolBar::instance().update();
 		ScrubBar::instance().update();
-
+		/*
 		std::vector<sf::Vector2f> points = {{200, 300}, {500, 300}, {800, 500}, {1000, 1200}}; // Example points
 		int numPoints = 100;
 
@@ -100,7 +100,7 @@ int main()
 		window.draw(curve);
 
 		window.draw(ctrlPoints);
-
+		*/
 		ImGui::SFML::Render(window);
 		window.display();
 	}
