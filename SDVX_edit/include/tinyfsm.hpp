@@ -45,6 +45,7 @@
 // #include <iostream>
 // #define DBG(str) do { std::cerr << str << std::endl; } while( false )
 // DBG("*** dbg_example *** " << __PRETTY_FUNCTION__);
+#include <plog/Log.h>
 
 namespace tinyfsm
 {
@@ -133,9 +134,9 @@ namespace tinyfsm
     template<typename S>
     void transit(void) {
       static_assert(is_same_fsm<F, S>::value, "transit to different state machine");
-      
-      std::cout << last << " -> "  << typeid(S).name() << std::endl;
-      last = typeid(S).name();
+
+      PLOG_INFO << "state transition: " << last << " -> " << std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));
+      last = std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));
       current_state_ptr->exit();
       current_state_ptr = &_state_instance<S>::value;
       current_state_ptr->entry();
@@ -144,6 +145,8 @@ namespace tinyfsm
     template<typename S, typename ActionFunction>
     void transit(ActionFunction action_function) {
       static_assert(is_same_fsm<F, S>::value, "transit to different state machine");
+      PLOG_INFO << "state transition: " << last << " -> " << std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));
+      last = std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));
       current_state_ptr->exit();
       // NOTE: do not send events in action_function definisions.
       action_function();

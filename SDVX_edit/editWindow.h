@@ -52,6 +52,8 @@ struct MouseDown : MouseEvent { };
 struct MouseUp : MouseEvent { };
 struct MouseMove : MouseEvent { };
 struct KeyEvent : tinyfsm::Event { };
+struct SelectEvent : MouseEvent { };
+struct KeyUpEvent : MouseEvent { };
 
 class EditController
 	: public tinyfsm::Fsm<EditController>
@@ -73,6 +75,8 @@ public:
 	virtual void react(MouseMove const&);
 	virtual void react(ToolChangeEvent const& e);
 	virtual void react(DeleteEvent const& e);
+	virtual void react(SelectEvent const& e);
+	virtual void react(KeyUpEvent const& e);
 
 	virtual void entry(void);  /* entry actions in some states */
 	virtual void exit(void) { };  /* no exit actions at all */
@@ -99,9 +103,7 @@ typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArr
 class EditWindow final : public Unique<EditWindow>
 {
 private:
-	int selectStart = 0;
-	int selectEnd = 0;
-
+	
 	int mouseDownLine = 0;
 	int mouseDownLane = 0;
 
@@ -116,6 +118,9 @@ private:
 	sf::Font font;
 
 public:
+	int selectStart = 0;
+	int selectEnd = 0;
+
 	EditWindow();
 	~EditWindow() = default;
 
@@ -165,7 +170,6 @@ public:
 	void paste(sf::Event event);
 
 	void startSelect(sf::Event event);
-	void endSelect(sf::Event event);
 
 	void play(sf::Event event);
 
@@ -177,7 +181,7 @@ public:
 	void mouseScroll(sf::Event event);
 
 	void mousePressedLeft(sf::Event event);
-	void mouseReleasedLeft(sf::Event event);
+
 
 	int editorMeasure = 0;
 	int editorLineStart = 0;

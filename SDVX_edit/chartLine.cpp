@@ -1,5 +1,7 @@
 #include "ChartLine.h"
 
+#include "Parser.h"
+
 LineMask ChartLine::makeMask() const
 {
 	LineMask out;
@@ -265,6 +267,31 @@ std::vector<Command> ChartLine::getCommandType(CommandType c)
 	std::vector<Command> out;
 	for (auto command : cmds) {
 		out.push_back(command);
+	}
+	return out;
+}
+
+std::string ChartLine::toString()
+{
+	std::string out;
+	for(int i = 0; i < 4; i++) {
+		out.push_back(static_cast<char>(btVal[i] + '0'));
+	}
+	out.push_back('|');
+	for (int i = 0; i < 2; i++) {
+		out.push_back(static_cast<char>(fxVal[i] + '0'));
+	}
+	out.push_back('|');
+	for (int i = 0; i < 2; i++) {
+		if (laserPos[i] == L_NONE) {
+			out.push_back('-');
+		}
+		else if (laserPos[i] == L_CONNECTOR) {
+			out.push_back(':');
+		}
+		else {
+			out.push_back(laserVals[std::clamp(static_cast<int>(std::lrint(laserPos[i] * 50.f)), 0,50)]);
+		}
 	}
 	return out;
 }

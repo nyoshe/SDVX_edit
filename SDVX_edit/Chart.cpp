@@ -176,6 +176,7 @@ ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine)
 
 ChartLine* Chart::insertChartLine(unsigned int line, ChartLine cLine, LineMask mask)
 {
+	PLOG_VERBOSE << "Inserting line: " << cLine.toString() << " mask: " << mask.toString();
 	unsigned int absPos = line;
 	//check to see if we are on a new measure
 	if (measures.size() == 0) {
@@ -303,6 +304,7 @@ void Chart::undo()
 	if (undoStack.empty()) {
 		return;
 	}
+	PLOG_VERBOSE << "undoing " << undoStack.back().size() << " actions, stack size: " << undoStack.size();
 	//std::vector<std::pair<ChartLine*, ChartLine*>> buffer;
 	for (auto it : undoStack.back()) {
 		if (!it.first) {
@@ -356,6 +358,7 @@ void Chart::redo()
 
 void Chart::clearRedoStack()
 {
+	PLOG_VERBOSE << "clearing redo stack";
 	while (!redoStack.empty()) {
 		for (auto it : redoStack.back()) {
 			if (it.first) {
@@ -368,6 +371,7 @@ void Chart::clearRedoStack()
 
 void Chart::clearUndoStack()
 {
+	PLOG_VERBOSE << "clearing undo stack";
 	while (!undoStack.empty()) {
 		for (auto it : undoStack.back()) {
 			if (it.first) {
@@ -379,7 +383,6 @@ void Chart::clearUndoStack()
 }
 
 //insert new measure with a dummy line, and also returns the pulses of the appended measure
-//TODO FOR TOMORROW: undo stack pulls the NULL pointer version
 int Chart::appendNewMeasure()
 {
 	int measureStart = 0;
@@ -502,6 +505,7 @@ void Chart::pushUndoBuffer()
 			undoStack.pop_front();
 		}
 		undoBuffer.clear();
+		PLOG_VERBOSE << "pushed undo buffer, total size: " << undoStack.size();
 	}
 }
 
@@ -608,86 +612,98 @@ void Chart::validateChart()
 	ChartLine* line = lines.begin()->second;
 	ChartLine* prev = nullptr;
 	int counter = 0;
+	bool error = false;
 	while (line) {
 		auto loc = lines.find(line->pos);
 
 		if (loc == lines.end()) {
-			PLOG_DEBUG << "line position not found in " << metadata.mapFileName << " line: " << line->pos;
+			PLOG_WARNING << "line position not found in " << metadata.mapFileName << " line: " << line->pos;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
+				error = true;
 			}
 		}
 
 		if (loc->second != line) {
-			PLOG_DEBUG << "line is in wrong position in " << metadata.mapFileName << " line: " << line->pos;
+			PLOG_WARNING << "line is in wrong position in " << metadata.mapFileName << " line: " << line->pos;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
+				error = true;
 			}
 		}
 
 		auto measureLoc = measures[line->measurePos].lines.find(line->pos - measures[line->measurePos].pos);
 
 		if (measureLoc == measures[line->measurePos].lines.end()) {
-			PLOG_DEBUG << "line was not found in measure in " << metadata.mapFileName << " line: " << line->pos;
+			PLOG_WARNING << "line was not found in measure in " << metadata.mapFileName << " line: " << line->pos;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
+				error = true;
 			}
 		}
 
 		if (measureLoc->second != line) {
-			PLOG_DEBUG << "line does not match the line found in measure in " << metadata.mapFileName << " line: " <<
+			PLOG_WARNING << "line does not match the line found in measure in " << metadata.mapFileName << " line: " <<
  line->pos;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
+				error = true;
 			}
 		}
 
 		if (counter != 0) {
 			if (prev != line->prev) {
-				PLOG_DEBUG << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
+				PLOG_WARNING << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
 				if constexpr (BREAK_ON_CHART_ERRORS) {
 					DebugBreak();
+					error = true;
 				}
 			}
 
 			if (prev->next != line) {
-				PLOG_DEBUG << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
+				PLOG_WARNING << "lines not properly connected in " << metadata.mapFileName << " line: " << line->pos;
 				if constexpr (BREAK_ON_CHART_ERRORS) {
 					DebugBreak();
+					error = true;
 				}
 			}
 
 			for (int i = 0; i < 2; i++) {
 				if (prev->laserPos[i] >= 0 && line->laserPos[i] >= 0) {
-					PLOG_DEBUG << "two laser positions in a row in " << metadata.mapFileName << " line: " << line->pos;
+					PLOG_WARNING << "two laser positions in a row in " << metadata.mapFileName << " line: " << line->pos;
 					if constexpr (BREAK_ON_CHART_ERRORS) {
 						DebugBreak();
+						error = true;
 					}
 				}
 				if (prev->laserPos[i] == -1 && line->laserPos[i] == -2) {
-					PLOG_DEBUG << "missing laser position before connector in " << metadata.mapFileName << " line: " <<
+					PLOG_WARNING << "missing laser position before connector in " << metadata.mapFileName << " line: " <<
  line->pos;
 					if constexpr (BREAK_ON_CHART_ERRORS) {
 						DebugBreak();
+						error = true;
 					}
 				}
 				if (prev->laserPos[i] == -2 && line->laserPos[i] == -1) {
-					PLOG_DEBUG << "missing laser position after connector in " << metadata.mapFileName << " line: " <<
+					PLOG_WARNING << "missing laser position after connector in " << metadata.mapFileName << " line: " <<
  line->pos;
 					if constexpr (BREAK_ON_CHART_ERRORS) {
 						DebugBreak();
+						error = true;
 					}
 				}
 
 				if (line->next) {
 					if (prev->laserPos[i] == -1 && line->next->laserPos[i] == -1 && line->laserPos[i] >= 0) {
-						PLOG_DEBUG << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->
+						PLOG_WARNING << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->
 pos;
 						if constexpr (BREAK_ON_CHART_ERRORS) {
 							DebugBreak();
+							error = true;
 						}
 						if constexpr (TRY_FIX_CHART_ERRORS) {
 							line->laserPos[i] == -1;
+							PLOG_WARNING << "fixed laser connector";
 						}
 					}
 				}
@@ -702,9 +718,10 @@ pos;
 	int measureCount = 0;
 	for (auto measure : measures) {
 		if (measure.lines.find(0) == measure.lines.end()) {
-			PLOG_DEBUG << "did not find zero'th line in measure in " << metadata.mapFileName << " measure: " << i;
+			PLOG_WARNING << "did not find zero'th line in measure in " << metadata.mapFileName << " measure: " << i;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
+				error = true;
 			}
 		}
 
@@ -713,22 +730,31 @@ pos;
 	}
 
 	if (counter != lines.size()) {
-		PLOG_DEBUG << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.
+		PLOG_WARNING << "mismatch in line size and the number of found lines, counter: " << counter << " size: " << lines.
 size() << std::endl;
 		if constexpr (BREAK_ON_CHART_ERRORS) {
 			DebugBreak();
+			error = true;
 		}
 	}
 
 	if (measureCount != lines.size()) {
-		PLOG_DEBUG << "mismatch in line size and the number of found measure lines, counter: " << measureCount <<
+		PLOG_WARNING << "mismatch in line size and the number of found measure lines, counter: " << measureCount <<
  " size: " << lines.size() << std::endl;
 		if constexpr (BREAK_ON_CHART_ERRORS) {
 			DebugBreak();
+			error = true;
 		}
 	}
 
-	std::cout << "no issues found :)" << std::endl;
+	if (TRY_FIX_CHART_ERRORS && error) {
+		pushUndoBuffer();
+		undo();
+		PLOG_WARNING << "undid last action";
+	} else {
+		PLOG_DEBUG << "chart validated, no issues found";
+	}
+	
 }
 
 std::map<unsigned int, ChartLine> Chart::getSelection(unsigned int pos1, unsigned int pos2, LineMask mask)

@@ -283,9 +283,9 @@ void ChartDisplay::drawSelection(sf::RenderTarget& window, std::map<unsigned, Ch
 	auto lineIt = selectedLines.lower_bound(start);
 	if (lineIt != selectedLines.end()) {
 		ChartLine* line = &lineIt->second;
-		while (line && line->pos <= end) {
-			drawLineButtons(window, line, true);
-			line = line->next;
+		while (lineIt != selectedLines.end() && lineIt->second.pos <= end) {
+			drawLineButtons(window, &lineIt->second, true);
+			++lineIt;
 		}
 	}
 }

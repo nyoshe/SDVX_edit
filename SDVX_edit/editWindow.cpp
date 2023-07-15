@@ -125,21 +125,66 @@ class DragPlacing
 
 };
 
-class awaitSelection
+class SelectArea
 	: public EditController
 {
-	void react()
-	{
+	void react(MouseUp const& e) override {
+		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
+			EditWindow::instance().selectedLines.clear();
+			EditWindow::instance().selectedLines = EditWindow::instance().chart.getSelection(iState.line, e.line, Mask::ALL);
+		}
+		iState = e;
+		transit<Idle>();
+	};
 
+	void react(MouseMove const& e)
+	{
+		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
+			EditWindow::instance().selectEnd = e.line;
+		}
 	}
+	void react(KeyUpEvent const& e) override {
+		//do nothing
+	};
+};
+
+class AwaitSelection
+	: public EditController
+{
+	void react(MouseDown const& e) override {
+		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
+			EditWindow::instance().selectEnd = e.line;
+			EditWindow::instance().selectStart = e.line;
+			iState = e;
+			transit<SelectArea>();
+		}
+	};
+
+	void react(KeyUpEvent const& e) override {
+		transit<Idle>();
+	};
+
+	void react(SelectEvent const& e) override {};
 };
 
 class Idle
 	: public EditController
 {
-	void react(MouseDown const& e) override {
-		iState = e;
-	};
+	//automatically return to state that we should be in
+	void entry() override
+	{
+		if (iState.tool.select) {
+			transit<AwaitSelection>();
+			return;
+		}
+		switch (iState.tool.type) {
+		case BT:
+		case FX:
+			transit<AwaitPlacement>();
+			return;
+			break;
+		}
+	}
 };
 
 
@@ -156,11 +201,11 @@ void EditController::entry() {
 }
 
 void EditController::react(MouseDown const&) {
-	std::cout << "mouse down ignored" << std::endl;
+	PLOG_INFO << "mouse down ignored" << std::endl;
 }
 
 void EditController::react(MouseUp const&) {
-	std::cout << "mouse up ignored" << std::endl;
+	PLOG_INFO << "mouse up ignored" << std::endl;
 }
 
 void EditController::react(UpdateEvent const&) {
@@ -172,26 +217,22 @@ void EditController::react(MouseMove const&) {
 }
 
 void EditController::react(ToolChangeEvent const& e) {
-	if (e.tool.select) {
-		transit<awaitSelection>();
-		return;
-	}
-	switch(e.tool.type) {
-	case BT:
-	case FX:
-		transit<AwaitPlacement>();
-		break;
-	}
+	iState.tool = e.tool;
+	transit<Idle>();
 }
 
 void EditController::react(DeleteEvent const& e) {
-	
-	switch (e.tool.type) {
-	case BT:
-	case FX:
-		transit<AwaitPlacement>();
-		break;
-	}
+	iState = e;
+	transit<Idle>();
+}
+
+void EditController::react(SelectEvent const& e) {
+	transit<AwaitSelection>();
+}
+
+
+void EditController::react(KeyUpEvent const& e) {
+
 }
 
 MouseEvent EditController::iState = MouseEvent();
@@ -225,12 +266,11 @@ EditWindow::EditWindow()
 	                               std::bind(&EditWindow::moveLaserUp, this, _1), "moveLaserUp");
 	Input::instance().addEventAction(sf::Event::MouseWheelScrolled, std::bind(&EditWindow::mouseScroll, this, _1),
 	                                 "moveEditWindow");
-	Input::instance().addAction(sf::Event::MouseButtonPressed, {sf::Keyboard::LAlt, sf::Keyboard::LControl},
-	                            {sf::Mouse::Left}, std::bind(&EditWindow::startSelect, this, _1), "selectStart");
+	Input::instance().addActionKey(sf::Event::KeyPressed, {sf::Keyboard::LAlt, sf::Keyboard::LControl},
+		std::bind(&EditWindow::startSelect, this, _1), "selectStart");
 	Input::instance().addActionMouse(sf::Event::MouseButtonPressed, {sf::Mouse::Left},
 	                                 std::bind(&EditWindow::mousePressedLeft, this, _1), "mousePress");
-	Input::instance().addActionMouse(sf::Event::MouseButtonReleased, {},
-	                                 std::bind(&EditWindow::mouseReleasedLeft, this, _1), "mouseRelease");
+
 	fsm_list::start();
 
 	font.loadFromFile("Fonts/CONSOLA.TTF");
@@ -540,8 +580,15 @@ void EditWindow::handleEvent(sf::Event event)
 		dEvent.tool = tool;
 		send_event(dEvent);
 	}
-	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonReleased) {
-		endSelect(event);
+
+
+	if (event.type == sf::Event::KeyReleased) {
+		KeyUpEvent kEvent;
+		kEvent.lane = getMouseLane();
+		kEvent.line = getSnappedLine(getMouseLine());
+		kEvent.laserPos = getMouseLaserPos(true);
+		kEvent.tool = tool;
+		send_event(kEvent);
 	}
 
 	if (event.type == sf::Event::MouseMoved) {
@@ -551,14 +598,24 @@ void EditWindow::handleEvent(sf::Event event)
 		mEvent.laserPos = getMouseLaserPos(true);
 		mEvent.tool = tool;
 		send_event(mEvent);
+	}
 
-		if (state == SELECTING) {
-			selectEnd = getSnappedLine(getMouseLine());
-		}
-		if (state == IDLE && !sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-			mouseDownLine = getSnappedLine(getMouseLine());
-			mouseDownLane = getMouseLane();
-		}
+	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonPressed) {
+		MouseDown mEvent;
+		mEvent.lane = getMouseLane();
+		mEvent.line = getSnappedLine(getMouseLine());
+		mEvent.laserPos = getMouseLaserPos(true);
+		mEvent.tool = tool;
+		send_event(mEvent);
+	}
+
+	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonReleased) {
+		MouseUp mEvent;
+		mEvent.lane = getMouseLane();
+		mEvent.line = getSnappedLine(getMouseLine());
+		mEvent.laserPos = getMouseLaserPos(true);
+		mEvent.tool = tool;
+		send_event(mEvent);
 	}
 }
 
@@ -735,11 +792,12 @@ void EditWindow::paste(sf::Event event)
 
 void EditWindow::startSelect(sf::Event event)
 {
-	if (getMouseLine() != -1) {
-		selectStart = getSnappedLine(getMouseLine());
-		selectEnd = getSnappedLine(getMouseLine());
-		state = SELECTING;
-	}
+	SelectEvent sEvent;
+	sEvent.lane = getMouseLane();
+	sEvent.line = getSnappedLine(getMouseLine());
+	sEvent.laserPos = getMouseLaserPos(true);
+	sEvent.tool = tool;
+	send_event(sEvent);
 }
 
 void EditWindow::connectLines(std::map<unsigned int, ChartLine*> input)
@@ -757,17 +815,6 @@ void EditWindow::connectLines(std::map<unsigned int, ChartLine*> input)
 	}
 	input.begin()->second->prev = nullptr;
 	std::prev(input.end(), 1)->second->next = nullptr;
-}
-
-void EditWindow::endSelect(sf::Event event)
-{
-	if (getMouseLine() != -1 && state == SELECTING) {
-		selectEnd = getSnappedLine(getMouseLine());
-		selectedLines.clear();
-
-		selectedLines = chart.getSelection(selectStart, selectEnd, Mask::ALL);
-		state = IDLE;
-	}
 }
 
 void EditWindow::play(sf::Event event)
@@ -834,12 +881,6 @@ void EditWindow::mouseScroll(sf::Event event)
 
 void EditWindow::mousePressedLeft(sf::Event event)
 {
-	MouseDown mEvent;
-	mEvent.lane = getMouseLane();
-	mEvent.line = getSnappedLine(getMouseLine());
-	mEvent.laserPos = getMouseLaserPos(true);
-	mEvent.tool = tool;
-	send_event(mEvent);
 
 	if (tool.select && laserHover.second && state == IDLE) {
 		int laserBeginPos = laserHover.second->pos;
@@ -858,32 +899,4 @@ void EditWindow::mousePressedLeft(sf::Event event)
 		chart.pushUndoBuffer();
 		selectedLaser = std::make_pair(0, nullptr);
 	}
-	if (getMouseLane() != -1 && !tool.select && state == IDLE) {
-		switch (tool.type) {
-		case BT:
-			state = PLACING_BT;
-			break;
-		case FX:
-			state = PLACING_FX;
-			break;
-		case LASER_L:
-		case LASER_R:
-			state = PLACING_LASER;
-			break;
-		}
-	}
-}
-
-void EditWindow::mouseReleasedLeft(sf::Event event)
-{
-	if (event.mouseButton.button != sf::Mouse::Left) {
-		return;
-	}
-	MouseUp mEvent;
-	mEvent.lane = getMouseLane();
-	mEvent.line = getSnappedLine(getMouseLine());
-	mEvent.laserPos = getMouseLaserPos(true);
-	mEvent.tool = tool;
-	send_event(mEvent);
-	state = IDLE;
 }

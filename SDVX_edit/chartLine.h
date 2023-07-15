@@ -35,6 +35,27 @@ struct LineMask
 		maskNot.laser = ~laser;
 		return maskNot;
 	}
+	std::string toString()
+	{
+		std::string out;
+		for (int i = 0; i < 4; i++) {
+			out.push_back(static_cast<char>(bt[i] + '0'));
+		}
+		out.push_back('|');
+		for (int i = 0; i < 2; i++) {
+			out.push_back(static_cast<char>(fx[i] + '0'));
+		}
+		out.push_back('|');
+		for (int i = 0; i < 2; i++) {
+			if (laser[i]) {
+				out.push_back('1');
+			}
+			else {
+				out.push_back('0');
+			}
+		}
+		return out;
+	}
 
 	explicit operator int() const { return bt.count() + fx.count() + laser.count(); }
 };
@@ -93,6 +114,8 @@ public:
 	void clearLaser(int laser);
 
 	std::vector<Command> getCommandType(CommandType c);
+
+	std::string toString();
 
 	static constexpr uint8_t FX_HOLD = 1;
 	static constexpr uint8_t BT_HOLD = 2;

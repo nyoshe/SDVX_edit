@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <plog/Log.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
@@ -18,9 +19,12 @@
 #include "imgui/imgui.h"
 #include "plog/Initializers/RollingFileInitializer.h"
 
+
 int main()
 {
-	init(plog::debug, "logs/log.txt", 1000000, 3);
+	static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+	init(plog::verbose, "logs/log.txt", 1000000, 3).addAppender(&consoleAppender);
+
 	PLOG_INFO << "initialized logging";
 	sf::RenderWindow window(sf::VideoMode(1200, 900), "voltexEdit");
 	ImGui::SFML::Init(window);

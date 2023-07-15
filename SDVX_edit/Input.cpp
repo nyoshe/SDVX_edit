@@ -167,6 +167,7 @@ Input::Input()
 
 	//check if bindings file exists
 	if (input.good()) {
+		PLOG_INFO << "Bindings file found, loading file";
 		std::string s;
 		sf::Event::EventType eventType = sf::Event::EventType::Count;
 		std::vector<std::string> actionList = {};
@@ -201,8 +202,8 @@ Input::Input()
 				}
 			}
 		}
+		PLOG_INFO << "Bindings loaded";
 	}
-	std::cout << "test";
 	//else just return nothing
 }
 
@@ -314,6 +315,7 @@ void Input::addAction(sf::Event::EventType event, std::vector<sf::Keyboard::Key>
 		if (eventTypeMap[name] == event) {
 			functionMap[nameMap[name]].push_back(FunctionInfo(eventTypeMap[name], name, func));
 		}
+		PLOG_DEBUG << "Binding for \"" << name << "\" found, overriding";
 	}
 	else {
 		functionMap[std::make_pair(keyList, buttonList)].push_back(FunctionInfo(event, name, func));

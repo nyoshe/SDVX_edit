@@ -1,9 +1,5 @@
-action:moveEditWindow,
+action:moveEditWindow
 type:MouseWheelScrolled
-endBinding
-
-action:mouseRelease
-type:MouseButtonReleased
 endBinding
 
 action:mousePress
@@ -42,9 +38,8 @@ keys:Z,LControl
 endBinding
 
 action:selectStart
-type:MouseButtonPressed
+type:KeyPressed
 keys:LControl,LAlt
-buttons:Left
 endBinding
 
 action:play
