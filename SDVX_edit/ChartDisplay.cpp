@@ -142,10 +142,11 @@ void ChartDisplay::draw(sf::RenderTarget& window, const Chart& chart, int _offse
 
 void ChartDisplay::drawAsColor(sf::RenderTarget& window, std::map<unsigned int, ChartLine*>& objects, sf::Color col, int _offset, int start, int end, LineMask mask)
 {
+	if (objects.empty()) return;
 	for (int l = 0; l < 2; l++) {
 		if (mask.laser[l]) {
 			QuadArray vertexBuffer =
-				generateLaserQuads(l, objects, objects.lower_bound(start), objects.lower_bound(end),
+				generateLaserQuads(l, objects, objects.lower_bound(start), std::prev(objects.end(), 1),
 					{ col, col });
 			drawLaserQuads(window, vertexBuffer);
 			//qArray[l] = vertexBuffer;
@@ -155,7 +156,7 @@ void ChartDisplay::drawAsColor(sf::RenderTarget& window, std::map<unsigned int, 
 	if (lineIt != objects.end()) {
 		ChartLine* line = lineIt->second;
 		while (line && line->pos <= end) {
-			ChartLine* maskedLine = new ChartLine(line->extractMask(mask));
+			ChartLine* maskedLine = (line->extractMask(mask));
 			drawLineButtons(window, maskedLine, false, col);
 			delete maskedLine;
 			line = line->next;
@@ -252,6 +253,7 @@ void ChartDisplay::drawLineButtons(sf::RenderTarget& window, const ChartLine* li
 {
 	drawLineButtons(window, line, selected, sf::Color(255, 255, 255));
 }
+
 void ChartDisplay::drawSelected(sf::RenderTarget& window, const ChartLine* line, const sf::Sprite& sprite)
 {
 	//static sf::RectangleShape rectangle;
@@ -276,15 +278,18 @@ void ChartDisplay::drawSelected(sf::RenderTarget& window, const ChartLine* line,
 	window.draw(quad);
 }
 
-void ChartDisplay::drawSelection(sf::RenderTarget& window, std::map<unsigned, ChartLine>& selectedLines, int offset,
+void ChartDisplay::drawSelection(sf::RenderTarget& window, std::map<unsigned, ChartLine*>& selectedLines, int offset,
 	int start, int end)
 {
 	setVariables(window);
+
+	drawAsColor(window, selectedLines, sf::Color(255, 255, 255, 100), offset, start, end, Mask::LASER_ALL);
+
 	auto lineIt = selectedLines.lower_bound(start);
 	if (lineIt != selectedLines.end()) {
-		ChartLine* line = &lineIt->second;
-		while (lineIt != selectedLines.end() && lineIt->second.pos <= end) {
-			drawLineButtons(window, &lineIt->second, true);
+		//ChartLine* line = &lineIt->second;
+		while (lineIt != selectedLines.end() && lineIt->second->pos <= end) {
+			drawLineButtons(window, lineIt->second, true);
 			++lineIt;
 		}
 	}
@@ -330,7 +335,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 		float y = 0;
 		//draw entry point
 		if (line->getPrevLaser(laser) == nullptr && line->laserPos[laser] >= 0) {
-			x = getNoteLocation(lineNum).x + getLaserX(line, laser);
+			x = getLaserX(line, laser);
 			y = getNoteLocation(lineNum).y;
 
 			quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
@@ -356,7 +361,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 		if ((nextLaser->pos - line->pos) <= (192 / 32) &&
 			line->laserPos[laser] != L_CONNECTOR &&
 			line->laserPos[laser] != nextLaser->laserPos[laser]) {
-			x = std::max(getLaserX(line, laser), getLaserX(nextLaser, laser)) + getNoteLocation(lineNum).x;
+			x = std::max(getLaserX(line, laser), getLaserX(nextLaser, laser));
 			y = getNoteLocation(lineNum).y;
 			// build laser quad
 
@@ -364,7 +369,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 			quad[0] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
 			quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - dif), c);
 
-			x = std::min(getLaserX(line, laser), getLaserX(nextLaser, laser)) + getNoteLocation(lineNum).x;
+			x = std::min(getLaserX(line, laser), getLaserX(nextLaser, laser));
 			quad[2] = sf::Vertex(sf::Vector2f(x, y - dif), c);
 			quad[3] = sf::Vertex(sf::Vector2f(x, y), c);
 
@@ -373,7 +378,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 
 			//draw tail if we need it
 			if (nextLaser->getNextLaser(laser) == nullptr) {
-				x = getLaserX(nextLaser, laser) + getNoteLocation(lineNum).x;
+				x = getLaserX(nextLaser, laser);
 				quad[0] = sf::Vertex(sf::Vector2f(x, y - dif), c);
 				quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - dif), c);
 				quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y - laneWidth * 1.0), c);
@@ -389,7 +394,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 			continue;
 		}
 
-		x = getLaserX(line, laser) + getNoteLocation(lineNum).x;
+		x = getLaserX(line, laser);
 		y = getNoteLocation(lineNum).y;
 		quad[0] = sf::Vertex(sf::Vector2f(x, y), c);
 		quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
@@ -397,7 +402,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 		int nextLineNum = line->getNextLaser(laser)->pos;
 		ChartLine* nextLine = line->getNextLaser(laser);
 
-		x = getLaserX(nextLine, laser) + getNoteLocation(lineNum).x;
+		x = getLaserX(nextLine, laser);
 		y = getNoteLocation(nextLineNum).y;
 
 		quad[2] = sf::Vertex(sf::Vector2f(x + laneWidth, y), c);
@@ -433,9 +438,9 @@ float ChartDisplay::getLaserX(ChartLine* line, int laser)
 	}
 
 	if (line->isWide[laser]) {
-		return ourPos * (9 * laneWidth) - 3 * laneWidth;
+		return ourPos * (9 * laneWidth);
 	}
-	return ourPos * (5 * laneWidth) - laneWidth;
+	return ourPos * (5 * laneWidth) + 2 * laneWidth;
 }
 
 

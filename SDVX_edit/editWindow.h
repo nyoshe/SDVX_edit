@@ -1,16 +1,13 @@
 #pragma once
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <iostream>
-#include <memory>
 #include <string>
+#include <tinyfsm.hpp>
 #include <unordered_map>
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 #include "AudioManager.h"
+#include "ChartDisplay.h"
 #include "FontManager.h"
 #include "Input.h"
 #include "Parser.h"
@@ -18,42 +15,37 @@
 #include "Unique.h"
 #include "imgui/imgui-SFML.h"
 #include "imgui/imgui.h"
+#include "imgui_internal.h"
 
-#include <tinyfsm.hpp>
-
-#include "ChartDisplay.h"
-
+class EditWindow;
 
 class EditController;
-struct MouseEvent : tinyfsm::Event
+struct EditEvent : tinyfsm::Event
 {
 	int lane = -1;
 	int line = -1;
+	int startLine = 0;
+	int endLine = 0;
 	float laserPos = L_NONE;
-	EditTool tool;
-};
-struct UpdateEvent : MouseEvent
-{
 	sf::RenderTarget* window;
-};
-struct ToolChangeEvent : tinyfsm::Event
-{
-	ToolChangeEvent() = default;
-	ToolChangeEvent(ToolType _tool) : tool(_tool) {};
 	EditTool tool;
 };
-
-
 
 #include "fsmlist.h"
+using event_list = tinyfsm::FsmList<EditEvent>;
 
-struct DeleteEvent : MouseEvent { };
-struct MouseDown : MouseEvent { };
-struct MouseUp : MouseEvent { };
-struct MouseMove : MouseEvent { };
-struct KeyEvent : tinyfsm::Event { };
-struct SelectEvent : MouseEvent { };
-struct KeyUpEvent : MouseEvent { };
+struct MouseEvent : EditEvent { };
+struct UpdateEvent : EditEvent { };
+struct ToolChangeEvent : EditEvent { };
+struct RightCLickEvent : EditEvent { };
+struct MouseDown : EditEvent { };
+struct MouseUp : EditEvent { };
+struct MouseMove : EditEvent { };
+struct KeyEvent : EditEvent { };
+struct SelectEvent : EditEvent { };
+struct KeyUpEvent : EditEvent { };
+struct PlayEvent : EditEvent { };
+struct UpdateEndEvent : EditEvent { };
 
 class EditController
 	: public tinyfsm::Fsm<EditController>
@@ -67,24 +59,26 @@ class EditController
 public:
 
 	/* default reaction for unhandled events */
-	void react(tinyfsm::Event const&) { };
-
+	virtual void react(tinyfsm::Event const&) { };
+	
 	virtual void react(MouseDown const&);
 	virtual void react(MouseUp const&);
 	virtual void react(UpdateEvent const&);
 	virtual void react(MouseMove const&);
 	virtual void react(ToolChangeEvent const& e);
-	virtual void react(DeleteEvent const& e);
+	virtual void react(RightCLickEvent const& e);
 	virtual void react(SelectEvent const& e);
 	virtual void react(KeyUpEvent const& e);
+	virtual void react(PlayEvent const& e);
+	virtual void react(UpdateEndEvent const& e);
 
-	virtual void entry(void);  /* entry actions in some states */
+	virtual void entry(void) { };  /* entry actions in some states */
 	virtual void exit(void) { };  /* no exit actions at all */
 
 protected:
-	static MouseEvent iState;
+	static EditEvent iState;
+	static EditWindow* editor;
 };
-
 
 enum EditorState
 {
@@ -103,36 +97,34 @@ typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArr
 class EditWindow final : public Unique<EditWindow>
 {
 private:
-	
-	int mouseDownLine = 0;
-	int mouseDownLane = 0;
+
 
 	std::pair<int, ChartLine*> laserHover;
-	std::pair<int, ChartLine*> selectedLaser;
+	
 	//std::pair<int, ChartLine*> selectedLaserEnd;
 
 	std::vector<Measure> measures;
-	float mouseX = 0;
-	float mouseY = 0;
-
 	sf::Font font;
 
 public:
+	float mouseX = 0;
+	float mouseY = 0;
 	int selectStart = 0;
 	int selectEnd = 0;
 
 	EditWindow();
 	~EditWindow() = default;
-
+	std::pair<int, ChartLine*> selectedLaser;
+	
 	void setWindow(sf::RenderWindow* _window);
 	void setWindow(sf::RenderTarget* _window);
 	void update();
 	void drawDebug();
 	void updateVars();
+	void changeTool(ToolType type);
 	void changeTool(EditTool tool);
 
 	void drawChart(unsigned int start, unsigned int end);
-	void drawPlayBar();
 	std::vector<sf::VertexArray> generateSlamQuads(int lineNum, float start, float end, int laser, bool isWide);
 
 	int getMouseLane();
@@ -144,16 +136,10 @@ public:
 	int getMeasureFromLine(unsigned int loc);
 
 	void handleEvent(sf::Event event);
-	float getLaserX(ChartLine* line, int laser);
-
-	sf::Vector2f getSnappedPos(ToolType type);
-
 	//get the note location from line (global) and lane
 	sf::Vector2f getNoteLocation(int lane, int line);
 	//get the note location from line (global)
 	sf::Vector2f getNoteLocation(int line);
-
-	void connectLines(std::map<unsigned int, ChartLine*> input);
 
 	//QuadArray wrapLaserQuads(QuadArray& arr);
 
@@ -181,6 +167,27 @@ public:
 	void mouseScroll(sf::Event event);
 
 	void mousePressedLeft(sf::Event event);
+
+	template <typename T>
+	T createEvent(void)
+	{
+		T out;
+		out.lane = getMouseLane();
+		out.line = getSnappedLine(getMouseLine());
+		out.laserPos = getMouseLaserPos(true);
+		out.window = this->window;
+		out.tool = this->tool;
+		return out;
+	}
+
+	template <typename T>
+	T createEvent(int start, int end)
+	{
+		T out = createEvent<T>();
+		out.startLine = start;
+		out.endLine = end;
+		return out;
+	}
 
 
 	int editorMeasure = 0;
@@ -214,11 +221,12 @@ public:
 	EditorState state = IDLE;
 
 	sf::RenderTarget* window = nullptr;
+	sf::RenderTexture tex;
 	sf::RenderWindow* appWindow = nullptr;
 
-	std::map<unsigned int, ChartLine> selectedLines;
+	std::map<unsigned int, ChartLine*> selectedLines;
 
-	std::map<unsigned int, ChartLine> clipboard;
+	std::map<unsigned int, ChartLine*> clipboard;
 
 	ChartDisplay display = ChartDisplay();
 

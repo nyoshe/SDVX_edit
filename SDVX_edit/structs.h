@@ -31,8 +31,6 @@ struct Measure
 
 struct EditTool
 {
-	EditTool() {};
-	EditTool(ToolType t) : type(t) {};
 	ToolType type = BT;
 	bool select = false;
 	bool wideLaser = false;

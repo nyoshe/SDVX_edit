@@ -34,6 +34,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="fsm">
+      <UniqueIdentifier>{39cd365e-213f-4d29-a12c-ec980f9e0a65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -365,11 +368,14 @@
     <ClInclude Include="GameControl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="fsmlist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ChartDisplay.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tinyfsm.hpp">
+      <Filter>fsm</Filter>
+    </ClInclude>
+    <ClInclude Include="fsmlist.h">
+      <Filter>fsm</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -107,7 +107,7 @@ public:
 
 	void modifyLaserPos(int laser, float val);
 
-	ChartLine extractMask(const LineMask& mask);
+	ChartLine* extractMask(const LineMask& mask);
 
 	LineMask makeMask() const;
 

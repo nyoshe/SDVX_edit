@@ -209,27 +209,27 @@ ChartLine ChartLine::replaceMask(const LineMask& mask, const ChartLine& b)
 	return out;
 }
 
-ChartLine ChartLine::extractMask(const LineMask& mask)
+ChartLine* ChartLine::extractMask(const LineMask& mask)
 {
-	ChartLine output;
+	ChartLine* output = new ChartLine();
 	for (int i = 0; i < 4; i++) {
 		if (mask.bt[i]) {
-			output.btVal[i] = btVal[i];
+			output->btVal[i] = btVal[i];
 		}
 	}
 	for (int i = 0; i < 2; i++) {
 		if (mask.fx[i]) {
-			output.fxVal[i] = fxVal[i];
+			output->fxVal[i] = fxVal[i];
 		}
 		if (mask.laser[i]) {
-			output.laserPos[i] = laserPos[i];
-			output.isWide[i] = isWide[i];
+			output->laserPos[i] = laserPos[i];
+			output->isWide[i] = isWide[i];
 		}
 	}
-	output.next = next;
-	output.prev = prev;
-	output.pos = pos;
-	output.measurePos = measurePos;
+	output->next = next;
+	output->prev = prev;
+	output->pos = pos;
+	output->measurePos = measurePos;
 
 	return output;
 }

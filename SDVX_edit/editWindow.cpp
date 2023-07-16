@@ -1,8 +1,12 @@
 #include "EditWindow.h"
+
+#include "bezier.h"
 using namespace std::placeholders;
 
 class Idle;
 class DragPlacing;
+class AwaitLaserSelect;
+class EditingLaser;
 
 class AwaitPlacement
 	: public EditController
@@ -26,13 +30,14 @@ class AwaitPlacement
 			
 			line->pos = e.line;
 			placingMap[e.line] = line;
-			EditWindow::instance().display.drawAsColor(*e.window, placingMap,sf::Color(255,255,255,100),
-				EditWindow::instance().editorLineStart, e.line, e.line, Mask::ALL);
+			editor->display.drawAsColor(*e.window, placingMap,sf::Color(255,255,255,100),
+				editor->editorLineStart, e.startLine, e.endLine, Mask::ALL);
 		}
 	}
 
-	void react(DeleteEvent const& e) override {
+	void react(RightCLickEvent const& e) override {
 		LineMask mask;
+		if (e.lane == -1) return;
 		switch (e.tool.type) {
 		case BT:
 			mask.bt[e.lane] = true;
@@ -41,16 +46,17 @@ class AwaitPlacement
 			mask.fx[e.lane / 2] = true;
 			break;
 		}
-		EditWindow::instance().chart.removeChartLine(e.line, mask);
-		EditWindow::instance().chart.pushUndoBuffer();
-		EditWindow::instance().chart.clearRedoStack();
+		editor->chart.removeChartLine(e.line, mask);
+		editor->chart.pushUndoBuffer();
+		editor->chart.clearRedoStack();
 	}
 
 
 	void react(MouseDown const& e) override {
 		if (!ImGui::GetIO().WantCaptureMouse && e.lane != -1 && e.line != -1) {
 			iState = e;
-			transit<DragPlacing>();
+			auto glambda = []() ->bool {return !ImGui::GetIO().WantCaptureMouse && iState.lane != -1 && iState.line != -1; };
+			transit<DragPlacing>([]() { }, glambda);
 			return;
 		}
 	};
@@ -66,35 +72,38 @@ class DragPlacing
 	}
 
 	void react(MouseUp const& e) override {
-		std::map<unsigned int, ChartLine> insertMap;
-		for (auto [key, val] : placingMap) {
-			insertMap[key] = *val;
-		}
-		EditWindow::instance().chart.clearRedoStack();
-		EditWindow::instance().chart.insertChartLine(std::min(e.line, iState.line), insertMap);
-		EditWindow::instance().chart.pushUndoBuffer();
+		editor->chart.clearRedoStack();
+		editor->chart.insertChartLine(std::min(e.line, iState.line), placingMap);
+		editor->chart.pushUndoBuffer();
 		transit<AwaitPlacement>();
 	};
 	void react(UpdateEvent const& e) override
 	{
 		if(placingMap.size() > 0) {
-			EditWindow::instance().display.drawAsColor(*e.window, placingMap, sf::Color(255, 255, 255, 100),
-				EditWindow::instance().editorLineStart, placingMap.begin()->second->pos, std::prev(placingMap.end(), 1)->second->pos, Mask::ALL);
+			editor->display.drawAsColor(*e.window, placingMap, sf::Color(255, 255, 255, 100),
+				editor->editorLineStart, e.startLine, e.endLine, Mask::ALL);
 		}
 		
 	}
+
+	//slow but meh, whatever
 	void react(MouseMove const& e) override
 	{
 		
 		int mouseLine = e.line;
-		if (mouseLine != iState.line && mouseLine != -1) {
+
+		if (mouseLine != iState.line &&
+			mouseLine != -1 &&
+			!placingMap.empty() &&
+			std::prev(placingMap.end())->second->pos != e.line){
+			
 			for (auto [key, val] : placingMap) {
 				delete val;
 			}
 			placingMap.clear();
 			LineMask mask;
 			for (int i = std::min(e.line, iState.line); i < std::max(e.line, iState.line); i += (192 /
-				EditWindow::instance().snapGridSize)) {
+				editor->snapGridSize)) {
 				ChartLine* newLine = new ChartLine();
 				switch (e.tool.type) {
 				case BT:
@@ -111,7 +120,7 @@ class DragPlacing
 			}
 			placingMap[std::max(e.line, iState.line)] = new ChartLine();
 			placingMap[std::max(e.line, iState.line)]->pos = std::max(e.line, iState.line);
-			EditWindow::instance().connectLines(placingMap);
+			editor->chart.connectLines(placingMap);
 		}
 	}
 
@@ -130,8 +139,8 @@ class SelectArea
 {
 	void react(MouseUp const& e) override {
 		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
-			EditWindow::instance().selectedLines.clear();
-			EditWindow::instance().selectedLines = EditWindow::instance().chart.getSelection(iState.line, e.line, Mask::ALL);
+			editor->selectedLines.clear();
+			editor->selectedLines = editor->chart.getSelection(iState.line, e.line, Mask::ALL);
 		}
 		iState = e;
 		transit<Idle>();
@@ -140,7 +149,7 @@ class SelectArea
 	void react(MouseMove const& e)
 	{
 		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
-			EditWindow::instance().selectEnd = e.line;
+			editor->selectEnd = e.line;
 		}
 	}
 	void react(KeyUpEvent const& e) override {
@@ -153,8 +162,8 @@ class AwaitSelection
 {
 	void react(MouseDown const& e) override {
 		if (!ImGui::GetIO().WantCaptureMouse && e.line != -1) {
-			EditWindow::instance().selectEnd = e.line;
-			EditWindow::instance().selectStart = e.line;
+			editor->selectEnd = e.line;
+			editor->selectStart = e.line;
 			iState = e;
 			transit<SelectArea>();
 		}
@@ -173,69 +182,225 @@ class Idle
 	//automatically return to state that we should be in
 	void entry() override
 	{
-		if (iState.tool.select) {
-			transit<AwaitSelection>();
-			return;
-		}
 		switch (iState.tool.type) {
 		case BT:
 		case FX:
-			transit<AwaitPlacement>();
+			if (iState.tool.select) 
+				transit<AwaitSelection>();
+			else
+				transit<AwaitPlacement>();
+			return;
+			break;
+		case LASER_L:
+		case LASER_R:
+			if (iState.tool.select)
+				transit<AwaitLaserSelect>();
 			return;
 			break;
 		}
 	}
 };
 
-
-class EditingLaser
+class Playing
 	: public EditController
 {
-	void react()
+	void entry() override
 	{
-		
+		if (editor->player.trackValid) {
+			editor->player.playFrom(editor->chart.getMs(editor->selectStart));
+		}
+	}
+
+	void react(PlayEvent const& e) override
+	{
+		if (editor->player.isPlaying()) {
+			editor->player.stop();
+			transit<Idle>();
+		}
+		else if (editor->player.trackValid) {
+			editor->player.playFrom(editor->chart.getMs(editor->selectStart));
+		}
+	}
+
+	void exit() override
+	{
+		editor->player.stop();
+	}
+
+	void react(UpdateEvent const& e) override
+	{
+		if (editor->chart.lines.lower_bound(e.startLine) == editor->chart.lines.end()) return;
+		if (editor->chart.getLineBefore(e.endLine) == editor->chart.lines.end()) return;
+
+		for (int i = editor->chart.lines.lower_bound(e.startLine)->second->measurePos; i <= editor->chart.getLineBefore(e.endLine)->second->measurePos; i++) {
+			if (i + 1 >= editor->chart.measures.size()) {
+				break;
+			}
+			if (editor->chart.measures[i + 1].msStart > editor->player.getMs()) {
+				float startMs = editor->chart.measures[i].msStart;
+				float endMs = editor->chart.measures[i + 1].msStart;
+
+				sf::Vector2f pos1 = editor->getNoteLocation(-1, editor->chart.measures[i].pos);
+				sf::Vector2f pos2 = editor->getNoteLocation(5, editor->chart.measures[i].pos);
+
+				pos1 = editor->getNoteLocation(
+					-1, editor->chart.measures[i].pos + editor->chart.measures[i].pulses * (editor->player.getMs() - startMs) / (endMs -
+						startMs));
+				pos2 = editor->getNoteLocation(
+					5, editor->chart.measures[i].pos + editor->chart.measures[i].pulses * (editor->player.getMs() - startMs) / (endMs -
+						startMs));
+
+				sf::Vertex line[] = {
+					sf::Vertex(pos1, sf::Color(255, 0, 0)),
+					sf::Vertex(pos2, sf::Color(255, 0, 0))
+				};
+				e.window->draw(line, 2, sf::Lines);
+				break;
+			}
+		}
+	}
+	void react(UpdateEndEvent const& e) override
+	{
 	}
 };
 
-void EditController::entry() {
-}
+class AwaitLaserSelect
+	: public EditController
+{
+	void react(MouseDown const& e) override
+	{
+		if (e.tool.select && hover) {
+			int laserBeginPos = hover->pos;
+			int laserEndPos = hover->getNextLaser(e.tool.type)->pos;
+			int mousePos = e.line;
+			if (mousePos - laserBeginPos < laserEndPos - mousePos) {
+				editor->selectedLaser = std::make_pair(e.tool.type, hover);
+			}
+			else {
+				editor->selectedLaser = std::make_pair(e.tool.type, hover->getNextLaser(e.tool.type));
+			}
+			editor->chart.pushUndoBuffer();
+			iState = e;
+			transit<EditingLaser>();
+		}
+		else {
+			//deselect
+			editor->chart.pushUndoBuffer();
+			editor->selectedLaser = std::make_pair(0, nullptr);
+		}
+	}
+
+	void react(UpdateEvent const& e) override
+	{
+		int laser = e.tool.type;
+		ChartLine* newHover = editor->display.getLaserHover(laser, editor->mouseX, editor->mouseY);
+		if (newHover) {
+			isHovered = true;
+			hover = newHover;
+			editor->display.drawAsColor(*e.window, editor->chart.lines,
+				sf::Color(255, 255, 255, 100), editor->editorLineStart, 
+				hover->pos, hover->getNextLaser(laser)->pos, laser ? Mask::LASER_R : Mask::LASER_L);
+		}
+
+		if(hover) {
+			std::vector<sf::Vector2f> points(3);
+			points[0] = { editor->display.getLaserX(hover, e.tool.type), editor->getNoteLocation(hover->pos).y };
+			points[1] = {
+				editor->mouseX, editor->mouseY
+			};
+			points[2] = {
+				editor->display.getLaserX(hover->getNextLaser(e.tool.type), e.tool.type),
+				editor->getNoteLocation(hover->getNextLaser(e.tool.type)->pos).y
+			};
+			int numPoints = 100;
+
+			std::vector<sf::Vector2f> bezierCurve = calculateBezierCurve(points, numPoints);
+
+			sf::VertexArray curve(sf::LineStrip);
+
+			sf::VertexArray ctrlPoints(sf::LineStrip);
+
+			for (auto point : bezierCurve) {
+				curve.append(sf::Vertex(point, sf::Color::Red));
+			}
+			for (auto point : points) {
+				ctrlPoints.append(sf::Vertex(point, sf::Color::Green));
+			}
+
+			//curve.append(sf::Vertex({0,0}, sf::Color::Red));
+			e.window->draw(curve);
+
+			e.window->draw(ctrlPoints);
+		}
+		
+	}
+
+	void react(UpdateEndEvent const& e) override
+	{
+		if (!isHovered) {
+			hover = nullptr;
+		}
+
+		if (isHovered) {
+			if (ImGui::BeginPopupContextVoid("curvePopup", ImGuiPopupFlags_MouseButtonRight))
+			{
+				isHovered = true;
+				if (ImGui::MenuItem("make curve"))
+				{
+				}
+				ImGui::EndPopup();
+			} else {
+				isHovered = false;
+			}
+		}
+	}
+
+	bool isHovered = false;
+	ChartLine* hover = nullptr;
+};
+
+class EditingLaser
+	: public AwaitLaserSelect
+{
+
+};
+/*
+template<typename... T>
+void EditController::react(EditEvent<T> const& e) {}
+*/
 
 void EditController::react(MouseDown const&) {
-	PLOG_INFO << "mouse down ignored" << std::endl;
+	PLOG_INFO << "mouse down ignored";
 }
 
 void EditController::react(MouseUp const&) {
-	PLOG_INFO << "mouse up ignored" << std::endl;
+	PLOG_INFO << "mouse up ignored";
 }
 
-void EditController::react(UpdateEvent const&) {
-	//do nothing
-}
+void EditController::react(UpdateEvent const&) { }
 
-void EditController::react(MouseMove const&) {
-	//do nothing
-}
+void EditController::react(MouseMove const&) { }
 
 void EditController::react(ToolChangeEvent const& e) {
 	iState.tool = e.tool;
 	transit<Idle>();
 }
 
-void EditController::react(DeleteEvent const& e) {
+void EditController::react(RightCLickEvent const& e) {
 	iState = e;
 	transit<Idle>();
 }
 
-void EditController::react(SelectEvent const& e) {
-	transit<AwaitSelection>();
-}
+void EditController::react(SelectEvent const& e) { transit<AwaitSelection>(); }
 
+void EditController::react(KeyUpEvent const& e) { }
 
-void EditController::react(KeyUpEvent const& e) {
+void EditController::react(PlayEvent const& e) { transit<Playing>(); }
 
-}
+void EditController::react(UpdateEndEvent const& e) { }
 
-MouseEvent EditController::iState = MouseEvent();
+EditEvent EditController::iState = EditEvent();
+EditWindow* EditController::editor = &EditWindow::instance();
 
 FSM_INITIAL_STATE(EditController, AwaitPlacement)
 
@@ -332,12 +497,17 @@ void EditWindow::updateVars()
 
 }
 
+void EditWindow::changeTool(ToolType type)
+{
+	tool.type = type;
+	send_event(createEvent<ToolChangeEvent>());
+}
+
 void EditWindow::changeTool(EditTool _tool)
 {
 	tool = _tool;
-	ToolChangeEvent event;
-	event.tool = _tool;
-	send_event(event);
+
+	send_event(createEvent<ToolChangeEvent>());
 }
 
 void EditWindow::setWindow(sf::RenderTarget* _window)
@@ -410,28 +580,6 @@ int EditWindow::getMeasureFromLine(unsigned int loc)
 	return nearest->second->measurePos;
 }
 
-//gets left x position of leaser start
-float EditWindow::getLaserX(ChartLine* line, int laser)
-{
-	float ourPos = 0;
-	if (line->laserPos[laser] == L_CONNECTOR) {
-		ChartLine* prevLaser = line->getPrevLaser(laser);
-		ChartLine* nextLaser = line->getNextLaser(laser);
-		float startPos = prevLaser->laserPos[laser];
-		float endPos = nextLaser->laserPos[laser];
-		int diff = nextLaser->pos - prevLaser->pos;
-		ourPos = startPos - (startPos - endPos) * (static_cast<float>(line->pos - prevLaser->pos) / diff);
-	}
-	else {
-		ourPos = line->laserPos[laser];
-	}
-
-	if (line->isWide[laser]) {
-		return ourPos * (9 * laneWidth) - 3 * laneWidth;
-	}
-	return ourPos * (5 * laneWidth) - laneWidth;
-}
-
 
 void EditWindow::drawChart(unsigned int start, unsigned int end)
 {
@@ -440,18 +588,15 @@ void EditWindow::drawChart(unsigned int start, unsigned int end)
 
 	display.draw(*window, chart, editorLineStart, start, end);
 
-	ChartLine* hover = display.getLaserHover(0, mouseX, mouseY);
+	//ChartLine* hover = display.getLaserHover(0, mouseX, mouseY);
 
-	if(hover) {
-		display.drawAsColor(*window, chart.lines, sf::Color(255, 255, 255, 100), editorLineStart, hover->pos, hover->getNextLaser(0)->pos, Mask::LASER_L);
-		laserHover = std::make_pair(0, hover);
-	}
+	
 	
 
 	if (selectedLaser.second) {
 		sf::Vector2f v = getNoteLocation(0, selectedLaser.second->pos);
 		sf::RectangleShape rect(sf::Vector2f(laneWidth + 8, 8));
-		rect.setPosition(sf::Vector2f(v.x + getLaserX(selectedLaser.second, selectedLaser.first) - 4, v.y - 4));
+		rect.setPosition(sf::Vector2f(display.getLaserX(selectedLaser.second, selectedLaser.first) - 4, v.y - 4));
 		rect.setOutlineColor(sf::Color::Green);
 		rect.setFillColor(sf::Color(0, 255, 0, 125));
 		rect.setOutlineThickness(2);
@@ -475,42 +620,9 @@ void EditWindow::drawChart(unsigned int start, unsigned int end)
 		sf::Vertex(pos2, sf::Color(255, 0, 0))
 	};
 	window->draw(line2, 2, sf::Lines);
-
-	drawPlayBar();
 }
 
-void EditWindow::drawPlayBar()
-{
-	//draw the play bar
-	if (player.isPlaying()) {
-		for (int i = editorMeasure; i < editorMeasure + columns * measuresPerColumn + 1; i++) {
-			if (i >= chart.measures.size()) {
-				break;
-			}
-			if (chart.measures[i].msStart > player.getMs()) {
-				float startMs = chart.measures[i - 1].msStart;
-				float endMs = chart.measures[i].msStart;
 
-				sf::Vector2f pos1 = getNoteLocation(-1, chart.measures[i - 1].pos);
-				sf::Vector2f pos2 = getNoteLocation(5, chart.measures[i - 1].pos);
-
-				pos1 = getNoteLocation(
-					-1, chart.measures[i - 1].pos + chart.measures[i - 1].pulses * (player.getMs() - startMs) / (endMs -
-						startMs));
-				pos2 = getNoteLocation(
-					5, chart.measures[i - 1].pos + chart.measures[i - 1].pulses * (player.getMs() - startMs) / (endMs -
-						startMs));
-
-				sf::Vertex line[] = {
-					sf::Vertex(pos1, sf::Color(255, 0, 0)),
-					sf::Vertex(pos2, sf::Color(255, 0, 0))
-				};
-				window->draw(line, 2, sf::Lines);
-				break;
-			}
-		}
-	}
-}
 
 std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, float start, float end, int laser, bool isWide)
 {
@@ -573,49 +685,23 @@ std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, float st
 void EditWindow::handleEvent(sf::Event event)
 {
 	if (event.mouseButton.button == sf::Mouse::Right && event.type == sf::Event::MouseButtonReleased) {
-		DeleteEvent dEvent;
-		dEvent.lane = getMouseLane();
-		dEvent.line = getSnappedLine(getMouseLine());
-		dEvent.laserPos = getMouseLaserPos(true);
-		dEvent.tool = tool;
-		send_event(dEvent);
+		send_event(createEvent<RightCLickEvent>());
 	}
 
-
 	if (event.type == sf::Event::KeyReleased) {
-		KeyUpEvent kEvent;
-		kEvent.lane = getMouseLane();
-		kEvent.line = getSnappedLine(getMouseLine());
-		kEvent.laserPos = getMouseLaserPos(true);
-		kEvent.tool = tool;
-		send_event(kEvent);
+		send_event(createEvent<KeyUpEvent>());
 	}
 
 	if (event.type == sf::Event::MouseMoved) {
-		MouseMove mEvent;
-		mEvent.lane = getMouseLane();
-		mEvent.line = getSnappedLine(getMouseLine());
-		mEvent.laserPos = getMouseLaserPos(true);
-		mEvent.tool = tool;
-		send_event(mEvent);
+		send_event(createEvent<MouseMove>());
 	}
 
 	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonPressed) {
-		MouseDown mEvent;
-		mEvent.lane = getMouseLane();
-		mEvent.line = getSnappedLine(getMouseLine());
-		mEvent.laserPos = getMouseLaserPos(true);
-		mEvent.tool = tool;
-		send_event(mEvent);
+		send_event(createEvent<MouseDown>());
 	}
 
 	if (event.mouseButton.button == sf::Mouse::Left && event.type == sf::Event::MouseButtonReleased) {
-		MouseUp mEvent;
-		mEvent.lane = getMouseLane();
-		mEvent.line = getSnappedLine(getMouseLine());
-		mEvent.laserPos = getMouseLaserPos(true);
-		mEvent.tool = tool;
-		send_event(mEvent);
+		send_event(createEvent<MouseUp>());
 	}
 }
 
@@ -645,9 +731,11 @@ void EditWindow::update()
 	if (DEBUG) {
 		drawDebug();
 	}
-
-	bool checkValid = false;
+	
+	tex.clear();
+	tex.create(window->getSize().x, window->getSize().y);
 	sf::View prevView = window->getView();
+	window = &tex;
 	for (int i = 0; i < columns; i++) {
 		sf::View view;
 		view.setViewport(sf::FloatRect((1.f / columns) * i, topPadding, (1.f / columns) - (0.1 / columns),
@@ -656,26 +744,20 @@ void EditWindow::update()
 		view.setCenter((window->getSize().x / columns) * 0.5,
 		               (measureHeight * measuresPerColumn) * 0.5 - (i + 1) * (measureHeight * measuresPerColumn));
 		window->setView(view);
-
 		sf::Vector2i position = sf::Mouse::getPosition(*appWindow);
 
 		if (view.getViewport().contains(static_cast<float>(position.x) / window->getSize().x,
 		                                static_cast<float>(position.y) / window->getSize().y)) {
 			// convert it to world coordinates
-			sf::Vector2f worldPos = appWindow->mapPixelToCoords(position);
+			sf::Vector2f worldPos = window->mapPixelToCoords(position);
 			mouseX = worldPos.x;
 			mouseY = worldPos.y;
-			checkValid = true;
 		}
-		drawChart(editorLineStart + pulsesPerColumn * i, editorLineStart + pulsesPerColumn * (i + 1));
+		int start = editorLineStart + pulsesPerColumn * i;
+		int end = editorLineStart + pulsesPerColumn * (i + 1);
+		drawChart(start, end);
 
-		UpdateEvent uEvent;
-		uEvent.lane = getMouseLane();
-		uEvent.line = getSnappedLine(getMouseLine());
-		uEvent.laserPos = getMouseLaserPos(true);
-		uEvent.tool = tool;
-		uEvent.window = window;
-		send_event(uEvent);
+		send_event(createEvent<UpdateEvent>(start, end));
 
 
 		if (DEBUG) {
@@ -693,50 +775,38 @@ void EditWindow::update()
 			window->draw(txt);
 		}
 	}
+
+	window = appWindow;
+	send_event(createEvent<UpdateEndEvent>());
+
+	sf::Sprite spr(tex.getTexture());
+	spr.setScale(sf::Vector2f(1.f, -1.f));
+	spr.setPosition(sf::Vector2f(0, appWindow->getSize().y));
+	window->draw(spr);
+	
+
 	window->setView(prevView);
+}
+template<typename E>
+void printType(E const& fsmType)
+{
+	
 }
 
 void EditWindow::drawDebug()
 {
+
+	
 	static sf::Clock deltaClock;
 	/**/
 	ImGui::Begin("Debug");
+	
 	ImGui::Text(std::string("fps: " + std::to_string(1.f / deltaClock.getElapsedTime().asSeconds())).c_str());
 	ImGui::Text(std::string("X: " + std::to_string(mouseX) + " Y: " + std::to_string(mouseY).c_str()).c_str());
 	//ImGui::Text(std::string("measure: " + std::to_string(getMouseMeasure())).c_str());
 	ImGui::Text(std::string("Mouse Line: " + std::to_string(getMouseLine())).c_str());
 	ImGui::Text(std::string("Mouse Line Snapped: " + std::to_string(getSnappedLine(getMouseLine()))).c_str());
-	ImGui::Text(std::string("mouse diff: " + std::to_string((getSnappedLine(getMouseLine()) - mouseDownLine))).c_str());
-	std::string stateStr = "";
-	switch (state) {
-	case IDLE:
-		stateStr = "idle";
-		break;
-	case PLACING_BT:
-		stateStr = "placing bt";
-		break;
-	case PLACING_FX:
-		stateStr = "placing fx";
-		break;
-	case PLACING_LASER:
-		stateStr = "placing laser";
-		break;
-	case SELECTING:
-		stateStr = "selecting";
-		break;
-	case MODIFYING_LASER:
-		stateStr = "modifying laser";
-		break;
-	case PLAYING:
-		stateStr = "playing";
-		break;
-	case HOVERED_GUI:
-		stateStr = "hovering gui";
-		break;
-	}
-	ImGui::Text(std::string("state: " + stateStr).c_str());
-	ImGui::Text(std::string("mouse down line: " + std::to_string(mouseDownLine)).c_str());
-	ImGui::Text(std::string("mouse down lane: " + std::to_string(mouseDownLane)).c_str());
+	ImGui::Text(std::string("state: " + tinyfsm::Fsm<EditController>::current_state_ptr->last).c_str());
 	ImGui::Text(std::string("mouse laser pos: " + std::to_string(getMouseLaserPos(tool.wideLaser))).c_str());
 	ImGui::Text(std::string("hovered: " + std::to_string(ImGui::GetIO().WantCaptureMouse)).c_str());
 	ImGui::End();
@@ -761,15 +831,28 @@ void EditWindow::redo(sf::Event event)
 
 void EditWindow::copy(sf::Event event)
 {
+	for (auto [key, val] : clipboard) {
+		delete val;
+	}
+	clipboard.clear();
 	clipboard = chart.getSelection(selectStart, selectEnd, Mask::ALL);
 }
 
 void EditWindow::cut(sf::Event event)
 {
+	for (auto [key, val] : selectedLines) {
+		delete val;
+	}
 	selectedLines.clear();
+
+	for (auto [key, val] : clipboard) {
+		delete val;
+	}
+
 	clipboard = chart.getSelection(selectStart, selectEnd, Mask::ALL);
+
 	for (auto line : clipboard) {
-		chart.removeChartLine(line.first, line.second.makeMask());
+		chart.removeChartLine(line.first, (*line.second).makeMask());
 	}
 }
 
@@ -778,13 +861,6 @@ void EditWindow::paste(sf::Event event)
 	chart.clearRedoStack();
 	unsigned int snapPos = getSnappedLine(selectStart);
 	chart.insertChartLine(snapPos, clipboard);
-	/*
-	unsigned int lineBegin = 0;
-	if (clipboard.begin() != clipboard.end()) lineBegin = clipboard.begin()->second.pos;
-	for (auto line : clipboard) {
-		chart.insertChartLine(snapPos + (line.second.pos - lineBegin), line.second);
-	}
-	*/
 	chart.validateChart();
 	chart.pushUndoBuffer();
 }
@@ -792,41 +868,14 @@ void EditWindow::paste(sf::Event event)
 
 void EditWindow::startSelect(sf::Event event)
 {
-	SelectEvent sEvent;
-	sEvent.lane = getMouseLane();
-	sEvent.line = getSnappedLine(getMouseLine());
-	sEvent.laserPos = getMouseLaserPos(true);
-	sEvent.tool = tool;
-	send_event(sEvent);
+	send_event(createEvent<SelectEvent>());
 }
 
-void EditWindow::connectLines(std::map<unsigned int, ChartLine*> input)
-{
-	if (input.size() <= 1) {
-		return;
-	}
 
-	auto i = input.begin();
-	i->second->prev = nullptr;
-	++i;
-	for (; i != input.end(); ++i) {
-		i->second->prev = std::prev(i, 1)->second;
-		std::prev(i, 1)->second->next = i->second;
-	}
-	input.begin()->second->prev = nullptr;
-	std::prev(input.end(), 1)->second->next = nullptr;
-}
 
 void EditWindow::play(sf::Event event)
 {
-	if (player.isPlaying()) {
-		player.stop();
-		state = IDLE;
-	}
-	else if (player.trackValid) {
-		player.playFrom(chart.getMs(selectStart));
-		state = PLAYING;
-	}
+	send_event(createEvent<PlayEvent>());
 }
 
 void EditWindow::moveLaserLeft(sf::Event event)
@@ -872,9 +921,21 @@ void EditWindow::moveLaserUp(sf::Event event)
 
 void EditWindow::mouseScroll(sf::Event event)
 {
+	//done for trackpads, should work fine with normal mice too
+	static float scrollAccumulate = 0;
+	scrollAccumulate += event.mouseWheelScroll.delta;
+	int mouseDelta = 0;
+	if (scrollAccumulate >= 1) {
+		mouseDelta = 1;
+		scrollAccumulate = 0;
+	} else if (scrollAccumulate <= -1) {
+		mouseDelta = -1;
+		scrollAccumulate = 0;
+	}
+
 	if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
-		if (editorMeasure + event.mouseWheelScroll.delta * measuresPerColumn >= 0) {
-			editorMeasure += event.mouseWheelScroll.delta * measuresPerColumn;
+		if (editorMeasure + mouseDelta * measuresPerColumn >= 0) {
+			editorMeasure += mouseDelta * measuresPerColumn;
 		}
 	}
 }
@@ -882,21 +943,5 @@ void EditWindow::mouseScroll(sf::Event event)
 void EditWindow::mousePressedLeft(sf::Event event)
 {
 
-	if (tool.select && laserHover.second && state == IDLE) {
-		int laserBeginPos = laserHover.second->pos;
-		int laserEndPos = laserHover.second->getNextLaser(laserHover.first)->pos;
-		int mousePos = getMouseLine();
-		if (mousePos - laserBeginPos < laserEndPos - mousePos) {
-			selectedLaser = laserHover;
-		}
-		else {
-			selectedLaser = std::make_pair(laserHover.first, laserHover.second->getNextLaser(laserHover.first));
-		}
-		chart.pushUndoBuffer();
-	}
-	else {
-		//deselect
-		chart.pushUndoBuffer();
-		selectedLaser = std::make_pair(0, nullptr);
-	}
+	
 }

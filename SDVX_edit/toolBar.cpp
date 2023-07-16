@@ -102,7 +102,7 @@ void ToolBar::update()
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(knobRIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::instance().tool.type = LASER_R;
+			EditWindow::instance().changeTool(LASER_R);
 		}
 		if (styleChanges) {
 			ImGui::PopStyleColor(styleChanges--);
@@ -115,7 +115,7 @@ void ToolBar::update()
 			styleChanges++;
 		}
 		if (ImGui::ImageButton(knobLIcon, ImVec2(iconSize, iconSize))) {
-			EditWindow::instance().tool.type = LASER_L;
+			EditWindow::instance().changeTool(LASER_L);
 		}
 		if (EditWindow::instance().tool.type == LASER_L || EditWindow::instance().tool.type == LASER_R) {
 			ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMax().x + iconSize * 0.3,

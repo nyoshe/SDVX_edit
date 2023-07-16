@@ -103,7 +103,7 @@ public:
 	//this must be done whenever we change the bpm or update the time signature
 	void calcTimings();
 
-	void insertChartLine(int line, const std::map<unsigned int, ChartLine>& lineMap);
+	void insertChartLine(int line, const std::map<unsigned, ChartLine*>& lineMap);
 	ChartLine* insertChartLine(unsigned int line, ChartLine cLine);
 	ChartLine* insertChartLine(unsigned int line, ChartLine cLine, LineMask mask);
 
@@ -130,5 +130,6 @@ public:
 	//quick function to make sure we didn't mess anything up
 	void validateChart();
 
-	std::map<unsigned int, ChartLine> getSelection(unsigned int pos1, unsigned int pos2, LineMask mask);
+	std::map<unsigned, ChartLine*> getSelection(unsigned int pos1, unsigned int pos2, LineMask mask);
+	void connectLines(std::map<unsigned, ChartLine*> input);
 };

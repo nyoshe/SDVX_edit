@@ -16,7 +16,7 @@ private:
 	void setVariables(sf::RenderTarget& window);
 	QuadArray generateLaserQuads(int laser, const std::map<unsigned, ChartLine*>& objects,
 	                             LineIterator startIter, LineIterator endIter, std::vector<sf::Color> cols);
-	float getLaserX(ChartLine* line, int laser);
+	
 	void drawLaserQuads(sf::RenderTarget& window, const QuadArray& arr);
 	float triArea(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C);
 	bool getMouseOverlap(const sf::VertexArray quad, float mouseX, float mouseY);
@@ -50,13 +50,14 @@ public:
 	bool DEBUG = true;
 	int offset = 0;
 	ChartDisplay();
+	float getLaserX(ChartLine* line, int laser);
 	void draw(sf::RenderTarget& window, const Chart& chart, int _offset, int start, int end);
 	void drawAsColor(sf::RenderTarget& window, std::map<unsigned, ChartLine*>& objects, sf::Color col,
 	                 int _offset, int start, int end, LineMask mask);
 	sf::Vector2f getNoteLocation(int lane, int line);
 	sf::Vector2f getNoteLocation(int line);
 	void drawLineButtons(sf::RenderTarget& window, const ChartLine* line, bool selected, sf::Color col);
-	void drawSelection(sf::RenderTarget& window, std::map<unsigned int, ChartLine>& selectedLines, int offset, int start, int end);
+	void drawSelection(sf::RenderTarget& window, std::map<unsigned int, ChartLine*>& selectedLines, int offset, int start, int end);
 	ChartLine* getLaserHover(int laser, float mouseX, float mouseY);
 	const sf::Color laserLColor = sf::Color(0, 160, 255, 150);
 	const sf::Color laserRColor = sf::Color(255, 0, 200, 150);

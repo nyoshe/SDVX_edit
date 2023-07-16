@@ -47,6 +47,7 @@
 // DBG("*** dbg_example *** " << __PRETTY_FUNCTION__);
 #include <plog/Log.h>
 
+
 namespace tinyfsm
 {
 
@@ -86,6 +87,7 @@ namespace tinyfsm
   class Fsm
   {
   public:
+
 
     using fsmtype = Fsm<F>;
     using state_ptr_t = F *;
@@ -127,13 +129,14 @@ namespace tinyfsm
       current_state_ptr->react(event);
     }
 
-
+    inline static std::string last = "none";
   /// state transition functions
   protected:
-      inline static std::string last = "none";
     template<typename S>
     void transit(void) {
+    	
       static_assert(is_same_fsm<F, S>::value, "transit to different state machine");
+     
 
       PLOG_INFO << "state transition: " << last << " -> " << std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));
       last = std::string(typeid(S).name()).substr(1 + std::string(typeid(S).name()).find(' '));

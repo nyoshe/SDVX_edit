@@ -83,28 +83,7 @@ int main()
 		EditWindow::instance().update();
 		ToolBar::instance().update();
 		ScrubBar::instance().update();
-		/*
-		std::vector<sf::Vector2f> points = {{200, 300}, {500, 300}, {800, 500}, {1000, 1200}}; // Example points
-		int numPoints = 100;
-
-		std::vector<sf::Vector2f> bezierCurve = calculateBezierCurve(points, numPoints);
-
-		sf::VertexArray curve(sf::LineStrip);
-
-		sf::VertexArray ctrlPoints(sf::LineStrip);
-
-		for (auto point : bezierCurve) {
-			curve.append(sf::Vertex(point, sf::Color::Red));
-		}
-		for (auto point : points) {
-			ctrlPoints.append(sf::Vertex(point, sf::Color::Green));
-		}
-
-		//curve.append(sf::Vertex({0,0}, sf::Color::Red));
-		window.draw(curve);
-
-		window.draw(ctrlPoints);
-		*/
+		
 		ImGui::SFML::Render(window);
 		window.display();
 	}
