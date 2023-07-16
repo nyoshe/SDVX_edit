@@ -590,9 +590,6 @@ void EditWindow::drawChart(unsigned int start, unsigned int end)
 
 	//ChartLine* hover = display.getLaserHover(0, mouseX, mouseY);
 
-	
-	
-
 	if (selectedLaser.second) {
 		sf::Vector2f v = getNoteLocation(0, selectedLaser.second->pos);
 		sf::RectangleShape rect(sf::Vector2f(laneWidth + 8, 8));

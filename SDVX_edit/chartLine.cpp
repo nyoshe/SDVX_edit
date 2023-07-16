@@ -171,15 +171,7 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearFxHold(int lane)
 
 void ChartLine::modifyLaserPos(int laser, float val)
 {
-	if (laserPos[laser] + val >= 1.0) {
-		laserPos[laser] = 1.0;
-	}
-	else if (laserPos[laser] + val <= 0) {
-		laserPos[laser] = 0;
-	}
-	else {
-		laserPos[laser] += val;
-	}
+	laserPos[laser] = std::clamp(laserPos[laser] + val, 0.f, 1.f);
 }
 
 //essentially overwrites if mask bits are set
