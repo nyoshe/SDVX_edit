@@ -3,22 +3,29 @@
 void StatusBar::setWindow(sf::RenderWindow* _window)
 {
 	window = _window;
+	ImGui::GetStyle().WindowRounding = 4.0;
 }
 
 void StatusBar::update()
 {
 	ImGui::PushFont(FontManager::instance().getDefaultFont());
 	static bool updatingScale = false;
+	static bool showDemo = false;
+
+	if (showDemo) {
+		ImGui::ShowDemoWindow();
+	}
 	if (ImGui::BeginMainMenuBar()) {
+		
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New")) {
+			if (ImGui::MenuItem("New", "Ctrl+N")) {
 				Chart newChart;
 				EditWindow::instance().chart = newChart;
 			}
-			if (ImGui::MenuItem("Open")) {
+			if (ImGui::MenuItem("Open", "Ctrl+O")) {
 				ImGuiFileDialog::Instance()->OpenDialog("OpenFileDlgKey", "Open", ".ksh", ".");
 			}
-			if (ImGui::MenuItem("Save")) {
+			if (ImGui::MenuItem("Save", "Ctrl+S")) {
 				EditWindow::instance().saveFile();
 			}
 			if (ImGui::MenuItem("Save As")) {
@@ -28,17 +35,23 @@ void StatusBar::update()
 		}
 
 		if (ImGui::BeginMenu("View")) {
+			ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
 			if (ImGui::BeginMenu(
 				("Measures per column: " + std::to_string(EditWindow::instance().measuresPerColumn)).c_str())) {
+				
 				for (int i = 1; i < 13; i++) {
+					
 					if (ImGui::MenuItem(std::to_string(i).c_str(), nullptr,
 					                    i == EditWindow::instance().measuresPerColumn)) {
 						EditWindow::instance().measuresPerColumn = i;
 						EditWindow::instance().updateVars();
 					}
+					
 				}
+				
 				ImGui::EndMenu();
 			}
+			
 
 			if (ImGui::BeginMenu(("columns: " + std::to_string(EditWindow::instance().columns)).c_str())) {
 				for (int i = 4; i < 13; i++) {
@@ -49,6 +62,8 @@ void StatusBar::update()
 				}
 				ImGui::EndMenu();
 			}
+			ImGui::PopItemFlag();
+
 			static float scale = 1.0;
 			std::ostringstream oss;
 			oss << std::setprecision(2) << FontManager::instance().getAbsoluteScale();
@@ -70,8 +85,15 @@ void StatusBar::update()
 				ScrubBar::instance().enabled = !ScrubBar::instance().enabled;
 			}
 			*/
+			
+			
 			if (ImGui::MenuItem("Draw Debug", nullptr, EditWindow::instance().DEBUG)) {
 				EditWindow::instance().DEBUG = !EditWindow::instance().DEBUG;
+				EditWindow::instance().display.DEBUG = !EditWindow::instance().display.DEBUG;
+			}
+
+			if (ImGui::MenuItem("Imgui demo window", nullptr, showDemo)) {
+				showDemo = !showDemo;
 			}
 
 			ImGui::EndMenu();

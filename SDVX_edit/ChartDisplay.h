@@ -47,7 +47,7 @@ private:
 
 	sf::Font font;
 public:
-	bool DEBUG = false;
+	bool DEBUG = true;
 	int offset = 0;
 	ChartDisplay();
 	float getLaserX(ChartLine* line, int laser);

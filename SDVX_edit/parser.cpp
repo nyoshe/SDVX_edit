@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include <set>
+
 Command Parser::parseCommand(std::string s)
 {
 	Command c;
@@ -112,7 +114,7 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 				m.topSig = timeSigTop;
 				m.bottomSig = timeSigBottom;
 				m.pos = pos;
-
+				lineBuffer[0]->isMeasureStart = true;
 				for (int i = 0; i < lineBuffer.size(); i++) {
 					lineBuffer[i]->pos = pos;
 					lineBuffer[i]->measurePos = measurePos;

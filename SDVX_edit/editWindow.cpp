@@ -7,6 +7,7 @@ class Idle;
 class DragPlacing;
 class AwaitLaserSelect;
 class EditingLaser;
+class AwaitLaserPlacement;
 
 class AwaitPlacement
 	: public EditController
@@ -195,6 +196,8 @@ class Idle
 		case LASER_R:
 			if (iState.tool.select)
 				transit<AwaitLaserSelect>();
+			else
+				transit<AwaitLaserPlacement>();
 			return;
 			break;
 		}
@@ -354,15 +357,102 @@ class AwaitLaserSelect
 			}
 		}
 	}
-
+protected:
 	bool isHovered = false;
 	ChartLine* hover = nullptr;
 };
 
-class EditingLaser
-	: public AwaitLaserSelect
+class EditingLaser : public AwaitLaserSelect
 {
+	void react(UpdateEvent const& e) override
+	{
+		int laser = e.tool.type;
+		ChartLine* newHover = editor->display.getLaserHover(laser, editor->mouseX, editor->mouseY);
+		if (newHover) {
+			isHovered = true;
+		}
+		if (editor->selectedLaser.second && 
+			editor->selectedLaser.second->pos < e.endLine &&
+			editor->selectedLaser.second->pos > e.startLine) {
+			sf::Vector2f v = editor->getNoteLocation(0, editor->selectedLaser.second->pos);
+			sf::RectangleShape rect(sf::Vector2f(editor->laneWidth + 8, 8));
+			rect.setPosition(sf::Vector2f(editor->display.getLaserX(editor->selectedLaser.second, editor->selectedLaser.first) - 4, v.y - 4));
+			rect.setOutlineColor(sf::Color::Green);
+			rect.setFillColor(sf::Color(0, 255, 0, 125));
+			rect.setOutlineThickness(2);
+			e.window->draw(rect);
+		}
+	}
 
+	void react(MouseDown const& e) override
+	{
+		if (!isHovered) {
+			transit<AwaitLaserSelect>();
+			editor->selectedLaser = std::make_pair(0, nullptr);
+		}
+	}
+	void react(UpdateEndEvent const& e) override
+	{
+		if (!isHovered) hover = nullptr;
+		isHovered = false;
+	}
+};
+
+class AwaitLaserPlacement
+	: public EditController
+{
+	void react(UpdateEvent const& e)
+	{
+		//find first laser
+
+		LineIterator line = editor->chart.getLineBefore(e.line);
+		int laser = e.tool.type;
+		if (laser > 1) transit<Idle>();
+		while (line != editor->chart.lines.begin()) {
+			if(line->second->laserPos[laser] >= 0){
+				break;
+			}
+			line--;
+		}
+		if ((e.line - line->first) >= 2 && line != editor->chart.lines.begin()) {
+			laserMap.clear();
+			laserMap[line->first] = new ChartLine(*line->second);
+
+			ChartLine newLine;
+			newLine.laserPos[laser] = e.laserPos;
+			newLine.pos = e.line;
+
+			ChartLine middleLine;
+			middleLine.laserPos[laser] = L_CONNECTOR;
+			middleLine.pos = line->first + (e.line - line->first) / 2;
+
+			laserMap[middleLine.pos] = new ChartLine(middleLine);
+			laserMap[e.line] = new ChartLine(newLine);
+
+			editor->chart.connectLines(laserMap);
+
+			sf::Color col;
+			if (laser == LASER_L) {
+				col = editor->display.laserLColor;
+			}
+			if (laser == LASER_R) {
+				col = editor->display.laserRColor;
+			}
+			col.a = 60;
+
+			editor->display.drawAsColor(*e.window, laserMap, col, editor->editorLineStart,
+				line->first, e.line, Mask::LASER_ALL);
+		}
+		
+	}
+	void exit()
+	{
+		for (auto [key, val] : laserMap){
+			delete val;
+		}
+	}
+protected:
+	std::map<unsigned int, ChartLine*> laserMap;
 };
 /*
 template<typename... T>
@@ -492,7 +582,6 @@ void EditWindow::updateVars()
 	measureHeight = height / static_cast<float>(measuresPerColumn * columns);
 	viewLines = pulsesPerColumn * columns;
 
-	editorLineStart = editorMeasure * 192;
 	pulsesPerColumn = measuresPerColumn * 192;
 
 }
@@ -590,16 +679,6 @@ void EditWindow::drawChart(unsigned int start, unsigned int end)
 
 	//ChartLine* hover = display.getLaserHover(0, mouseX, mouseY);
 
-	if (selectedLaser.second) {
-		sf::Vector2f v = getNoteLocation(0, selectedLaser.second->pos);
-		sf::RectangleShape rect(sf::Vector2f(laneWidth + 8, 8));
-		rect.setPosition(sf::Vector2f(display.getLaserX(selectedLaser.second, selectedLaser.first) - 4, v.y - 4));
-		rect.setOutlineColor(sf::Color::Green);
-		rect.setFillColor(sf::Color(0, 255, 0, 125));
-		rect.setOutlineThickness(2);
-		window->draw(rect);
-	}
-
 	sf::Vector2f pos1 = getNoteLocation(-1, selectStart);
 	sf::Vector2f pos2 = getNoteLocation(5, selectStart);
 
@@ -679,7 +758,7 @@ std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, float st
 	return drawVec;
 }
 
-void EditWindow::handleEvent(sf::Event event)
+void EditWindow::handleEvent(const sf::Event& event)
 {
 	if (event.mouseButton.button == sf::Mouse::Right && event.type == sf::Event::MouseButtonReleased) {
 		send_event(createEvent<RightCLickEvent>());
@@ -783,11 +862,6 @@ void EditWindow::update()
 	
 
 	window->setView(prevView);
-}
-template<typename E>
-void printType(E const& fsmType)
-{
-	
 }
 
 void EditWindow::drawDebug()
@@ -931,8 +1005,8 @@ void EditWindow::mouseScroll(sf::Event event)
 	}
 
 	if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
-		if (editorMeasure + mouseDelta * measuresPerColumn >= 0) {
-			editorMeasure += mouseDelta * measuresPerColumn;
+		if (editorLineStart + mouseDelta * pulsesPerColumn >= 0) {
+			editorLineStart += mouseDelta * pulsesPerColumn;
 		}
 	}
 }

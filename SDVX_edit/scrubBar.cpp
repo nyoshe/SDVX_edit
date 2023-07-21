@@ -17,9 +17,9 @@ void ScrubBar::update()
 
 	int measuresPerColumn = editor.measuresPerColumn;
 	int columns = editor.columns;
-	int editorMeasure = editor.editorMeasure;
+	//int editorMeasure = editor.editorMeasure;
 
-	editor.editorMeasure = currentMeasure;
+	//editor.editorMeasure = currentMeasure;
 	editor.columns = 1;
 	editor.measuresPerColumn = 1;
 
@@ -29,7 +29,7 @@ void ScrubBar::update()
 
 	//editor.drawChart();
 
-	editor.editorMeasure = editorMeasure;
+	//editor.editorMeasure = editorMeasure;
 	editor.measuresPerColumn = measuresPerColumn;
 	editor.columns = columns;
 	editor.setWindow(beforeWin);
@@ -56,15 +56,16 @@ void ScrubBar::update()
 		//tex.clear();
 		//tex.create(100, window->getSize().x);
 	}
-	float linePos = window->getSize().x * static_cast<float>(editor.editorMeasure) / static_cast<float>(
-		displayMeasures);
-
+	//float linePos = window->getSize().x * static_cast<float>(editor.editorMeasure) / static_cast<float>(
+	//	displayMeasures);
+	/*
 	sf::Vertex line[] = {
 		sf::Vertex(sf::Vector2f(linePos, topPadding * window->getSize().y), sf::Color::Red),
 		sf::Vertex(sf::Vector2f(linePos, topPadding * window->getSize().y + height), sf::Color::Red)
 	};
 
 	window->draw(line, 2, sf::Lines);
+	*/
 	//window->draw(quad);
 
 	window->draw(displaySpr);

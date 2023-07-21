@@ -46,6 +46,7 @@ struct SelectEvent : EditEvent { };
 struct KeyUpEvent : EditEvent { };
 struct PlayEvent : EditEvent { };
 struct UpdateEndEvent : EditEvent { };
+struct UpdateStartEvent : EditEvent { };
 
 class EditController
 	: public tinyfsm::Fsm<EditController>
@@ -92,7 +93,6 @@ enum EditorState
 	HOVERED_GUI,
 };
 
-typedef std::vector<std::pair<ChartLine*, std::vector<sf::VertexArray>>> QuadArray;
 
 class EditWindow final : public Unique<EditWindow>
 {
@@ -135,7 +135,7 @@ public:
 
 	int getMeasureFromLine(unsigned int loc);
 
-	void handleEvent(sf::Event event);
+	void handleEvent(const sf::Event& event);
 	//get the note location from line (global) and lane
 	sf::Vector2f getNoteLocation(int lane, int line);
 	//get the note location from line (global)
@@ -189,8 +189,6 @@ public:
 		return out;
 	}
 
-
-	int editorMeasure = 0;
 	int editorLineStart = 0;
 	int columns = 6;
 

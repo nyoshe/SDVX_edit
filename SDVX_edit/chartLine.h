@@ -75,6 +75,11 @@ namespace Mask
 class ChartLine
 {
 public:
+	inline bool operator()(const ChartLine* lhs, const ChartLine* rhs) const
+	{
+		return lhs->pos < rhs->pos;
+	}
+
 	//2 for long note, 1 for chip
 	std::vector<uint8_t> btVal = {0, 0, 0, 0};
 	//1 for long note, 2 for chip (legacy reasons tl. stupid devs)
@@ -86,6 +91,8 @@ public:
 	//defines our position relative to 1/192 snapping
 	unsigned int pos = 0;
 	unsigned int measurePos = 0;
+	bool isMeasureStart = false;
+
 	std::vector<Command> cmds;
 	bool empty();
 

@@ -29,6 +29,7 @@ struct Measure
 	float msStart = 0.0;
 };
 
+
 struct EditTool
 {
 	ToolType type = BT;

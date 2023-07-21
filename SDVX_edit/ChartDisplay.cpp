@@ -146,7 +146,7 @@ void ChartDisplay::drawAsColor(sf::RenderTarget& window, std::map<unsigned int, 
 	for (int l = 0; l < 2; l++) {
 		if (mask.laser[l]) {
 			QuadArray vertexBuffer =
-				generateLaserQuads(l, objects, objects.lower_bound(start), std::prev(objects.end(), 1),
+				generateLaserQuads(l, objects, objects.lower_bound(start), objects.lower_bound(end),
 					{ col, col });
 			drawLaserQuads(window, vertexBuffer);
 			//qArray[l] = vertexBuffer;
@@ -212,11 +212,19 @@ void ChartDisplay::drawLineButtons(sf::RenderTarget& window, const ChartLine* li
 
 	if (DEBUG) {
 		sf::Vector2f v = getNoteLocation(0, pos);
+		sf::Color col;
+		if (line->isMeasureStart) {
+			col = sf::Color(255, 0, 0, 120);
+		} else {
+			col = sf::Color(0, 255, 0, 120);
+		}
 		sf::Vertex l[] = {
-			sf::Vertex(sf::Vector2f(v.x - laneWidth * 0.5, v.y), sf::Color(0, 255, 0, 60)),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4.5, v.y), sf::Color(0, 255, 0, 60))
+			sf::Vertex(sf::Vector2f(v.x - laneWidth * 1.0, v.y), col),
+			sf::Vertex(sf::Vector2f(v.x , v.y), col),
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4.0, v.y), col),
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 5.0 , v.y), col)
 		};
-		window.draw(l, 2, sf::Lines);
+		window.draw(l, 4, sf::Lines);
 	}
 
 	for (int lane = 0; lane < 4; lane++) {

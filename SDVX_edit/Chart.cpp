@@ -392,6 +392,7 @@ int Chart::appendNewMeasure()
 		measures.push_back(m);
 		measures[0].lines[0] = newLine;
 		lines[0] = newLine;
+		lines[0]->isMeasureStart = true;
 	}
 	else {
 		Measure prevMeasure = measures.back();
@@ -414,7 +415,7 @@ int Chart::appendNewMeasure()
 
 		measures.back().lines[0] = newLine;
 		lines[measureStart] = newLine;
-
+		lines[measureStart]->isMeasureStart = true;
 		//insertChartLine(measureStart, ChartLine());
 	}
 
@@ -596,16 +597,6 @@ int Chart::getMeasureFromPos(int pos)
 		return lines[pos]->measurePos;
 	}
 	return getLineBefore(pos)->second->measurePos;
-	/*
-	int i = 0;
-	for (auto measure : measures) {
-		if (measure.pos > pos) {
-			return i - 1;
-		}
-		i++;
-	}
-	return i - 1;
-	*/
 }
 
 void Chart::validateChart()
@@ -780,11 +771,11 @@ std::map<unsigned, ChartLine*> Chart::getSelection(unsigned int pos1, unsigned i
 	}
 
 	ChartLine* line = lines[start];
-	LineMask dropMask = *lines[start] & mask;
+	LineMask dropMask = *line & mask;
 	//this basically just goes from front to bakc and using the chart line mask, drops out the hold values when we don't see them
-	while (line && static_cast<int>(*line & dropMask) != 0) {
+	while (line && static_cast<int>(*line->prev & dropMask) != 0) {
 		line = line->prev;
-		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
+		out.emplace_back(line, line->extractMask(dropMask));
 		dropMask = *line & dropMask;
 	}
 
@@ -792,7 +783,7 @@ std::map<unsigned, ChartLine*> Chart::getSelection(unsigned int pos1, unsigned i
 
 	line = lines[start];
 	while (line && line->pos <= end) {
-		out.push_back(std::make_pair(line, line->extractMask(mask)));
+		out.emplace_back(line, line->extractMask(mask));
 		line = line->next;
 	}
 
@@ -801,7 +792,7 @@ std::map<unsigned, ChartLine*> Chart::getSelection(unsigned int pos1, unsigned i
 	//same as previous comment but not in reverse
 	while (line && static_cast<int>(*line & dropMask) != 0) {
 		line = line->next;
-		out.push_back(std::make_pair(line, line->extractMask(dropMask)));
+		out.emplace_back(line, line->extractMask(dropMask));
 		dropMask = *line & dropMask;
 	}
 
