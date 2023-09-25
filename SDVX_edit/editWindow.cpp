@@ -6,7 +6,6 @@ using namespace std::placeholders;
 class Idle;
 class DragPlacing;
 class AwaitLaserSelect;
-class EditingLaser;
 class AwaitLaserPlacement;
 
 class AwaitPlacement
@@ -284,7 +283,7 @@ class AwaitLaserSelect
 			}
 			editor->chart.pushUndoBuffer();
 			iState = e;
-			transit<EditingLaser>();
+			//transit<EditingLaser>();
 		}
 		else {
 			//deselect
@@ -315,6 +314,7 @@ class AwaitLaserSelect
 				editor->display.getLaserX(hover->getNextLaser(e.tool.type), e.tool.type),
 				editor->getNoteLocation(hover->getNextLaser(e.tool.type)->pos).y
 			};
+
 			int numPoints = 100;
 
 			std::vector<sf::Vector2f> bezierCurve = calculateBezierCurve(points, numPoints);
@@ -330,12 +330,22 @@ class AwaitLaserSelect
 				ctrlPoints.append(sf::Vertex(point, sf::Color::Green));
 			}
 
-			//curve.append(sf::Vertex({0,0}, sf::Color::Red));
 			e.window->draw(curve);
 
 			e.window->draw(ctrlPoints);
 		}
-		
+
+		if (editor->selectedLaser.second &&
+			editor->selectedLaser.second->pos < e.endLine &&
+			editor->selectedLaser.second->pos > e.startLine) {
+			sf::Vector2f v = editor->getNoteLocation(0, editor->selectedLaser.second->pos);
+			sf::RectangleShape rect(sf::Vector2f(editor->laneWidth + 8, 8));
+			rect.setPosition(sf::Vector2f(editor->display.getLaserX(editor->selectedLaser.second, editor->selectedLaser.first) - 4, v.y - 4));
+			rect.setOutlineColor(sf::Color::Green);
+			rect.setFillColor(sf::Color(0, 255, 0, 125));
+			rect.setOutlineThickness(2);
+			e.window->draw(rect);
+		}
 	}
 
 	void react(UpdateEndEvent const& e) override
@@ -362,41 +372,6 @@ protected:
 	ChartLine* hover = nullptr;
 };
 
-class EditingLaser : public AwaitLaserSelect
-{
-	void react(UpdateEvent const& e) override
-	{
-		int laser = e.tool.type;
-		ChartLine* newHover = editor->display.getLaserHover(laser, editor->mouseX, editor->mouseY);
-		if (newHover) {
-			isHovered = true;
-		}
-		if (editor->selectedLaser.second && 
-			editor->selectedLaser.second->pos < e.endLine &&
-			editor->selectedLaser.second->pos > e.startLine) {
-			sf::Vector2f v = editor->getNoteLocation(0, editor->selectedLaser.second->pos);
-			sf::RectangleShape rect(sf::Vector2f(editor->laneWidth + 8, 8));
-			rect.setPosition(sf::Vector2f(editor->display.getLaserX(editor->selectedLaser.second, editor->selectedLaser.first) - 4, v.y - 4));
-			rect.setOutlineColor(sf::Color::Green);
-			rect.setFillColor(sf::Color(0, 255, 0, 125));
-			rect.setOutlineThickness(2);
-			e.window->draw(rect);
-		}
-	}
-
-	void react(MouseDown const& e) override
-	{
-		if (!isHovered) {
-			transit<AwaitLaserSelect>();
-			editor->selectedLaser = std::make_pair(0, nullptr);
-		}
-	}
-	void react(UpdateEndEvent const& e) override
-	{
-		if (!isHovered) hover = nullptr;
-		isHovered = false;
-	}
-};
 
 class AwaitLaserPlacement
 	: public EditController
@@ -415,19 +390,29 @@ class AwaitLaserPlacement
 			line--;
 		}
 		if ((e.line - line->first) >= 2 && line != editor->chart.lines.begin()) {
+			for (auto [key, line] : laserMap) {
+				delete line;
+			}
 			laserMap.clear();
 			laserMap[line->first] = new ChartLine(*line->second);
+			laserMap[line->first]->type[laser] = LASER_HEAD;
+			laserMap[line->first]->isWide[laser] = e.tool.wideLaser;
 
 			ChartLine newLine;
 			newLine.laserPos[laser] = e.laserPos;
+			newLine.isWide[laser] = e.tool.wideLaser;
 			newLine.pos = e.line;
 
+			/*
 			ChartLine middleLine;
 			middleLine.laserPos[laser] = L_CONNECTOR;
 			middleLine.pos = line->first + (e.line - line->first) / 2;
 
 			laserMap[middleLine.pos] = new ChartLine(middleLine);
+			*/
 			laserMap[e.line] = new ChartLine(newLine);
+			laserMap[e.line]->type[laser] = LASER_TAIL;
+			laserMap[e.line]->isWide[laser] = e.tool.wideLaser;
 
 			editor->chart.connectLines(laserMap);
 
@@ -450,6 +435,7 @@ class AwaitLaserPlacement
 		for (auto [key, val] : laserMap){
 			delete val;
 		}
+		laserMap.clear();
 	}
 protected:
 	std::map<unsigned int, ChartLine*> laserMap;
@@ -653,7 +639,8 @@ float EditWindow::getMouseLaserPos(bool isWide) const
 	}
 	float selectAreaWidth = isWide ? (8 * laneWidth) : (4 * laneWidth);
 	float mouseLocal = (mouseX - (5 * laneWidth));
-	return std::clamp(static_cast<float>((mouseLocal / selectAreaWidth) + 0.5), 0.f, 1.f);
+	float clampedVal = std::clamp(static_cast<float>((mouseLocal / selectAreaWidth) + 0.5), 0.f, 1.f);
+	return std::round((1.f / laserMoveSize) * clampedVal) * laserMoveSize;
 }
 
 int EditWindow::getMeasureFromLine(unsigned int loc)
@@ -696,66 +683,6 @@ void EditWindow::drawChart(unsigned int start, unsigned int end)
 		sf::Vertex(pos2, sf::Color(255, 0, 0))
 	};
 	window->draw(line2, 2, sf::Lines);
-}
-
-
-
-std::vector<sf::VertexArray> EditWindow::generateSlamQuads(int lineNum, float start, float end, int laser, bool isWide)
-{
-	std::vector<sf::VertexArray> drawVec;
-	float xStart = getNoteLocation(lineNum).x;
-	float xEnd = getNoteLocation(lineNum).x;
-	float y = getNoteLocation(lineNum).y;
-
-	if (isWide) {
-		xStart += start * (9 * laneWidth) - 3 * laneWidth;
-		xEnd += end * (9 * laneWidth) - 3 * laneWidth;
-	}
-	else {
-		xStart += start * (5 * laneWidth) - laneWidth;
-		xEnd += end * (5 * laneWidth) - laneWidth;
-	}
-
-	sf::Color c;
-	if (laser == 1) {
-		//pink
-		c = sf::Color(255, 0, 200, 150);
-	}
-	else {
-		//blue
-		c = sf::Color(0, 160, 255, 150);
-	}
-
-	sf::VertexArray quad(sf::Quads, 4);
-
-	quad[0] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y), c);
-	quad[1] = sf::Vertex(sf::Vector2f(xStart, y), c);
-	quad[2] = sf::Vertex(sf::Vector2f(xStart, y + laneWidth), c);
-	quad[3] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y + laneWidth), c);
-	drawVec.push_back(quad);
-
-	if (xStart < xEnd) {
-		quad[0] = sf::Vertex(sf::Vector2f(xStart, y), c);
-		quad[1] = sf::Vertex(sf::Vector2f(xStart, y - laneWidth / 2.0), c);
-		quad[2] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth / 2.0), c);
-		quad[3] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y), c);
-	}
-	else {
-		quad[0] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y), c);
-		quad[1] = sf::Vertex(sf::Vector2f(xStart + laneWidth, y - laneWidth / 2.0), c);
-		quad[2] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth / 2.0), c);
-		quad[3] = sf::Vertex(sf::Vector2f(xEnd, y), c);
-	}
-
-	drawVec.push_back(quad);
-
-	quad[0] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth / 2.0), c);
-	quad[1] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth / 2.0), c);
-	quad[2] = sf::Vertex(sf::Vector2f(xEnd + laneWidth, y - laneWidth * 1.0), c);
-	quad[3] = sf::Vertex(sf::Vector2f(xEnd, y - laneWidth * 1.0), c);
-	drawVec.push_back(quad);
-
-	return drawVec;
 }
 
 void EditWindow::handleEvent(const sf::Event& event)

@@ -174,7 +174,13 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 					line->laserPos[i] = L_CONNECTOR;
 					break;
 				default:
+					if (lastLaser[i]) {
+						line->type[i] = LASER_BODY;
+					} else {
+						line->type[i] = LASER_HEAD;
+					}
 					line->laserPos[i] = laserVals.find(s[8 + i]) / 50.f;
+					lastLaser[i] = line;
 					break;
 				}
 			}
@@ -207,7 +213,6 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 				line->cmds.push_back(spinCommand);
 			}
 
-			//doubly linked list stuff
 			line->prev = prev;
 			if (prev != nullptr) {
 				prev->next = line;
@@ -215,6 +220,15 @@ void Parser::loadFile(std::string fileName, Chart& chart)
 
 			prev = line;
 			lineBuffer.push_back(line);
+		}
+		for(auto [pos, line] : chart.lines) {
+			for (int i = 0; i < 2; i++) {
+				if (line->type[i] == LASER_BODY) {
+					if (line->next && !line->getNextLaser(i)) {
+						line->type[i] = LASER_TAIL;
+					}
+				}
+			}
 		}
 	}
 	chart.appendNewMeasure();
@@ -269,12 +283,12 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 
 	mapFile << "--" << std::endl;
 
-	for (auto measure : chart.measures) {
-		for (auto line : measure.lines) {
+	for (const auto& measure : chart.measures) {
+		for (auto [key, line] : measure.lines) {
 			bool hasSpin = false;
 			std::string spinVal = "";
 			//first output commands
-			for (auto command : line.second->cmds) {
+			for (auto command : line->cmds) {
 				auto it = swappedCmdTable.find(command.type);
 				switch (it->first) {
 				case SPIN_R:
@@ -293,27 +307,26 @@ void Parser::saveFile(Chart& chart, std::string fileName)
 			}
 
 			//output the actual line
-			mapFile << static_cast<char>(line.second->btVal[0] + '0') << static_cast<char>(line.second->btVal[1] + '0')
-				<< static_cast<char>(line.second->btVal[2] + '0') << static_cast<char>(line.second->btVal[3] + '0') <<
+			mapFile << static_cast<char>(line->btVal[0] + '0') << static_cast<char>(line->btVal[1] + '0')
+				<< static_cast<char>(line->btVal[2] + '0') << static_cast<char>(line->btVal[3] + '0') <<
 				"|";
-			mapFile << static_cast<char>(line.second->fxVal[0] + '0') << static_cast<char>(line.second->fxVal[1] + '0')
+			mapFile << static_cast<char>(line->fxVal[0] + '0') << static_cast<char>(line->fxVal[1] + '0')
 				<< "|";
 			for (int i = 0; i < 2; i++) {
-				if (line.second->laserPos[i] == L_NONE) {
-					mapFile << "-";
-				}
-				else if (line.second->laserPos[i] == L_CONNECTOR) {
+				if (line->type[i] == LASER_NONE && line->getPrevLaser(i)) {
 					mapFile << ":";
 				}
-				else {
-					mapFile << laserVals[std::clamp(static_cast<int>(std::lrint(line.second->laserPos[i] * 50.f)), 0,
+				else if (line->type[i] != LASER_NONE) {
+					mapFile << laserVals[std::clamp(static_cast<int>(std::lrint(line->laserPos[i] * 50.f)), 0,
 					                                50)];
+				} else {
+					mapFile << "-";
 				}
 			}
 
 			//now do spins
 			if (hasSpin) {
-				mapFile << swappedCmdTable.find(line.second->cmds.back().type)->second << line.second->cmds.back().val;
+				mapFile << swappedCmdTable.find(line->cmds.back().type)->second << line->cmds.back().val;
 			}
 
 			mapFile << std::endl;

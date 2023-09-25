@@ -72,6 +72,7 @@ ChartDisplay::ChartDisplay()
 	fxHoldSprite.setTexture(fxHoldTex);
 	fxHoldSprite.setTextureRect(sf::IntRect(0, fxHoldTex.getSize().y - 1, fxHoldTex.getSize().x,
 		fxHoldTex.getSize().y));
+	font.loadFromFile("Fonts/CONSOLA.TTF");
 
 }
 
@@ -214,16 +215,42 @@ void ChartDisplay::drawLineButtons(sf::RenderTarget& window, const ChartLine* li
 		sf::Vector2f v = getNoteLocation(0, pos);
 		sf::Color col;
 		if (line->isMeasureStart) {
-			col = sf::Color(255, 0, 0, 120);
+			col = sf::Color(255, 80, 80, 100);
 		} else {
-			col = sf::Color(0, 255, 0, 120);
+			col = sf::Color(0, 255, 0, 100);
 		}
 		sf::Vertex l[] = {
-			sf::Vertex(sf::Vector2f(v.x - laneWidth * 1.0, v.y), col),
+			sf::Vertex(sf::Vector2f(v.x - laneWidth * 1.0 - line->isMeasureStart * laneWidth * 0.5, v.y), col),
 			sf::Vertex(sf::Vector2f(v.x , v.y), col),
 			sf::Vertex(sf::Vector2f(v.x + laneWidth * 4.0, v.y), col),
-			sf::Vertex(sf::Vector2f(v.x + laneWidth * 5.0 , v.y), col)
+			sf::Vertex(sf::Vector2f(v.x + laneWidth * 5.0 + line->isMeasureStart * laneWidth * 0.5 , v.y), col)
 		};
+
+		for (int i = 0; i < 2; i++) {
+			if (line->type[i] != LASER_NONE) {
+				sf::Text text("N", font);
+				if (line->type[i] == LASER_HEAD) {
+					text.setString("H");
+					text.setFillColor(sf::Color::Green);
+				}
+				if (line->type[i] == LASER_TAIL) {
+					text.setString("T");
+					text.setFillColor(sf::Color::Red);
+				}
+				if (line->type[i] == LASER_BODY) {
+					text.setString("B");
+					text.setFillColor(sf::Color::Blue);
+				}
+
+				text.setCharacterSize(20);
+				text.setPosition(v.x - laneWidth * 1.6 + i * laneWidth * 7, v.y - 10);
+				window.draw(text);
+			}
+			
+		}
+		
+
+		
 		window.draw(l, 4, sf::Lines);
 	}
 
@@ -342,7 +369,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 		float x = 0;
 		float y = 0;
 		//draw entry point
-		if (line->getPrevLaser(laser) == nullptr && line->laserPos[laser] >= 0) {
+		if (line->type[laser] == LASER_HEAD) {
 			x = getLaserX(line, laser);
 			y = getNoteLocation(lineNum).y;
 
@@ -367,7 +394,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 		ChartLine* nextLaser = line->getNextLaser(laser);
 		//check for slams, this is not kson compliant and checks based on timing
 		if ((nextLaser->pos - line->pos) <= (192 / 32) &&
-			line->laserPos[laser] != L_CONNECTOR &&
+			//line->laserPos[laser] != L_CONNECTOR &&
 			line->laserPos[laser] != nextLaser->laserPos[laser]) {
 			x = std::max(getLaserX(line, laser), getLaserX(nextLaser, laser));
 			y = getNoteLocation(lineNum).y;
@@ -385,7 +412,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 			laserBuffer.push_back(quad);
 
 			//draw tail if we need it
-			if (nextLaser->getNextLaser(laser) == nullptr) {
+			if (nextLaser->type[laser] == LASER_TAIL) {
 				x = getLaserX(nextLaser, laser);
 				quad[0] = sf::Vertex(sf::Vector2f(x, y - dif), c);
 				quad[1] = sf::Vertex(sf::Vector2f(x + laneWidth, y - dif), c);
@@ -433,7 +460,7 @@ QuadArray ChartDisplay::generateLaserQuads(int laser, const std::map<unsigned in
 float ChartDisplay::getLaserX(ChartLine* line, int laser)
 {
 	float ourPos = 0;
-	if (line->laserPos[laser] == L_CONNECTOR) {
+	if (line->type[laser] == LASER_NONE) {
 		ChartLine* prevLaser = line->getPrevLaser(laser);
 		ChartLine* nextLaser = line->getNextLaser(laser);
 		float startPos = prevLaser->laserPos[laser];
@@ -471,9 +498,7 @@ ChartLine* ChartDisplay::getLaserHover(int laser, float mouseX, float mouseY)
 {
 	//run over the buffer and then check for collision
 	for (auto& [chartLine, array] : qArray[laser]) {
-		if (chartLine->laserPos[laser] == L_CONNECTOR || chartLine->next->laserPos[laser] == L_NONE) {
-			chartLine = chartLine->getPrevLaser(laser);
-		}
+
 		for (auto& quad : array) {
 			if (getMouseOverlap(quad, mouseX, mouseY)) {
 				return chartLine;

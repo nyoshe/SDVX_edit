@@ -125,7 +125,6 @@ public:
 	void changeTool(EditTool tool);
 
 	void drawChart(unsigned int start, unsigned int end);
-	std::vector<sf::VertexArray> generateSlamQuads(int lineNum, float start, float end, int laser, bool isWide);
 
 	int getMouseLane();
 	//int getMouseMeasure();
@@ -174,7 +173,7 @@ public:
 		T out;
 		out.lane = getMouseLane();
 		out.line = getSnappedLine(getMouseLine());
-		out.laserPos = getMouseLaserPos(true);
+		out.laserPos = getMouseLaserPos(this->tool.wideLaser);
 		out.window = this->window;
 		out.tool = this->tool;
 		return out;

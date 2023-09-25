@@ -69,3 +69,11 @@ enum ToolType
 	BT,
 	FX,
 };
+
+enum LaserType
+{
+	LASER_BODY,
+	LASER_TAIL,
+	LASER_HEAD,
+	LASER_NONE,
+};

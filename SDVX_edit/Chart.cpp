@@ -635,8 +635,7 @@ void Chart::validateChart()
 		}
 
 		if (measureLoc->second != line) {
-			PLOG_WARNING << "line does not match the line found in measure in " << metadata.mapFileName << " line: " <<
- line->pos;
+			PLOG_WARNING << "line does not match the line found in measure in " << metadata.mapFileName << " line: " << line->pos;
 			if constexpr (BREAK_ON_CHART_ERRORS) {
 				DebugBreak();
 				error = true;
@@ -669,16 +668,14 @@ void Chart::validateChart()
 					}
 				}
 				if (prev->laserPos[i] == -1 && line->laserPos[i] == -2) {
-					PLOG_WARNING << "missing laser position before connector in " << metadata.mapFileName << " line: " <<
- line->pos;
+					PLOG_WARNING << "missing laser position before connector in " << metadata.mapFileName << " line: " << line->pos;
 					if constexpr (BREAK_ON_CHART_ERRORS) {
 						DebugBreak();
 						error = true;
 					}
 				}
 				if (prev->laserPos[i] == -2 && line->laserPos[i] == -1) {
-					PLOG_WARNING << "missing laser position after connector in " << metadata.mapFileName << " line: " <<
- line->pos;
+					PLOG_WARNING << "missing laser position after connector in " << metadata.mapFileName << " line: " << line->pos;
 					if constexpr (BREAK_ON_CHART_ERRORS) {
 						DebugBreak();
 						error = true;
@@ -687,8 +684,7 @@ void Chart::validateChart()
 
 				if (line->next) {
 					if (prev->laserPos[i] == -1 && line->next->laserPos[i] == -1 && line->laserPos[i] >= 0) {
-						PLOG_WARNING << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->
-pos;
+						PLOG_WARNING << "laser pos with no connector in " << metadata.mapFileName << " line: " << line->pos;
 						if constexpr (BREAK_ON_CHART_ERRORS) {
 							DebugBreak();
 							error = true;

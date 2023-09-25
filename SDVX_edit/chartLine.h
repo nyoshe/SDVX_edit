@@ -85,9 +85,12 @@ public:
 	//1 for long note, 2 for chip (legacy reasons tl. stupid devs)
 	std::vector<uint8_t> fxVal = {0, 0};
 	std::vector<float> laserPos = {L_NONE, L_NONE};
+	std::vector<LaserType> type = { LASER_NONE, LASER_NONE };
+
 	std::vector<bool> isWide = {false, false};
 	ChartLine* next = nullptr;
 	ChartLine* prev = nullptr;
+	
 	//defines our position relative to 1/192 snapping
 	unsigned int pos = 0;
 	unsigned int measurePos = 0;

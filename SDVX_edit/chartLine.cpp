@@ -43,12 +43,12 @@ bool ChartLine::empty()
 				return false;
 			}
 		}
-		if (laserPos[i] >= 0) {
+		if (this->type[i] != LASER_NONE) {
 			return false;
 		}
 		//we are considered empty only if we are the connector to a following laser point
-		if (next && prev && laserPos[i] == L_CONNECTOR) {
-			if (next->laserPos[i] >= 0 && prev->laserPos[i] >= 0) {
+		if (next && prev && this->type[i] == LASER_NONE) {
+			if (next->type[i] != LASER_NONE && prev->type[i] != LASER_NONE) {
 				return false;
 			}
 		}
@@ -62,11 +62,11 @@ bool ChartLine::empty()
 ChartLine* ChartLine::getNextLaser(int laser)
 {
 	ChartLine* line = this->next;
-	while (line && line->laserPos[laser] != L_NONE) {
-		if (line->laserPos[laser] == L_NONE) {
+	while (line) {
+		if (line->type[laser] == LASER_HEAD) {
 			return nullptr;
 		}
-		if (line->laserPos[laser] >= 0) {
+		if (line->type[laser] == LASER_TAIL || line->type[laser] == LASER_BODY) {
 			return line;
 		}
 		line = line->next;
@@ -77,11 +77,11 @@ ChartLine* ChartLine::getNextLaser(int laser)
 ChartLine* ChartLine::getPrevLaser(int laser)
 {
 	ChartLine* line = this->prev;
-	while (line && line->laserPos[laser] != L_NONE) {
-		if (line->laserPos[laser] == L_NONE) {
+	while (line) {
+		if (line->type[laser] == LASER_TAIL) {
 			return nullptr;
 		}
-		if (line->laserPos[laser] >= 0) {
+		if (line->type[laser] == LASER_HEAD || line->type[laser] == LASER_BODY) {
 			return line;
 		}
 		line = line->prev;
@@ -93,7 +93,7 @@ ChartLine* ChartLine::getBtStart(int lane)
 {
 	auto line = this;
 	if (line->btVal[lane] != 2) {
-		return this;
+		return nullptr;
 	}
 	while (line->prev && line->prev->btVal[lane] == 2) {
 		line = line->prev;
@@ -105,7 +105,7 @@ ChartLine* ChartLine::getBtEnd(int lane)
 {
 	auto line = this;
 	if (line->btVal[lane] != 2) {
-		return this;
+		return nullptr;
 	}
 	while (line->next && line->next->btVal[lane] == 2) {
 		line = line->next;
@@ -117,7 +117,7 @@ ChartLine* ChartLine::getFxStart(int lane)
 {
 	auto line = this;
 	if (line->fxVal[lane] != 1) {
-		return this;
+		return nullptr;
 	}
 	while (line->prev && line->prev->fxVal[lane] == 1) {
 		line = line->prev;
@@ -129,7 +129,7 @@ ChartLine* ChartLine::getFxEnd(int lane)
 {
 	auto line = this;
 	if (line->fxVal[lane] != 1) {
-		return this;
+		return nullptr;
 	}
 	while (line->next && line->next->fxVal[lane] == 1) {
 		line = line->next;
@@ -143,13 +143,16 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearBtHold(int lane)
 	if (this->btVal[lane] == 1) return actionList;
 	ChartLine* start = getBtStart(lane);
 	ChartLine* end = getBtEnd(lane);
-	while (start != end) {
-		actionList.push_back(std::make_pair(start, new ChartLine(*start)));
-		start->btVal[lane] = 0;
-		start = start->next;
+	if (start && end) {
+		while (start != end) {
+			actionList.push_back(std::make_pair(start, new ChartLine(*start)));
+			start->btVal[lane] = 0;
+			start = start->next;
+		}
+		actionList.push_back(std::make_pair(end, new ChartLine(*end)));
+		end->btVal[lane] = 0;
 	}
-	actionList.push_back(std::make_pair(end, new ChartLine(*end)));
-	end->btVal[lane] = 0;
+	
 	return actionList;
 }
 
@@ -159,13 +162,16 @@ std::vector<std::pair<ChartLine*, ChartLine*>> ChartLine::clearFxHold(int lane)
 	if (this->fxVal[lane] == 2) return actionList;
 	ChartLine* start = getFxStart(lane);
 	ChartLine* end = getFxEnd(lane);
-	while (start != end) {
-		actionList.push_back(std::make_pair(start, new ChartLine(*start)));
-		start->fxVal[lane] = 0;
-		start = start->next;
+	if (start && end) {
+		while (start != end) {
+			actionList.push_back(std::make_pair(start, new ChartLine(*start)));
+			start->fxVal[lane] = 0;
+			start = start->next;
+		}
+		actionList.push_back(std::make_pair(end, new ChartLine(*end)));
+		end->fxVal[lane] = 0;
 	}
-	actionList.push_back(std::make_pair(end, new ChartLine(*end)));
-	end->fxVal[lane] = 0;
+	
 	return actionList;
 }
 
@@ -187,6 +193,7 @@ ChartLine ChartLine::replaceMask(const LineMask& mask, const ChartLine& b)
 			else if (!b.isWide[i]) {
 				out.isWide[i] = false;
 			}
+			out.type[i] = b.type[i];
 		}
 		//a merge overwrites the laser position
 		if (mask.fx[i]) {
@@ -216,6 +223,7 @@ ChartLine* ChartLine::extractMask(const LineMask& mask)
 		if (mask.laser[i]) {
 			output->laserPos[i] = laserPos[i];
 			output->isWide[i] = isWide[i];
+			output->type[i] = type[i];
 		}
 	}
 	output->next = next;
@@ -275,11 +283,11 @@ std::string ChartLine::toString()
 	}
 	out.push_back('|');
 	for (int i = 0; i < 2; i++) {
-		if (laserPos[i] == L_NONE) {
-			out.push_back('-');
-		}
-		else if (laserPos[i] == L_CONNECTOR) {
+		if (this->type[i] == LASER_NONE && this->getPrevLaser(i)) {
 			out.push_back(':');
+		}
+		else if (this->type[i] == LASER_NONE) {
+			out.push_back('-');
 		}
 		else {
 			out.push_back(laserVals[std::clamp(static_cast<int>(std::lrint(laserPos[i] * 50.f)), 0,50)]);
